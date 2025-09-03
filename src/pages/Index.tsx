@@ -1,33 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Job, Customer, JobAlert } from '@/types/job';
-import { mockJobs, mockCustomers, mockEngineers } from '@/lib/jobUtils';
+import { 
+  mockJobs, 
+  mockCustomers, 
+  mockEngineers, 
+  loadJobsFromStorage, 
+  saveJobsToStorage, 
+  loadCustomersFromStorage,
+  saveCustomersToStorage,
+  loadEngineersFromStorage,
+  saveEngineersToStorage
+} from '@/lib/jobUtils';
 import MasterDashboard from '@/components/MasterDashboard';
 import CustomerDashboard from '@/components/CustomerDashboard';
-import CustomerAlertsPortal from '@/components/CustomerAlertsPortal';
-import GlobalAlertsPortal from '@/components/GlobalAlertsPortal';
-import AllCustomersPage from '@/components/AllCustomersPage';
-import EndOfShiftReport from '@/components/EndOfShiftReport';
 import CustomerDetailPage from '@/components/CustomerDetailPage';
+import CustomerAlertsPortal from '@/components/CustomerAlertsPortal';
+import AllCustomersPage from '@/components/AllCustomersPage';
 import JobLogWizard from '@/components/JobLogWizard';
+import JobDetailPage from '@/pages/JobDetailPage';
 import JobEditModal from '@/components/JobEditModal';
+import GlobalAlertsPortal from '@/components/GlobalAlertsPortal';
+import SitesPage from '@/components/SitesPage';
 import NavigationSidebar from '@/components/NavigationSidebar';
 import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Users, Bell } from 'lucide-react';
-import JobDetailPage from './JobDetailPage';
+import EndOfShiftReport from '@/components/EndOfShiftReport';
 
-type View = 'master' | 'customer' | 'alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts';
+type View = 'master' | 'customer' | 'customer-dashboard' | 'customer-detail' | 'customer-alerts' | 'alerts' | 'wizard' | 'reports' | 'job-detail' | 'sites';
 
 export default function Index() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
-  const [jobs, setJobs] = useState<Job[]>(mockJobs);
-  const [customers] = useState<Customer[]>(mockCustomers);
+  
+  // Load jobs from localStorage on component mount
+  const [jobs, setJobs] = useState<Job[]>(() => loadJobsFromStorage());
+  
+  const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
   const [currentView, setCurrentView] = useState<View>('master');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Save jobs to localStorage whenever jobs state changes
+  useEffect(() => {
+    saveJobsToStorage(jobs);
+  }, [jobs]);
 
   const handleJobCreate = (newJob: Omit<Job, 'id'>) => {
     const jobWithId: Job = {
@@ -36,6 +55,14 @@ export default function Index() {
     };
     setJobs(prev => [jobWithId, ...prev]);
     setCurrentView('master');
+  };
+
+  const handleCustomerCreate = (newCustomer: Omit<Customer, 'id'>) => {
+    const customerWithId: Customer = {
+      ...newCustomer,
+      id: Date.now()
+    };
+    setCustomers(prev => [customerWithId, ...prev]);
   };
 
   const handleJobClick = (job: Job) => {
@@ -51,11 +78,15 @@ export default function Index() {
 
   const handleCustomerSelect = (customer: Customer) => {
     setSelectedCustomer(customer);
-    setCurrentView('customer-detail');
+    setCurrentView('customer-dashboard');
   };
 
   const handleViewChange = (view: View) => {
     setCurrentView(view);
+    // If we're on a job detail page and trying to navigate away, clear the URL
+    if (jobId && view !== 'job-detail') {
+      navigate('/');
+    }
   };
 
   const handleHomepageClick = () => {
@@ -68,9 +99,18 @@ export default function Index() {
     return (
       <>
         <NavigationSidebar 
-          currentView={currentView}
-          onViewChange={handleViewChange}
-          onHomepageClick={handleHomepageClick}
+          currentView="job-detail"
+          onViewChange={(view) => {
+            // Always allow navigation, but clear URL if needed
+            if (view !== 'job-detail') {
+              navigate('/');
+            }
+            handleViewChange(view);
+          }}
+          onHomepageClick={() => {
+            navigate('/');
+            handleHomepageClick();
+          }}
           selectedCustomer={selectedCustomer?.name}
         />
         <SidebarInset>
@@ -109,7 +149,24 @@ export default function Index() {
           <AllCustomersPage
             onBack={() => setCurrentView('master')}
             onCustomerSelect={handleCustomerSelect}
+            onCustomerCreate={handleCustomerCreate}
           />
+        );
+      
+      case 'customer-dashboard':
+        return selectedCustomer ? (
+          <CustomerDashboard
+            customer={selectedCustomer}
+            jobs={jobs}
+            onBack={() => setCurrentView('customer')}
+            onJobClick={handleJobClick}
+            onJobCreate={() => setCurrentView('wizard')}
+          />
+        ) : (
+          <div className="text-center py-12">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No customer selected</h3>
+            <p className="text-muted-foreground">Please select a customer to view dashboard.</p>
+          </div>
         );
       
       case 'alerts':
@@ -124,11 +181,7 @@ export default function Index() {
         return (
           <JobLogWizard
             customers={customers}
-            onJobCreate={(job) => {
-              // Handle job creation logic here
-              console.log('New job created:', job);
-              setCurrentView('master');
-            }}
+            onJobCreate={handleJobCreate}
             onCancel={() => setCurrentView('master')}
           />
         );
@@ -138,6 +191,32 @@ export default function Index() {
           <EndOfShiftReport
             onBack={() => setCurrentView('master')}
           />
+        );
+      
+      case 'sites':
+        return (
+          <SitesPage
+            onBack={() => setCurrentView('master')}
+            onSiteSelect={(site, customer) => {
+              const selectedCustomer = customers.find(c => c.name === customer);
+              if (selectedCustomer) {
+                setSelectedCustomer(selectedCustomer);
+                setCurrentView('customer');
+              }
+            }}
+            onJobClick={handleJobClick}
+            onJobCreate={() => setCurrentView('wizard')}
+            jobs={jobs}
+            customers={customers}
+          />
+        );
+      
+      case 'job-detail':
+        return (
+          <div className="text-center py-12">
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Job Detail View</h3>
+            <p className="text-muted-foreground">This view is handled by the router.</p>
+          </div>
         );
       
       case 'customer-detail':
@@ -191,6 +270,8 @@ export default function Index() {
             <h1 className="text-lg font-semibold">
               {currentView === 'master' && 'Master Dashboard'}
               {currentView === 'customer' && 'All Customers'}
+              {currentView === 'sites' && 'All Sites'}
+              {currentView === 'customer-dashboard' && selectedCustomer && `${selectedCustomer.name} Dashboard`}
               {currentView === 'customer-detail' && selectedCustomer && `${selectedCustomer.name} Details`}
               {currentView === 'customer-alerts' && selectedCustomer && `${selectedCustomer.name} Alerts`}
               {currentView === 'alerts' && 'Global Alerts Portal'}

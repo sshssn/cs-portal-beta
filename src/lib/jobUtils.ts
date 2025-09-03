@@ -142,506 +142,61 @@ export const mockEngineers: Engineer[] = [
 export const mockCustomers: Customer[] = [
   {
     id: 1,
-    name: 'Acme Corporation',
-    sites: ['Main Office', 'Warehouse A', 'Warehouse B', 'Distribution Center']
-  },
-  {
-    id: 2,
-    name: 'TechStart Inc',
-    sites: ['Headquarters', 'R&D Lab', 'Data Center']
-  },
-  {
-    id: 3,
-    name: 'Global Manufacturing',
-    sites: ['Plant 1', 'Plant 2', 'Quality Control', 'Administration']
-  },
-  {
-    id: 4,
-    name: 'Metro Hospital',
-    sites: ['Main Building', 'Emergency Wing', 'Parking Garage', 'Cafeteria']
-  },
-  {
-    id: 5,
-    name: 'City University',
-    sites: ['Library', 'Science Building', 'Student Center', 'Dormitory A', 'Dormitory B']
+    name: 'Demo Corporation',
+    email: 'info@democorp.com',
+    phone: '+44 20 7123 4567',
+    sites: ['London HQ', 'Manchester Office', 'Birmingham Site'],
+    notes: 'Demo customer for testing purposes'
   }
 ];
 
 export const mockJobs: Job[] = [
   {
     id: '1',
-    jobNumber: 'JOB-240901-001',
-    customer: 'Acme Corporation',
-    site: 'Main Office',
-    description: 'HVAC system maintenance in conference room',
+    jobNumber: 'JOB-2024-001',
+    customer: 'Demo Corporation',
+    site: 'London HQ',
+    description: 'Demo job for testing the system - HVAC maintenance required',
     engineer: 'John Smith',
     status: 'amber',
-    priority: 'High',
+    priority: 'Medium',
     category: 'HVAC',
     jobType: 'Maintenance',
     targetCompletionTime: 120,
-    dateLogged: new Date('2024-09-01T09:00:00'),
+    dateLogged: new Date('2024-01-15T09:00:00'),
+    dateAccepted: null,
+    dateOnSite: null,
+    dateCompleted: null,
+    reason: null,
     contact: {
-      name: 'Alice Johnson',
-      number: '+1 (555) 101-2001',
-      email: 'alice.johnson@acme.com',
+      name: 'Sarah Johnson',
+      number: '+447123456789',
+      email: 'sarah.johnson@democorp.com',
       relationship: 'Facilities Manager'
     },
     reporter: {
-      name: 'Bob Wilson',
-      number: '+1 (555) 101-2002',
-      email: 'bob.wilson@acme.com',
-      relationship: 'Office Manager'
+      name: 'Sarah Johnson',
+      number: '+447123456789',
+      email: 'sarah.johnson@democorp.com',
+      relationship: 'Facilities Manager'
     },
     primaryJobTrade: 'HVAC',
-    secondaryJobTrades: ['Electrical'],
-    tags: ['Maintenance', 'Scheduled'],
+    secondaryJobTrades: ['Electrical', 'General'],
+    tags: ['Demo', 'Maintenance', 'HVAC'],
     customAlerts: {
       acceptSLA: 30,
       onsiteSLA: 90,
       completedSLA: 180
     },
-    project: 'Q3 Maintenance',
+    project: 'Demo Project',
     customerOrderNumber: 'PO-2024-001',
     referenceNumber: 'REF-001',
-    jobOwner: 'Facilities Department',
-    jobRef1: 'HVAC-001',
-    jobRef2: 'MAINT-001',
+    jobOwner: 'Demo Department',
+    jobRef1: 'DEMO-001',
+    jobRef2: 'TEST-001',
     requiresApproval: false,
-    preferredAppointmentDate: new Date('2024-09-02T10:00:00'),
-    startDate: new Date('2024-09-01T09:00:00'),
-    endDate: null,
-    lockVisitDateTime: false,
-    deployToMobile: true,
-    isRecurringJob: false,
-    completionTimeFromEngineerOnsite: false
-  },
-  {
-    id: '2',
-    jobNumber: 'JOB-240901-002',
-    customer: 'TechStart Inc',
-    site: 'Data Center',
-    description: 'Emergency electrical repair - server room power outage',
-    engineer: 'Sarah Johnson',
-    status: 'red',
-    priority: 'Critical',
-    category: 'Electrical',
-    jobType: 'Emergency',
-    targetCompletionTime: 60,
-    dateLogged: new Date('2024-09-01T14:30:00'),
-    contact: {
-      name: 'David Chen',
-      number: '+1 (555) 201-3001',
-      email: 'david.chen@techstart.com',
-      relationship: 'IT Manager'
-    },
-    reporter: {
-      name: 'Emma Davis',
-      number: '+1 (555) 201-3002',
-      email: 'emma.davis@techstart.com',
-      relationship: 'System Administrator'
-    },
-    primaryJobTrade: 'Electrical',
-    secondaryJobTrades: [],
-    tags: ['Emergency', 'Critical'],
-    customAlerts: {
-      acceptSLA: 10,
-      onsiteSLA: 30,
-      completedSLA: 60
-    },
-    project: 'Infrastructure',
-    customerOrderNumber: 'EMG-2024-001',
-    referenceNumber: 'REF-002',
-    jobOwner: 'IT Department',
-    jobRef1: 'ELEC-002',
-    jobRef2: 'EMG-002',
-    requiresApproval: false,
-    preferredAppointmentDate: new Date('2024-09-01T15:00:00'),
-    startDate: new Date('2024-09-01T14:30:00'),
-    endDate: null,
-    lockVisitDateTime: true,
-    deployToMobile: true,
-    isRecurringJob: false,
-    completionTimeFromEngineerOnsite: false
-  },
-  {
-    id: '3',
-    jobNumber: 'JOB-240901-003',
-    customer: 'Global Manufacturing',
-    site: 'Plant 1',
-    description: 'Routine safety inspection of fire suppression system',
-    engineer: 'Mike Davis',
-    status: 'green',
-    priority: 'Medium',
-    category: 'Fire Safety',
-    jobType: 'Inspection',
-    targetCompletionTime: 180,
-    dateLogged: new Date('2024-09-01T08:00:00'),
-    contact: {
-      name: 'Frank Miller',
-      number: '+1 (555) 301-4001',
-      email: 'frank.miller@globalmfg.com',
-      relationship: 'Safety Manager'
-    },
-    reporter: {
-      name: 'Grace Lee',
-      number: '+1 (555) 301-4002',
-      email: 'grace.lee@globalmfg.com',
-      relationship: 'Plant Supervisor'
-    },
-    primaryJobTrade: 'Fire Safety',
-    secondaryJobTrades: ['Electrical'],
-    tags: ['Inspection', 'Compliance'],
-    customAlerts: {
-      acceptSLA: 60,
-      onsiteSLA: 180,
-      completedSLA: 360
-    },
-    project: 'Safety Compliance',
-    customerOrderNumber: 'INS-2024-001',
-    referenceNumber: 'REF-003',
-    jobOwner: 'Safety Department',
-    jobRef1: 'FIRE-003',
-    jobRef2: 'INS-003',
-    requiresApproval: true,
-    preferredAppointmentDate: new Date('2024-09-02T09:00:00'),
-    startDate: new Date('2024-09-01T08:00:00'),
-    endDate: null,
-    lockVisitDateTime: false,
-    deployToMobile: true,
-    isRecurringJob: true,
-    completionTimeFromEngineerOnsite: false
-  },
-  {
-    id: '4',
-    jobNumber: 'JOB-240901-004',
-    customer: 'Metro Hospital',
-    site: 'Emergency Wing',
-    description: 'Plumbing repair in patient bathroom - water leak',
-    engineer: 'Lisa Wilson',
-    status: 'amber',
-    priority: 'High',
-    category: 'Plumbing',
-    jobType: 'Repair',
-    targetCompletionTime: 90,
-    dateLogged: new Date('2024-09-01T12:15:00'),
-    contact: {
-      name: 'Helen Rodriguez',
-      number: '+1 (555) 401-5001',
-      email: 'helen.rodriguez@metrohospital.com',
-      relationship: 'Facilities Coordinator'
-    },
-    reporter: {
-      name: 'Ivan Petrov',
-      number: '+1 (555) 401-5002',
-      email: 'ivan.petrov@metrohospital.com',
-      relationship: 'Maintenance Supervisor'
-    },
-    primaryJobTrade: 'Plumbing',
-    secondaryJobTrades: [],
-    tags: ['Repair', 'Urgent'],
-    customAlerts: {
-      acceptSLA: 20,
-      onsiteSLA: 60,
-      completedSLA: 120
-    },
-    project: 'Emergency Wing Maintenance',
-    customerOrderNumber: 'REP-2024-001',
-    referenceNumber: 'REF-004',
-    jobOwner: 'Facilities Department',
-    jobRef1: 'PLUMB-004',
-    jobRef2: 'REP-004',
-    requiresApproval: false,
-    preferredAppointmentDate: new Date('2024-09-01T13:00:00'),
-    startDate: new Date('2024-09-01T12:15:00'),
-    endDate: null,
-    lockVisitDateTime: false,
-    deployToMobile: true,
-    isRecurringJob: false,
-    completionTimeFromEngineerOnsite: false
-  },
-  {
-    id: '5',
-    jobNumber: 'JOB-240901-005',
-    customer: 'City University',
-    site: 'Library',
-    description: 'Installation of new security cameras in reading areas',
-    engineer: 'Tom Brown',
-    status: 'green',
-    priority: 'Low',
-    category: 'Security Systems',
-    jobType: 'Installation',
-    targetCompletionTime: 240,
-    dateLogged: new Date('2024-08-30T10:00:00'),
-    contact: {
-      name: 'Julia Kim',
-      number: '+1 (555) 501-6001',
-      email: 'julia.kim@cityuni.edu',
-      relationship: 'Library Director'
-    },
-    reporter: {
-      name: 'Kevin O\'Connor',
-      number: '+1 (555) 501-6002',
-      email: 'kevin.oconnor@cityuni.edu',
-      relationship: 'Security Manager'
-    },
-    primaryJobTrade: 'Security Systems',
-    secondaryJobTrades: ['Electrical'],
-    tags: ['Installation', 'Scheduled'],
-    customAlerts: {
-      acceptSLA: 120,
-      onsiteSLA: 240,
-      completedSLA: 480
-    },
-    project: 'Campus Security Upgrade',
-    customerOrderNumber: 'INST-2024-001',
-    referenceNumber: 'REF-005',
-    jobOwner: 'Security Department',
-    jobRef1: 'SEC-005',
-    jobRef2: 'INST-005',
-    requiresApproval: true,
-    preferredAppointmentDate: new Date('2024-08-30T11:00:00'),
-    startDate: new Date('2024-08-30T10:00:00'),
-    endDate: new Date('2024-09-01T16:00:00'),
-    lockVisitDateTime: false,
-    deployToMobile: true,
-    isRecurringJob: false,
-    completionTimeFromEngineerOnsite: true
-  },
-  {
-    id: '6',
-    jobNumber: 'JOB-240902-006',
-    customer: 'Acme Corporation',
-    site: 'Warehouse A',
-    description: 'Painting touch-up work in loading dock area',
-    engineer: 'John Smith',
-    status: 'green',
-    priority: 'Low',
-    category: 'Painting',
-    jobType: 'Maintenance',
-    targetCompletionTime: 300,
-    dateLogged: new Date('2024-09-02T07:30:00'),
-    contact: {
-      name: 'Laura Martinez',
-      number: '+1 (555) 101-2003',
-      email: 'laura.martinez@acme.com',
-      relationship: 'Warehouse Manager'
-    },
-    reporter: {
-      name: 'Mark Thompson',
-      number: '+1 (555) 101-2004',
-      email: 'mark.thompson@acme.com',
-      relationship: 'Dock Supervisor'
-    },
-    primaryJobTrade: 'Painting',
-    secondaryJobTrades: [],
-    tags: ['Maintenance', 'Preventive'],
-    customAlerts: {
-      acceptSLA: 60,
-      onsiteSLA: 180,
-      completedSLA: 360
-    },
-    project: 'Warehouse Maintenance',
-    customerOrderNumber: 'PAINT-2024-001',
-    referenceNumber: 'REF-006',
-    jobOwner: 'Warehouse Operations',
-    jobRef1: 'PAINT-006',
-    jobRef2: 'MAINT-006',
-    requiresApproval: false,
-    preferredAppointmentDate: new Date('2024-09-03T09:00:00'),
-    startDate: new Date('2024-09-02T07:30:00'),
-    endDate: null,
-    lockVisitDateTime: false,
-    deployToMobile: true,
-    isRecurringJob: false,
-    completionTimeFromEngineerOnsite: false
-  },
-  {
-    id: '7',
-    jobNumber: 'JOB-240902-007',
-    customer: 'TechStart Inc',
-    site: 'Headquarters',
-    description: 'Carpet replacement in executive conference room',
-    engineer: 'Sarah Johnson',
-    status: 'amber',
-    priority: 'Medium',
-    category: 'Flooring',
-    jobType: 'Installation',
-    targetCompletionTime: 480,
-    dateLogged: new Date('2024-09-02T09:15:00'),
-    contact: {
-      name: 'Nancy Wilson',
-      number: '+1 (555) 201-3003',
-      email: 'nancy.wilson@techstart.com',
-      relationship: 'Executive Assistant'
-    },
-    reporter: {
-      name: 'Oscar Garcia',
-      number: '+1 (555) 201-3004',
-      email: 'oscar.garcia@techstart.com',
-      relationship: 'Facilities Coordinator'
-    },
-    primaryJobTrade: 'Flooring',
-    secondaryJobTrades: [],
-    tags: ['Installation', 'Scheduled'],
-    customAlerts: {
-      acceptSLA: 30,
-      onsiteSLA: 90,
-      completedSLA: 180
-    },
-    project: 'Office Renovation',
-    customerOrderNumber: 'FLOOR-2024-001',
-    referenceNumber: 'REF-007',
-    jobOwner: 'Executive Office',
-    jobRef1: 'FLOOR-007',
-    jobRef2: 'RENO-007',
-    requiresApproval: true,
-    preferredAppointmentDate: new Date('2024-09-04T08:00:00'),
-    startDate: new Date('2024-09-02T09:15:00'),
-    endDate: null,
-    lockVisitDateTime: false,
-    deployToMobile: true,
-    isRecurringJob: false,
-    completionTimeFromEngineerOnsite: false
-  },
-  {
-    id: '8',
-    jobNumber: 'JOB-240902-008',
-    customer: 'Global Manufacturing',
-    site: 'Quality Control',
-    description: 'Roof leak repair above testing equipment',
-    engineer: 'Mike Davis',
-    status: 'red',
-    priority: 'Critical',
-    category: 'Roofing',
-    jobType: 'Emergency',
-    targetCompletionTime: 120,
-    dateLogged: new Date('2024-09-02T11:00:00'),
-    contact: {
-      name: 'Paul Anderson',
-      number: '+1 (555) 301-4003',
-      email: 'paul.anderson@globalmfg.com',
-      relationship: 'QC Manager'
-    },
-    reporter: {
-      name: 'Quinn Roberts',
-      number: '+1 (555) 301-4004',
-      email: 'quinn.roberts@globalmfg.com',
-      relationship: 'QC Technician'
-    },
-    primaryJobTrade: 'Roofing',
-    secondaryJobTrades: ['Electrical'],
-    tags: ['Emergency', 'Critical'],
-    customAlerts: {
-      acceptSLA: 10,
-      onsiteSLA: 30,
-      completedSLA: 60
-    },
-    project: 'Emergency Repairs',
-    customerOrderNumber: 'EMG-2024-002',
-    referenceNumber: 'REF-008',
-    jobOwner: 'Quality Control',
-    jobRef1: 'ROOF-008',
-    jobRef2: 'EMG-008',
-    requiresApproval: false,
-    preferredAppointmentDate: new Date('2024-09-02T12:00:00'),
-    startDate: new Date('2024-09-02T11:00:00'),
-    endDate: null,
-    lockVisitDateTime: true,
-    deployToMobile: true,
-    isRecurringJob: false,
-    completionTimeFromEngineerOnsite: false
-  },
-  {
-    id: '9',
-    jobNumber: 'JOB-240903-009',
-    customer: 'Metro Hospital',
-    site: 'Main Building',
-    description: 'HVAC filter replacement and system cleaning',
-    engineer: 'Lisa Wilson',
-    status: 'green',
-    priority: 'Medium',
-    category: 'HVAC',
-    jobType: 'Maintenance',
-    targetCompletionTime: 180,
-    dateLogged: new Date('2024-09-03T08:00:00'),
-    contact: {
-      name: 'Rachel Green',
-      number: '+1 (555) 401-5003',
-      email: 'rachel.green@metrohospital.com',
-      relationship: 'Facilities Manager'
-    },
-    reporter: {
-      name: 'Sam Thompson',
-      number: '+1 (555) 401-5004',
-      email: 'sam.thompson@metrohospital.com',
-      relationship: 'Maintenance Coordinator'
-    },
-    primaryJobTrade: 'HVAC',
-    secondaryJobTrades: [],
-    tags: ['Maintenance', 'Scheduled'],
-    customAlerts: {
-      acceptSLA: 60,
-      onsiteSLA: 180,
-      completedSLA: 360
-    },
-    project: 'Preventive Maintenance',
-    customerOrderNumber: 'PM-2024-001',
-    referenceNumber: 'REF-009',
-    jobOwner: 'Facilities Department',
-    jobRef1: 'HVAC-009',
-    jobRef2: 'PM-009',
-    requiresApproval: true,
-    preferredAppointmentDate: new Date('2024-09-03T09:00:00'),
-    startDate: new Date('2024-09-03T08:00:00'),
-    endDate: new Date('2024-09-03T11:00:00'),
-    lockVisitDateTime: false,
-    deployToMobile: true,
-    isRecurringJob: true,
-    completionTimeFromEngineerOnsite: false
-  },
-  {
-    id: '10',
-    jobNumber: 'JOB-240903-010',
-    customer: 'City University',
-    site: 'Science Building',
-    description: 'Electrical panel upgrade for new laboratory equipment',
-    engineer: 'Tom Brown',
-    status: 'amber',
-    priority: 'High',
-    category: 'Electrical',
-    jobType: 'Installation',
-    targetCompletionTime: 360,
-    dateLogged: new Date('2024-09-03T10:30:00'),
-    contact: {
-      name: 'Tina Chen',
-      number: '+1 (555) 501-6003',
-      email: 'tina.chen@cityuni.edu',
-      relationship: 'Lab Manager'
-    },
-    reporter: {
-      name: 'Victor Martinez',
-      number: '+1 (555) 501-6004',
-      email: 'victor.martinez@cityuni.edu',
-      relationship: 'Department Head'
-    },
-    primaryJobTrade: 'Electrical',
-    secondaryJobTrades: ['HVAC'],
-    tags: ['Installation', 'Upgrade'],
-    customAlerts: {
-      acceptSLA: 30,
-      onsiteSLA: 90,
-      completedSLA: 180
-    },
-    project: 'Lab Equipment Upgrade',
-    customerOrderNumber: 'UPG-2024-001',
-    referenceNumber: 'REF-010',
-    jobOwner: 'Science Department',
-    jobRef1: 'ELEC-010',
-    jobRef2: 'UPG-010',
-    requiresApproval: true,
-    preferredAppointmentDate: new Date('2024-09-04T08:00:00'),
-    startDate: new Date('2024-09-03T10:30:00'),
+    preferredAppointmentDate: new Date('2024-01-16T10:00:00'),
+    startDate: new Date('2024-01-15T09:00:00'),
     endDate: null,
     lockVisitDateTime: false,
     deployToMobile: true,
@@ -649,3 +204,155 @@ export const mockJobs: Job[] = [
     completionTimeFromEngineerOnsite: false
   }
 ];
+
+// Local Storage Utilities for Jobs
+export const JOB_STORAGE_KEY = 'mockPortalJobs';
+export const CUSTOMER_STORAGE_KEY = 'mockPortalCustomers';
+export const NOTES_STORAGE_KEY = 'mockPortalNotes';
+export const COMMUNICATION_STORAGE_KEY = 'mockPortalCommunication';
+export const ENGINEER_STORAGE_KEY = 'mockPortalEngineers';
+export const SITE_NOTES_STORAGE_KEY = 'mockPortalSiteNotes';
+
+// Generic localStorage utilities
+export const saveToStorage = (key: string, data: any) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.error(`Failed to save ${key} to localStorage:`, error);
+  }
+};
+
+export const loadFromStorage = (key: string, defaultValue: any) => {
+  try {
+    const savedData = localStorage.getItem(key);
+    if (savedData) {
+      return JSON.parse(savedData);
+    }
+  } catch (error) {
+    console.error(`Failed to load ${key} from localStorage:`, error);
+  }
+  return defaultValue;
+};
+
+export const clearFromStorage = (key: string) => {
+  try {
+    localStorage.removeItem(key);
+  } catch (error) {
+    console.error(`Failed to clear ${key} from localStorage:`, error);
+  }
+};
+
+// Jobs localStorage
+export const saveJobsToStorage = (jobs: Job[]) => {
+  saveToStorage(JOB_STORAGE_KEY, jobs);
+};
+
+export const loadJobsFromStorage = (): Job[] => {
+  const savedJobs = loadFromStorage(JOB_STORAGE_KEY, mockJobs);
+  if (Array.isArray(savedJobs)) {
+    // Convert date strings back to Date objects
+    return savedJobs.map((job: any) => ({
+      ...job,
+      dateLogged: new Date(job.dateLogged),
+      dateAccepted: job.dateAccepted ? new Date(job.dateAccepted) : null,
+      dateOnSite: job.dateOnSite ? new Date(job.dateOnSite) : null,
+      dateCompleted: job.dateCompleted ? new Date(job.dateCompleted) : null,
+      preferredAppointmentDate: job.preferredAppointmentDate ? new Date(job.preferredAppointmentDate) : null,
+      startDate: job.startDate ? new Date(job.startDate) : null,
+      endDate: job.endDate ? new Date(job.endDate) : null,
+    }));
+  }
+  return mockJobs;
+};
+
+export const clearJobsFromStorage = () => {
+  clearFromStorage(JOB_STORAGE_KEY);
+};
+
+// Customers localStorage
+export const saveCustomersToStorage = (customers: Customer[]) => {
+  saveToStorage(CUSTOMER_STORAGE_KEY, customers);
+};
+
+export const loadCustomersFromStorage = (): Customer[] => {
+  return loadFromStorage(CUSTOMER_STORAGE_KEY, mockCustomers);
+};
+
+export const clearCustomersFromStorage = () => {
+  clearFromStorage(CUSTOMER_STORAGE_KEY);
+};
+
+// Notes localStorage
+export const saveNotesToStorage = (notes: any[]) => {
+  saveToStorage(NOTES_STORAGE_KEY, notes);
+};
+
+export const loadNotesFromStorage = (): any[] => {
+  return loadFromStorage(NOTES_STORAGE_KEY, []);
+};
+
+export const clearNotesFromStorage = () => {
+  clearFromStorage(NOTES_STORAGE_KEY);
+};
+
+// Communication Timeline localStorage
+export const saveCommunicationToStorage = (communications: any[]) => {
+  saveToStorage(COMMUNICATION_STORAGE_KEY, communications);
+};
+
+export const loadCommunicationFromStorage = (): any[] => {
+  return loadFromStorage(COMMUNICATION_STORAGE_KEY, []);
+};
+
+export const clearCommunicationFromStorage = () => {
+  clearFromStorage(COMMUNICATION_STORAGE_KEY);
+};
+
+// Engineers localStorage
+export const saveEngineersToStorage = (engineers: Engineer[]) => {
+  saveToStorage(ENGINEER_STORAGE_KEY, engineers);
+};
+
+export const loadEngineersFromStorage = (): Engineer[] => {
+  return loadFromStorage(ENGINEER_STORAGE_KEY, mockEngineers);
+};
+
+export const clearEngineersFromStorage = () => {
+  clearFromStorage(ENGINEER_STORAGE_KEY);
+};
+
+// Site Notes localStorage
+export const saveSiteNotesToStorage = (siteNotes: any[]) => {
+  saveToStorage(SITE_NOTES_STORAGE_KEY, siteNotes);
+};
+
+export const loadSiteNotesFromStorage = (): any[] => {
+  return loadFromStorage(SITE_NOTES_STORAGE_KEY, []);
+};
+
+export const clearSiteNotesFromStorage = () => {
+  clearFromStorage(SITE_NOTES_STORAGE_KEY);
+};
+
+// Clear all localStorage data
+export const clearAllStorage = () => {
+  clearJobsFromStorage();
+  clearCustomersFromStorage();
+  clearNotesFromStorage();
+  clearCommunicationFromStorage();
+  clearEngineersFromStorage();
+  clearSiteNotesFromStorage();
+};
+
+// Reset all data to mock defaults
+export const resetAllToMockData = () => {
+  clearAllStorage();
+  return {
+    jobs: mockJobs,
+    customers: mockCustomers,
+    engineers: mockEngineers,
+    notes: [],
+    communications: [],
+    siteNotes: []
+  };
+};

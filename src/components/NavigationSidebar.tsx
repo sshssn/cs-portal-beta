@@ -18,12 +18,13 @@ import {
   Settings,
   LogOut,
   User,
-  FileText
+  FileText,
+  MapPin
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
-  currentView: 'master' | 'customer' | 'alerts' | 'wizard' | 'reports';
-  onViewChange: (view: 'master' | 'customer' | 'alerts' | 'wizard' | 'reports') => void;
+  currentView: 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites';
+  onViewChange: (view: 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites') => void;
   onHomepageClick?: () => void;
   selectedCustomer?: string | null;
 }
@@ -46,6 +47,12 @@ export default function NavigationSidebar({
       label: 'Customer View',
       icon: Users,
       description: 'Manage and view all customer accounts and their job history'
+    },
+    {
+      id: 'sites',
+      label: 'Sites View',
+      icon: MapPin,
+      description: 'Monitor and manage all customer sites and their job status'
     },
     {
       id: 'alerts',
@@ -103,7 +110,7 @@ export default function NavigationSidebar({
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       onClick={() => {
-                        onViewChange(item.id as 'master' | 'customer' | 'alerts' | 'wizard' | 'reports');
+                        onViewChange(item.id as 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites');
                         // If it's Master Dashboard, also trigger homepage navigation
                         if (item.id === 'master' && onHomepageClick) {
                           onHomepageClick();

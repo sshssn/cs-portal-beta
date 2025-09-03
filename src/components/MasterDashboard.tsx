@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -44,12 +44,28 @@ export default function MasterDashboard({
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [showAlertsDropdown, setShowAlertsDropdown] = useState(false);
+  const alertsDropdownRef = useRef<HTMLDivElement>(null);
   const [searchResults, setSearchResults] = useState<{
     jobs: Job[];
     customers: Customer[];
     sites: string[];
     engineers: string[];
   }>({ jobs: [], customers: [], sites: [], engineers: [] });
+
+  // Handle clicking outside alerts dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (alertsDropdownRef.current && !alertsDropdownRef.current.contains(event.target as Node)) {
+        setShowAlertsDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Filter jobs based on search and filters
   const filteredJobs = jobs.filter(job => {
@@ -74,10 +90,22 @@ export default function MasterDashboard({
     overdue: jobs.filter(job => job.status === 'red').length
   };
 
-  // Calculate total alerts
+  // Calculate total alerts - jobs that need attention
   const totalAlerts = jobs.filter(job => 
-    job.status === 'red' || job.priority === 'Critical'
+    job.status === 'red' || 
+    job.priority === 'Critical' ||
+    (job.status === 'amber' && job.priority === 'High')
   ).length;
+
+  // Get latest alerts for dropdown
+  const latestAlerts = jobs
+    .filter(job => 
+      job.status === 'red' || 
+      job.priority === 'Critical' ||
+      (job.status === 'amber' && job.priority === 'High')
+    )
+    .sort((a, b) => new Date(b.dateLogged).getTime() - new Date(a.dateLogged).getTime())
+    .slice(0, 10);
 
   // Generate search results for dropdown
   const generateSearchResults = (term: string) => {
@@ -171,29 +199,120 @@ export default function MasterDashboard({
           <h1 className="text-3xl font-bold text-gray-900">Master Dashboard</h1>
           <p className="text-muted-foreground">Out of Hours Support Management</p>
         </div>
-        <div className="flex items-center gap-3">
-          {/* Alerts Indicator */}
-          <Button 
-            onClick={onAlertsClick} 
-            variant="outline" 
-            className="relative flex items-center gap-2"
-          >
-            <Bell className="h-4 w-4" />
-            Alerts
-            {totalAlerts > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-2 -right-2 h-5 w-5 flex items-center justify-center p-0 text-xs"
+                  <div className="flex items-center gap-3">
+            {/* Enhanced Alerts Indicator */}
+            <div className="relative" ref={alertsDropdownRef}>
+              <Button 
+                onClick={() => setShowAlertsDropdown(!showAlertsDropdown)} 
+                variant="outline" 
+                className="relative flex items-center gap-2 hover:bg-gray-50 transition-colors"
               >
-                {totalAlerts}
-              </Badge>
-            )}
-          </Button>
-          <Button onClick={onJobCreate} className="bg-blue-600 hover:bg-blue-700">
-            <Plus size={16} className="mr-2" />
-            Log New Job
-          </Button>
-        </div>
+                <Bell className="h-5 w-5 text-gray-600" />
+                <span className="text-gray-700 font-medium">Alerts</span>
+                {totalAlerts > 0 && (
+                  <Badge 
+                    variant="destructive" 
+                    className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 text-xs font-bold"
+                  >
+                    {totalAlerts > 99 ? '99+' : totalAlerts}
+                  </Badge>
+                )}
+              </Button>
+
+              {/* Alerts Dropdown */}
+              {showAlertsDropdown && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                  <div className="p-4 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-lg font-semibold text-gray-900">Recent Alerts</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onAlertsClick}
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      >
+                        View All
+                      </Button>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {totalAlerts} alert{totalAlerts !== 1 ? 's' : ''} requiring attention
+                    </p>
+                  </div>
+                  
+                  <div className="max-h-96 overflow-y-auto">
+                    {latestAlerts.length === 0 ? (
+                      <div className="p-4 text-center text-gray-500">
+                        <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                        <p className="text-sm">No active alerts</p>
+                        <p className="text-xs">All jobs are running smoothly</p>
+                      </div>
+                    ) : (
+                      <div className="divide-y divide-gray-100">
+                        {latestAlerts.map((job) => (
+                          <div 
+                            key={job.id}
+                            className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                            onClick={() => onJobClick(job)}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <Badge 
+                                    variant={job.status === 'red' ? 'destructive' : 'secondary'}
+                                    className="text-xs"
+                                  >
+                                    {job.status === 'red' ? 'Critical' : job.priority}
+                                  </Badge>
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(job.dateLogged).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <h4 className="text-sm font-medium text-gray-900 mb-1">
+                                  {job.jobNumber} - {job.customer}
+                                </h4>
+                                <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+                                  {job.description}
+                                </p>
+                                <div className="flex items-center gap-2 text-xs text-gray-500">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>{job.site}</span>
+                                  <span>•</span>
+                                  <User className="h-3 w-3" />
+                                  <span>{job.engineer}</span>
+                                </div>
+                              </div>
+                              <div className="ml-3">
+                                <div className={`w-3 h-3 rounded-full ${
+                                  job.status === 'red' ? 'bg-red-500' : 
+                                  job.status === 'amber' ? 'bg-amber-500' : 'bg-green-500'
+                                }`} />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="p-3 border-t border-gray-200 bg-gray-50">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowAlertsDropdown(false)}
+                      className="w-full text-gray-600 hover:text-gray-800"
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <Button onClick={onJobCreate} className="bg-blue-600 hover:bg-blue-700">
+              <Plus size={16} className="mr-2" />
+              Log New Job
+            </Button>
+          </div>
       </div>
 
       {/* Stats Cards */}

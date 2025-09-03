@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Job, Customer, Engineer } from '@/types/job';
 import { mockEngineers, mockJobTrades, mockTags, generateJobNumber } from '@/lib/jobUtils';
 import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Settings, Users, Check, FileText, Phone, Clock, Calendar, X, Plus, Trash2, StickyNote, Building2 } from 'lucide-react';
+import { UI_CONSTANTS } from '@/lib/ui-constants';
 
 interface JobLogWizardProps {
   customers: Customer[];
@@ -305,40 +307,40 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <Card className="shadow-lg border-0">
-        <CardHeader className="bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200">
+    <div className="max-w-[85rem] mx-auto p-4">
+      <Card className={`${UI_CONSTANTS.card.base} border-0`}>
+        <CardHeader className={`${UI_CONSTANTS.card.header} bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-blue-100 rounded-lg">
-                <Briefcase className="h-6 w-6 text-blue-600" />
+                <Briefcase className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <CardTitle className="text-3xl text-gray-900">Job Log Wizard</CardTitle>
-                <p className="text-gray-600 mt-1">Create and manage service jobs efficiently</p>
+                <CardTitle className={`${UI_CONSTANTS.typography.title} text-xl`}>Job Log Wizard</CardTitle>
+                <p className={`${UI_CONSTANTS.typography.bodyMuted} mt-1`}>Create and manage service jobs efficiently</p>
               </div>
             </div>
-            <Button variant="outline" onClick={onCancel} className="border-blue-300 text-blue-700 hover:bg-blue-50">
+            <Button variant="outline" onClick={onCancel} className={`${UI_CONSTANTS.button.outline} border-blue-300 text-blue-700 hover:bg-blue-50`}>
               Cancel
             </Button>
           </div>
         </CardHeader>
         
-        <CardContent className="p-8">
-          <div className="flex items-center justify-center mb-10">
+        <CardContent className={`${UI_CONSTANTS.card.content} p-6`}>
+          <div className="flex items-center justify-center mb-8">
             {[1, 2, 3, 4, 5].map((step) => (
               <div key={step} className="flex items-center">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center text-base font-semibold shadow-lg transition-all duration-300 ${
+                <div className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-semibold shadow-md transition-all duration-300 ${
                   step < currentStep 
                     ? 'bg-gradient-to-br from-green-500 to-green-600 text-white shadow-green-200' 
                     : step === currentStep 
-                      ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-200 scale-110' 
+                      ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-blue-200 scale-105' 
                       : 'bg-gray-100 text-gray-500 border-2 border-gray-200'
                 }`}>
-                  {step < currentStep ? <Check size={18} /> : step}
+                  {step < currentStep ? <Check size={16} /> : step}
                 </div>
                 {step < 5 && (
-                  <div className={`w-16 h-1 mx-3 rounded-full transition-all duration-300 ${
+                  <div className={`w-12 h-1 mx-2 rounded-full transition-all duration-300 ${
                     step < currentStep ? 'bg-gradient-to-r from-green-400 to-green-500' : 'bg-gray-200'
                   }`} />
                 )}
@@ -347,52 +349,52 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
           </div>
           
           {currentStep === 1 && (
-            <div className="space-y-8">
-              <div className="text-center mb-8">
-                <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-6">
-                  <User className="h-10 w-10 text-blue-600" />
-                </div>
-                <h2 className="text-3xl font-bold text-gray-900 mb-3">Reporter Details</h2>
-                <p className="text-lg text-gray-600">Who is reporting this job?</p>
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                <div className="space-y-6 bg-gray-50 p-6 rounded-xl border border-gray-200">
-                  <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
-                    <Building2 className="h-5 w-5 text-blue-600" />
-                    Job Location
-                  </h3>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">Customer *</label>
-                    <Select value={formData.customer} onValueChange={(value) => updateFormData({ customer: value, site: '' })}>
-                      <SelectTrigger className="h-11 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                        <SelectValue placeholder="Select customer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {customers && customers.length > 0 ? customers.map(customer => (
-                          <SelectItem key={customer.id} value={customer.name}>
-                            {customer.name}
-                          </SelectItem>
-                        )) : (
-                          <SelectItem value="no-customers" disabled>No customers available</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                          <div className={`${UI_CONSTANTS.spacing.section} space-y-6`}>
+                <div className="text-center mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                    <User className="h-8 w-8 text-blue-600" />
                   </div>
+                  <h2 className={`${UI_CONSTANTS.typography.title} text-lg mb-2`}>Reporter Details</h2>
+                  <p className={`${UI_CONSTANTS.typography.bodyMuted}`}>Who is reporting this job?</p>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <div className={`${UI_CONSTANTS.card.content} bg-gray-50 p-5 rounded-lg border ${UI_CONSTANTS.colors.border.secondary}`}>
+                    <h3 className={`${UI_CONSTANTS.typography.subtitle} flex items-center gap-2`}>
+                      <Building2 className="h-4 w-4 text-blue-600" />
+                      Job Location
+                    </h3>
+                    
+                    <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                      <label className={`${UI_CONSTANTS.typography.subtitle}`}>Customer *</label>
+                      <Select value={formData.customer} onValueChange={(value) => updateFormData({ customer: value, site: '' })}>
+                        <SelectTrigger className={`h-10 ${UI_CONSTANTS.form.select}`}>
+                          <SelectValue placeholder="Select customer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {customers && customers.length > 0 ? customers.map(customer => (
+                            <SelectItem key={customer.id} value={customer.name}>
+                              {customer.name}
+                            </SelectItem>
+                          )) : (
+                            <SelectItem value="no-customers" disabled>No customers available</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
                   <div>
-                    <label className="text-sm font-medium">Site *</label>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Site *</label>
                     <Select 
                       value={formData.site} 
                       onValueChange={(value) => updateFormData({ site: value })}
                       disabled={!formData.customer}
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className={`h-10 ${UI_CONSTANTS.form.select}`}>
                         <SelectValue placeholder="Select site" />
                       </SelectTrigger>
                       <SelectContent>
-                        {formData.customer && customers && customers.length > 0 ? (
+                        {formData.customer && customers.length > 0 ? (
                           customers
                             .find(c => c.name === formData.customer)?.sites?.map(site => (
                               <SelectItem key={site} value={site}>
@@ -407,25 +409,26 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                   </div>
                 </div>
 
-                <div className="space-y-6 bg-blue-50 p-6 rounded-xl border border-blue-200">
-                  <h3 className="font-semibold text-gray-900 text-lg flex items-center gap-2">
-                    <User className="h-5 w-5 text-blue-600" />
+                <div className={`${UI_CONSTANTS.card.content} bg-blue-50 p-5 rounded-lg border border-blue-200`}>
+                  <h3 className={`${UI_CONSTANTS.typography.subtitle} flex items-center gap-2`}>
+                    <User className="h-4 w-4 text-blue-600" />
                     Reporter Information
                   </h3>
                   
-                  <div>
-                    <label className="text-sm font-medium">Reporter Name *</label>
+                  <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Reporter Name *</label>
                     <Input
                       value={formData.reporterName}
                       onChange={(e) => updateFormData({ reporterName: e.target.value })}
                       placeholder="Enter reporter name"
+                      className={`h-10 ${UI_CONSTANTS.form.input}`}
                     />
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium">Reporter Phone *</label>
+                  <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Reporter Phone *</label>
                     <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">+44</span>
+                      <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium">+44</span>
                       <Input
                         value={formData.reporterPhone.replace('+44', '')}
                         onChange={(e) => {
@@ -435,33 +438,34 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                           }
                         }}
                         placeholder="7123456789"
-                        className={`pl-12 ${formData.reporterPhone && !validatePhone(formData.reporterPhone) ? 'border-red-500' : ''}`}
+                        className={`h-10 pl-16 ${UI_CONSTANTS.form.input} ${formData.reporterPhone && !validatePhone(formData.reporterPhone) ? 'border-red-500' : ''}`}
                       />
                     </div>
                     {formData.reporterPhone && !validatePhone(formData.reporterPhone) && (
-                      <p className="text-sm text-red-500 mt-1">Please enter a valid UK phone number (10 digits after +44)</p>
+                      <p className={`${UI_CONSTANTS.typography.caption} text-red-500 mt-1`}>Please enter a valid UK phone number (10 digits after +44)</p>
                     )}
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium">Reporter Email *</label>
+                  <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Reporter Email *</label>
                     <Input
                       value={formData.reporterEmail}
                       onChange={(e) => updateFormData({ reporterEmail: e.target.value })}
                       placeholder="Enter email address"
-                      className={formData.reporterEmail && !validateEmail(formData.reporterEmail) ? 'border-red-500' : ''}
+                      className={`h-10 ${UI_CONSTANTS.form.input} ${formData.reporterEmail && !validateEmail(formData.reporterEmail) ? 'border-red-500' : ''}`}
                     />
                     {formData.reporterEmail && !validateEmail(formData.reporterEmail) && (
-                      <p className="text-sm text-red-500 mt-1">Please enter a valid email address</p>
+                      <p className={`${UI_CONSTANTS.typography.caption} text-red-500 mt-1`}>Please enter a valid email address</p>
                     )}
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium">Relationship</label>
+                  <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Relationship</label>
                     <Input
                       value={formData.reporterRelationship}
                       onChange={(e) => updateFormData({ reporterRelationship: e.target.value })}
                       placeholder="e.g., Facilities Manager"
+                      className={`h-10 ${UI_CONSTANTS.form.input}`}
                     />
                   </div>
                 </div>
@@ -470,28 +474,29 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
           )}
 
           {currentStep === 2 && (
-            <div className="space-y-6">
+            <div className={`${UI_CONSTANTS.spacing.section}`}>
               <div className="text-center mb-6">
-                <Briefcase className="mx-auto h-12 w-12 text-blue-600 mb-4" />
-                <h2 className="text-2xl font-bold text-gray-900">Job Details</h2>
-                <p className="text-muted-foreground">Describe the job and requirements</p>
+                <Briefcase className="mx-auto h-10 w-10 text-blue-600 mb-4" />
+                <h2 className={`${UI_CONSTANTS.typography.title} text-lg`}>Job Details</h2>
+                <p className={`${UI_CONSTANTS.typography.bodyMuted}`}>Describe the job and requirements</p>
               </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">Job Description *</label>
+              <div className={`${UI_CONSTANTS.spacing.card.content}`}>
+                <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                  <label className={`${UI_CONSTANTS.typography.subtitle}`}>Job Description *</label>
                   <Textarea
                     value={formData.description}
                     onChange={(e) => updateFormData({ description: e.target.value })}
                     placeholder="Describe the job in detail..."
                     rows={4}
+                    className={`${UI_CONSTANTS.form.textarea}`}
                   />
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium">Nature of Job *</label>
+                <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                  <label className={`${UI_CONSTANTS.typography.subtitle}`}>Nature of Job *</label>
                   <Select value={formData.jobNature} onValueChange={(value) => updateFormData({ jobNature: value })}>
-                    <SelectTrigger>
+                    <SelectTrigger className={`h-10 ${UI_CONSTANTS.form.select}`}>
                       <SelectValue placeholder="Select job nature" />
                     </SelectTrigger>
                     <SelectContent>
@@ -504,12 +509,13 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                   </Select>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium">Job Owner</label>
+                <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                  <label className={`${UI_CONSTANTS.typography.subtitle}`}>Job Owner</label>
                   <Input
                     value={formData.jobOwner}
                     onChange={(e) => updateFormData({ jobOwner: e.target.value })}
                     placeholder="Enter job owner/department (optional)"
+                    className={`h-10 ${UI_CONSTANTS.form.input}`}
                   />
                 </div>
 
@@ -519,17 +525,17 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                     checked={formData.isEmergency}
                     onCheckedChange={(checked) => updateFormData({ isEmergency: !!checked })}
                   />
-                  <label htmlFor="emergency" className="text-sm font-medium">
+                  <label htmlFor="emergency" className={`${UI_CONSTANTS.typography.subtitle}`}>
                     This is an emergency job
                   </label>
                 </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">Job Notes</label>
+                <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                  <label className={`${UI_CONSTANTS.typography.subtitle}`}>Job Notes</label>
                   <Textarea
                     placeholder="Add any additional notes, special instructions, or important details about this job..."
                     rows={3}
-                    className="mt-2 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                    className={`${UI_CONSTANTS.form.textarea}`}
                   />
                 </div>
               </div>
@@ -537,29 +543,29 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
           )}
 
           {currentStep === 3 && (
-            <div className="space-y-6">
+            <div className={`${UI_CONSTANTS.spacing.section}`}>
               <div className="flex items-center justify-between mb-6">
                 <div className="text-center flex-1">
-                  <Settings className="mx-auto h-12 w-12 text-blue-600 mb-4" />
-                  <h2 className="text-2xl font-bold text-gray-900">Job Type & KPI</h2>
-                  <p className="text-muted-foreground">Configure job type and performance indicators</p>
+                  <Settings className="mx-auto h-10 w-10 text-blue-600 mb-4" />
+                  <h2 className={`${UI_CONSTANTS.typography.title} text-lg`}>Job Type & KPI</h2>
+                  <p className={`${UI_CONSTANTS.typography.bodyMuted}`}>Configure job type and performance indicators</p>
                 </div>
                 <Button
                   onClick={() => setShowSiteNotesModal(true)}
                   variant="outline"
-                  className="ml-4 flex items-center gap-2"
+                  className={`ml-4 flex items-center gap-2 ${UI_CONSTANTS.button.outline}`}
                 >
                   <StickyNote className="h-4 w-4" />
                   Site Notes
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Job Type *</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className={`${UI_CONSTANTS.spacing.card.content}`}>
+                  <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Job Type *</label>
                     <Select value={formData.jobType} onValueChange={(value: 'OOH' | 'CallOut') => updateFormData({ jobType: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger className={`h-10 ${UI_CONSTANTS.form.select}`}>
                         <SelectValue placeholder="Select job type" />
                       </SelectTrigger>
                       <SelectContent>
@@ -569,10 +575,10 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                     </Select>
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium">Primary Trade *</label>
+                  <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Primary Trade *</label>
                     <Select value={formData.primaryTrade} onValueChange={(value) => updateFormData({ primaryTrade: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger className={`h-10 ${UI_CONSTANTS.form.select}`}>
                         <SelectValue placeholder="Select primary trade" />
                       </SelectTrigger>
                       <SelectContent>
@@ -588,21 +594,22 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                   </div>
                 </div>
 
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">Response Time (minutes) *</label>
+                <div className={`${UI_CONSTANTS.spacing.card.content}`}>
+                  <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Response Time (minutes) *</label>
                     <Input
                       type="number"
                       value={formData.responseTime}
                       onChange={(e) => updateFormData({ responseTime: parseInt(e.target.value) || 60 })}
                       placeholder="Enter response time"
+                      className={`h-10 ${UI_CONSTANTS.form.input}`}
                     />
                   </div>
 
-                  <div>
-                    <label className="text-sm font-medium">Priority *</label>
+                  <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Priority *</label>
                     <Select value={formData.priority} onValueChange={(value: Job['priority']) => updateFormData({ priority: value })}>
-                      <SelectTrigger>
+                      <SelectTrigger className={`h-10 ${UI_CONSTANTS.form.select}`}>
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
                       <SelectContent>
@@ -617,7 +624,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
               </div>
 
               <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                <h4 className="font-medium text-blue-900 mb-2">SLA Times for {formData.priority} Priority</h4>
+                <h4 className={`${UI_CONSTANTS.typography.subtitle} text-blue-900 mb-2`}>SLA Times for {formData.priority} Priority</h4>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
                     <span className="text-blue-700 font-medium">Accept SLA:</span>
@@ -633,7 +640,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                   </div>
                 </div>
                 {formData.isEmergency && (
-                  <p className="text-sm text-blue-700 mt-2 font-medium">
+                  <p className={`${UI_CONSTANTS.typography.caption} text-blue-700 mt-2 font-medium`}>
                     ⚠️ Emergency job - Reduced SLA times applied
                   </p>
                 )}
@@ -642,16 +649,16 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
           )}
 
           {currentStep === 4 && (
-            <div className="space-y-6">
+            <div className={`${UI_CONSTANTS.spacing.section}`}>
               <div className="text-center mb-6">
-                <Users className="mx-auto h-12 w-12 text-blue-600 mb-4" />
-                <h2 className="text-2xl font-bold text-gray-900">Engineer Selection</h2>
-                <p className="text-muted-foreground">Choose an available engineer for this job</p>
+                <Users className="mx-auto h-10 w-10 text-blue-600 mb-4" />
+                <h2 className={`${UI_CONSTANTS.typography.title} text-lg`}>Engineer Selection</h2>
+                <p className={`${UI_CONSTANTS.typography.bodyMuted}`}>Choose an available engineer for this job</p>
               </div>
 
               <div className="bg-blue-50 p-4 rounded-lg mb-6">
-                <h4 className="font-medium text-blue-900 mb-2">Filtered Engineers ({formData.jobType})</h4>
-                <p className="text-sm text-blue-700">
+                <h4 className={`${UI_CONSTANTS.typography.subtitle} text-blue-900 mb-2`}>Filtered Engineers ({formData.jobType})</h4>
+                <p className={`${UI_CONSTANTS.typography.caption} text-blue-700`}>
                   Showing engineers available for {formData.jobType === 'OOH' ? 'Out of Hours' : 'Call Out'} jobs
                 </p>
               </div>
@@ -746,75 +753,75 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
           )}
 
           {currentStep === 5 && (
-            <div className="space-y-6">
+            <div className={`${UI_CONSTANTS.spacing.section}`}>
               <div className="text-center mb-6">
-                <CheckCircle className="mx-auto h-12 w-12 text-green-600 mb-4" />
-                <h2 className="text-2xl font-bold text-gray-900">Schedule & Review</h2>
-                <p className="text-muted-foreground">Set preferred date/time and review job details</p>
+                <CheckCircle className="mx-auto h-10 w-10 text-green-600 mb-4" />
+                <h2 className={`${UI_CONSTANTS.typography.title} text-lg`}>Schedule & Review</h2>
+                <p className={`${UI_CONSTANTS.typography.bodyMuted}`}>Set preferred date/time and review job details</p>
               </div>
 
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <h3 className="font-semibold text-gray-900 mb-4">Job Summary</h3>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className={`${UI_CONSTANTS.typography.title} mb-4`}>Job Summary</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Job Number:</span>
-                    <span className="font-medium ml-2">{formData.jobNumber}</span>
+                    <span className={`${UI_CONSTANTS.typography.bodyMuted}`}>Job Number:</span>
+                    <span className={`${UI_CONSTANTS.typography.body} ml-2`}>{formData.jobNumber}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Customer:</span>
-                    <span className="font-medium ml-2">{formData.customer}</span>
+                    <span className={`${UI_CONSTANTS.typography.bodyMuted}`}>Customer:</span>
+                    <span className={`${UI_CONSTANTS.typography.body} ml-2`}>{formData.customer}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Site:</span>
-                    <span className="font-medium ml-2">{formData.site}</span>
+                    <span className={`${UI_CONSTANTS.typography.bodyMuted}`}>Site:</span>
+                    <span className={`${UI_CONSTANTS.typography.body} ml-2`}>{formData.site}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Priority:</span>
-                    <span className="font-medium ml-2">{formData.priority}</span>
+                    <span className={`${UI_CONSTANTS.typography.bodyMuted}`}>Priority:</span>
+                    <span className={`${UI_CONSTANTS.typography.body} ml-2`}>{formData.priority}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Job Type:</span>
-                    <span className="font-medium ml-2">{formData.jobType === 'OOH' ? 'Out of Hours' : 'Call Out'}</span>
+                    <span className={`${UI_CONSTANTS.typography.bodyMuted}`}>Job Type:</span>
+                    <span className={`${UI_CONSTANTS.typography.body} ml-2`}>{formData.jobType === 'OOH' ? 'Out of Hours' : 'Call Out'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Primary Trade:</span>
-                    <span className="font-medium ml-2">{formData.primaryTrade}</span>
+                    <span className={`${UI_CONSTANTS.typography.bodyMuted}`}>Primary Trade:</span>
+                    <span className={`${UI_CONSTANTS.typography.body} ml-2`}>{formData.primaryTrade}</span>
                   </div>
                 </div>
                 
                 <div className="mt-4">
-                  <span className="text-gray-600">Description:</span>
-                  <p className="font-medium mt-1">{formData.description}</p>
+                  <span className={`${UI_CONSTANTS.typography.bodyMuted}`}>Description:</span>
+                  <p className={`${UI_CONSTANTS.typography.body} mt-1`}>{formData.description}</p>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-sm font-medium">Preferred Start Date & Time *</label>
+              <div className={`${UI_CONSTANTS.spacing.card.content}`}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Preferred Start Date & Time *</label>
                     <Input
                       type="datetime-local"
                       value={formData.preferredStartDateTime.toISOString().slice(0, 16)}
                       onChange={(e) => updateFormData({ preferredStartDateTime: new Date(e.target.value) })}
-                      className="w-full"
+                      className={`w-full h-10 ${UI_CONSTANTS.form.input}`}
                     />
                     {isOutOfHours(formData.preferredStartDateTime) && (
-                      <p className="text-sm text-amber-600 mt-1 font-medium">
+                      <p className={`${UI_CONSTANTS.typography.caption} text-amber-600 mt-1 font-medium`}>
                         ⚠️ Out of Hours (OOH) may apply - Start time is outside 8am-5pm
                       </p>
                     )}
                   </div>
                   
-                  <div>
-                    <label className="text-sm font-medium">Preferred End Date & Time *</label>
+                  <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                    <label className={`${UI_CONSTANTS.typography.subtitle}`}>Preferred End Date & Time *</label>
                     <Input
                       type="datetime-local"
                       value={formData.preferredEndDateTime.toISOString().slice(0, 16)}
                       onChange={(e) => updateFormData({ preferredEndDateTime: new Date(e.target.value) })}
-                      className="w-full"
+                      className={`w-full h-10 ${UI_CONSTANTS.form.input}`}
                     />
                     {isOutOfHours(formData.preferredEndDateTime) && (
-                      <p className="text-sm text-amber-600 mt-1 font-medium">
+                      <p className={`${UI_CONSTANTS.typography.caption} text-amber-600 mt-1 font-medium`}>
                         ⚠️ Out of Hours (OOH) may apply - End time is outside 8am-5pm
                       </p>
                     )}
@@ -823,8 +830,8 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
               </div>
 
               <div className="bg-green-50 border border-green-200 p-4 rounded-lg">
-                <h4 className="font-medium text-green-900 mb-2">Ready to Create Job</h4>
-                <p className="text-sm text-green-700">
+                <h4 className={`${UI_CONSTANTS.typography.subtitle} text-green-900 mb-2`}>Ready to Create Job</h4>
+                <p className={`${UI_CONSTANTS.typography.caption} text-green-700`}>
                   All information has been collected. Click "Create Job" to finalize the job allocation.
                 </p>
               </div>
@@ -882,7 +889,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
       {/* Site Notes Modal */}
       {showSiteNotesModal && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-lg p-6 max-w-[70rem] w-full mx-4 max-h-[80vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold text-gray-900">Site Notes</h3>
               <Button
@@ -946,7 +953,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
       {/* Engineer Details Modal */}
       {selectedEngineerDetails && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+          <div className="bg-white rounded-lg p-6 max-w-lg w-full mx-4">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">Engineer Details</h3>
               <Button

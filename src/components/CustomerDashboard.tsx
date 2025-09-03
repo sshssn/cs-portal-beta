@@ -1,341 +1,344 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Job, Customer, Engineer } from '@/types/job';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Job, Customer } from '@/types/job';
 import { getStatusColor, getPriorityColor } from '@/lib/jobUtils';
 import { 
+  Search, 
   ArrowLeft, 
   Building2, 
-  MapPin, 
-  User, 
-  Clock, 
+  Phone, 
+  Mail, 
+  MapPin,
+  Users,
+  Briefcase,
+  Filter,
+  Plus,
+  Clock,
   AlertTriangle,
   CheckCircle,
-  Phone,
-  Mail,
-  Calendar,
   FileText,
-  Plus
+  Calendar,
+  User,
+  ChevronDown
 } from 'lucide-react';
 
 interface CustomerDashboardProps {
   customer: Customer;
   jobs: Job[];
-  engineers: Engineer[];
   onBack: () => void;
   onJobClick: (job: Job) => void;
-  onAlertsPortal: () => void;
   onJobCreate: () => void;
 }
 
-export default function CustomerDashboard({ 
-  customer, 
-  jobs, 
-  engineers, 
-  onBack, 
-  onJobClick,
-  onAlertsPortal,
-  onJobCreate
-}: CustomerDashboardProps) {
-  const [selectedSite, setSelectedSite] = useState<string>('all');
+export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, onJobCreate }: CustomerDashboardProps) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  const [siteFilter, setSiteFilter] = useState<string>('all');
 
   // Filter jobs for this customer
   const customerJobs = jobs.filter(job => job.customer === customer.name);
-  const filteredJobs = selectedSite === 'all' 
-    ? customerJobs 
-    : customerJobs.filter(job => job.site === selectedSite);
+  
+  // Get all unique sites from customer jobs
+  const allSites = Array.from(new Set(customerJobs.map(job => job.site))).sort();
+  
+  // Filter jobs based on search and filters
+  const filteredJobs = customerJobs.filter(job => {
+    const matchesSearch = searchQuery === '' || 
+      job.jobNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.engineer.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      job.site.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
+    const matchesPriority = priorityFilter === 'all' || job.priority === priorityFilter;
+    const matchesSite = siteFilter === 'all' || job.site === siteFilter;
+    
+    return matchesSearch && matchesStatus && matchesPriority && matchesSite;
+  });
 
   // Calculate statistics
   const stats = {
     total: customerJobs.length,
-    active: customerJobs.filter(job => job.status === 'amber' || job.status === 'red').length,
-    completed: customerJobs.filter(job => job.status === 'green').length,
-    overdue: customerJobs.filter(job => job.status === 'red').length
+    active: customerJobs.filter(job => job.status !== 'green' && job.status !== 'completed').length,
+    completed: customerJobs.filter(job => job.status === 'green' || job.status === 'completed').length,
+    critical: customerJobs.filter(job => job.priority === 'Critical').length,
+    urgent: customerJobs.filter(job => job.status === 'red').length
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={onBack}>
-            <ArrowLeft size={16} className="mr-2" />
-            Back
-          </Button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-2">
-              <Building2 className="h-8 w-8" />
-              <span>{customer.name}</span>
-            </h1>
-            <p className="text-muted-foreground">{customer.sites?.length || 0} sites managed</p>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">{customer.name}</h1>
+          <p className="text-muted-foreground mt-2">Customer Dashboard & Job Management</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex items-center gap-3">
           <Button onClick={onJobCreate} className="bg-blue-600 hover:bg-blue-700">
             <Plus size={16} className="mr-2" />
             Log New Job
           </Button>
-          <Button onClick={onAlertsPortal} variant="outline">
-            <AlertTriangle size={16} className="mr-2" />
-            Alerts Portal
+          <Button onClick={onBack} variant="outline" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-5 w-5 text-blue-600" />
+      {/* Customer Information */}
+      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Building2 className="h-5 w-5 text-blue-600" />
+              </div>
               <div>
-                <p className="text-sm text-muted-foreground">Total Jobs</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-sm font-medium text-blue-900">Customer</p>
+                <p className="text-lg font-semibold text-blue-900">{customer.name}</p>
               </div>
             </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <Mail className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-green-900">Email</p>
+                <p className="text-sm font-medium text-green-900">{customer.email}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-100 rounded-lg">
+                <Phone className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-purple-900">Phone</p>
+                <p className="text-sm font-medium text-purple-900">{customer.phone}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <MapPin className="h-5 w-5 text-orange-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-orange-900">Sites</p>
+                <p className="text-lg font-semibold text-orange-900">{customer.sites.length}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-blue-800">Total Jobs</CardTitle>
+            <Briefcase className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-blue-900">{stats.total}</div>
+            <p className="text-xs text-blue-700">All time jobs</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-amber-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold">{stats.active}</p>
-              </div>
-            </div>
+        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-amber-800">Active Jobs</CardTitle>
+            <Clock className="h-4 w-4 text-amber-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-900">{stats.active}</div>
+            <p className="text-xs text-amber-700">In progress</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-2xl font-bold">{stats.completed}</p>
-              </div>
-            </div>
+        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-green-800">Completed</CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-green-900">{stats.completed}</div>
+            <p className="text-xs text-green-700">Finished jobs</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-2">
-              <AlertTriangle className="h-5 w-5 text-red-600" />
-              <div>
-                <p className="text-sm text-muted-foreground">Overdue</p>
-                <p className="text-2xl font-bold">{stats.overdue}</p>
-              </div>
-            </div>
+        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-red-800">Critical</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-red-900">{stats.critical}</div>
+            <p className="text-xs text-red-700">High priority</p>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-purple-800">Urgent</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-purple-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-900">{stats.urgent}</div>
+            <p className="text-xs text-purple-700">Red status</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Site Filter */}
-      {customer.sites && customer.sites.length > 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Filter by Site</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant={selectedSite === 'all' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setSelectedSite('all')}
-              >
-                All Sites ({customerJobs.length})
-              </Button>
-              {customer.sites.map(site => {
-                const siteJobCount = customerJobs.filter(job => job.site === site).length;
-                return (
-                  <Button
-                    key={site}
-                    variant={selectedSite === site ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedSite(site)}
-                  >
-                    {site} ({siteJobCount})
-                  </Button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Active Jobs */}
+      {/* Search and Filters */}
       <Card>
-        <CardHeader>
-          <CardTitle>Active Jobs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredJobs.map(job => (
-              <Card 
-                key={job.id} 
-                className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => onJobClick(job)}
-              >
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    {/* Header */}
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-sm">{job.jobNumber}</p>
-                        <p className="text-xs text-muted-foreground">{job.jobType}</p>
-                      </div>
-                      <div className="flex flex-col items-end space-y-1">
-                        <Badge 
-                          variant="secondary" 
-                                                className={`${getStatusColor(job.status)} text-white text-xs`}
-                    >
-                      {job.status === 'green' ? 'Completed' :
-                       job.status === 'amber' ? 'In Process' : 
-                       job.status === 'red' ? 'Issue' : 
-                       job.status === 'OOH' ? 'Out of Hours' :
-                       job.status === 'On call' ? 'On Call' :
-                       job.status === 'travel' ? 'Traveling' :
-                       job.status === 'require_revisit' ? 'Requires Revisit' :
-                       job.status === 'sick' ? 'Sick Leave' :
-                       job.status === 'training' ? 'Training' :
-                       String(job.status).toUpperCase()}
-                    </Badge>
-                        <Badge 
-                          variant="outline" 
-                          className={`${getPriorityColor(job.priority)} text-xs`}
-                        >
-                          {job.priority}
-                        </Badge>
-                      </div>
-                    </div>
+        <CardContent className="p-6">
+          <div className="space-y-4">
+            {/* Search Bar */}
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Search jobs by number, description, engineer, or site..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            {/* Filters */}
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-gray-500" />
+                <span className="text-sm font-medium text-gray-700">Filters:</span>
+              </div>
+              
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="allocated">Allocated</SelectItem>
+                  <SelectItem value="attended">Attended</SelectItem>
+                  <SelectItem value="awaiting_parts">Awaiting Parts</SelectItem>
+                  <SelectItem value="parts_to_fit">Parts to Fit</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="costed">Costed</SelectItem>
+                  <SelectItem value="reqs_invoice">Reqs. Invoice</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="All Priorities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Priorities</SelectItem>
+                  <SelectItem value="Low">Low</SelectItem>
+                  <SelectItem value="Medium">Medium</SelectItem>
+                  <SelectItem value="High">High</SelectItem>
+                  <SelectItem value="Critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Select value={siteFilter} onValueChange={setSiteFilter}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="All Sites" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sites</SelectItem>
+                  {allSites.map(site => (
+                    <SelectItem key={site} value={site}>
+                      {site}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-                    {/* Site and Description */}
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="h-3 w-3 text-gray-400" />
-                        <p className="text-xs font-medium">{job.site}</p>
-                      </div>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {job.description}
-                      </p>
-                    </div>
-
-                    {/* Engineer */}
-                    <div className="flex items-center space-x-1">
-                      <User className="h-3 w-3 text-gray-400" />
-                      <p className="text-xs">{job.engineer}</p>
-                    </div>
-
-                    {/* SLA Information */}
-                    <div className="bg-gray-50 p-2 rounded text-xs space-y-1">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Accept SLA:</span>
-                        <span className="font-medium">{job.customAlerts?.acceptSLA || 30}min</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Onsite SLA:</span>
-                        <span className="font-medium">{job.customAlerts?.onsiteSLA || 90}min</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Complete SLA:</span>
-                        <span className="font-medium">{job.customAlerts?.completedSLA || 180}min</span>
-                      </div>
-                    </div>
-
-                    {/* Alerts */}
-                    {(job.status === 'red' || job.priority === 'Critical') && (
-                      <div className="flex items-center space-x-1 text-red-600">
-                        <AlertTriangle className="h-3 w-3" />
-                        <p className="text-xs font-medium">Alert Active</p>
-                      </div>
-                    )}
-
-                    {/* Time */}
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>{job.dateLogged.toLocaleDateString()}</span>
-                      <span>{job.dateLogged.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                    </div>
+      {/* Jobs Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredJobs.map((job) => (
+          <Card 
+            key={job.id} 
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => onJobClick(job)}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Briefcase className="h-5 w-5 text-primary" />
                   </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{job.jobNumber}</h3>
+                    <p className="text-sm text-muted-foreground">{job.site}</p>
+                  </div>
+                </div>
+                <div className="flex flex-col items-end gap-2">
+                  <Badge 
+                    variant={getStatusColor(job.status) as any} 
+                    className="text-xs"
+                  >
+                    {job.status}
+                  </Badge>
+                  <Badge 
+                    variant={getPriorityColor(job.priority) as any} 
+                    className="text-xs"
+                  >
+                    {job.priority}
+                  </Badge>
+                </div>
+              </div>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              <p className="text-sm text-gray-700 line-clamp-2">
+                {job.description}
+              </p>
+              
+              <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center gap-1">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">{job.engineer}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-muted-foreground">
+                    {new Date(job.dateLogged).toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
 
-          {filteredJobs.length === 0 && (
-            <div className="text-center py-12">
-              <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No jobs found</h3>
-              <p className="text-muted-foreground">No jobs found for the selected criteria</p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Engineers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Available Engineers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4 font-medium">Engineer</th>
-                  <th className="text-left py-3 px-4 font-medium">Status</th>
-                  <th className="text-left py-3 px-4 font-medium">Contact</th>
-                  <th className="text-left py-3 px-4 font-medium">Sync Status</th>
-                  <th className="text-left py-3 px-4 font-medium">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {engineers.map(engineer => (
-                  <tr key={engineer.name} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">
-                      <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-gray-400" />
-                        <span className="font-medium">{engineer.name}</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge variant={engineer.status === 'accept' ? 'default' : 'secondary'}>
-                        {engineer.status}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center space-x-1 text-sm">
-                          <Phone className="h-3 w-3" />
-                          <span>{engineer.phone}</span>
-                        </div>
-                        <div className="flex items-center space-x-1 text-sm">
-                          <Mail className="h-3 w-3" />
-                          <span>{engineer.email}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Badge variant="outline" className="text-xs">
-                        {engineer.syncStatus}
-                      </Badge>
-                    </td>
-                    <td className="py-3 px-4">
-                      <Button size="sm" variant="outline">
-                        <Phone className="h-3 w-3 mr-1" />
-                        Call
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Empty State */}
+      {filteredJobs.length === 0 && (
+        <div className="text-center py-12">
+          <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
+          <h3 className="mt-2 text-sm font-semibold text-gray-900">No jobs found</h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all' || siteFilter !== 'all' 
+              ? 'Try adjusting your search criteria.' 
+              : 'No jobs available for this customer.'}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
