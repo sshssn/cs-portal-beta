@@ -1,4 +1,4 @@
-# 🚀 Customer Service Portal
+# 🚀 Help Desk Portal
 
 A modern, responsive Customer Service Portal built with React, TypeScript, and Tailwind CSS. This application provides comprehensive job management, alert systems, and customer service tools for field service operations.
 
@@ -217,7 +217,7 @@ This project is licensed under the MIT License.
 * React for the amazing frontend library
 * Lucide React for the beautiful icons
 
----
+Made with <3 with a lot of VibeCoding
 
 **Built with ❤️ for better customer service management**
 
