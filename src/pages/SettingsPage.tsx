@@ -29,7 +29,6 @@ import {
 import { showNotification } from '@/components/ui/toast-notification';
 import { CompanySettings, BusinessHours, DaySchedule, NotificationSettings, AppearanceSettings, SecuritySettings } from '@/types/company';
 import { saveCompanySettings } from '@/lib/companyUtils';
-import { useTheme } from '@/contexts/ThemeContext';
 
 const defaultBusinessHours: BusinessHours = {
   monday: { open: true, openTime: '09:00', closeTime: '17:00' },
@@ -84,7 +83,6 @@ export default function SettingsPage() {
   const [editForm, setEditForm] = useState<CompanySettings>(mockCompanySettings);
   const [activeTab, setActiveTab] = useState('company');
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { theme, setTheme } = useTheme();
 
   const tabs = [
     { id: 'company', label: 'Company Setup', icon: Building2 },
@@ -585,25 +583,9 @@ export default function SettingsPage() {
                      <div className="flex items-center justify-between">
              <div>
                <Label className="font-medium">Theme</Label>
-               <p className="text-sm text-gray-600">Choose your preferred color scheme</p>
+               <p className="text-sm text-gray-600">Light mode is currently enabled</p>
              </div>
-             {isEditing ? (
-               <Select value={theme} onValueChange={(value: 'light' | 'dark' | 'system') => {
-                 setTheme(value);
-                 handleNestedChange('appearance', 'theme', value);
-               }}>
-                 <SelectTrigger className="w-32">
-                   <SelectValue />
-                 </SelectTrigger>
-                 <SelectContent>
-                   <SelectItem value="light">Light</SelectItem>
-                   <SelectItem value="dark">Dark</SelectItem>
-                   <SelectItem value="system">System</SelectItem>
-                 </SelectContent>
-               </Select>
-             ) : (
-               <Badge variant="secondary">{theme === 'system' ? 'System' : theme}</Badge>
-             )}
+             <Badge variant="secondary">Light Mode</Badge>
            </div>
 
           <div className="flex items-center justify-between">
