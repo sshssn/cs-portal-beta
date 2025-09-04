@@ -18,7 +18,9 @@ import {
   Eye,
   Check,
   X,
-  Plus
+  Plus,
+  User,
+  MapPin
 } from 'lucide-react';
 import CreateAlertModal from './CreateAlertModal';
 
@@ -226,6 +228,10 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
 
   const getAlertIcon = (type: JobAlert['type']) => {
     switch (type) {
+      case 'ENGINEER_ACCEPT':
+        return <User className="h-4 w-4 text-blue-600" />;
+      case 'ENGINEER_ONSITE':
+        return <MapPin className="h-4 w-4 text-green-600" />;
       case 'ACCEPTED':
         return <Clock className="h-4 w-4 text-amber-600" />;
       case 'ONSITE':
@@ -241,6 +247,10 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
 
   const getAlertColor = (type: JobAlert['type']) => {
     switch (type) {
+      case 'ENGINEER_ACCEPT':
+        return 'bg-blue-50 border-blue-200';
+      case 'ENGINEER_ONSITE':
+        return 'bg-green-50 border-green-200';
       case 'ACCEPTED':
         return 'bg-amber-50 border-amber-200';
       case 'ONSITE':
@@ -274,7 +284,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
         <div className="flex items-center gap-3">
           <Button 
             onClick={() => setIsCreateModalOpen(true)} 
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="h-4 w-4" />
             Create Alert
@@ -380,6 +390,8 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="ENGINEER_ACCEPT">Engineer Accept</SelectItem>
+                <SelectItem value="ENGINEER_ONSITE">Engineer Onsite</SelectItem>
                 <SelectItem value="ACCEPTED">Accept SLA</SelectItem>
                 <SelectItem value="ONSITE">Onsite SLA</SelectItem>
                 <SelectItem value="COMPLETED">Complete SLA</SelectItem>

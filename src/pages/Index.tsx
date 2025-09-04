@@ -27,6 +27,7 @@ import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Users, Bell } from 'lucide-react';
 import EndOfShiftReport from '@/components/EndOfShiftReport';
+import NotificationManager from '@/components/NotificationManager';
 
 type View = 'master' | 'customer' | 'customer-dashboard' | 'customer-detail' | 'customer-alerts' | 'alerts' | 'wizard' | 'reports' | 'job-detail' | 'sites';
 
@@ -43,6 +44,17 @@ export default function Index() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
+  // Ensure demo jobs are always available
+  useEffect(() => {
+    if (jobs.length === 0) {
+      // If no jobs exist, load the mock jobs
+      const mockJobsData = loadJobsFromStorage();
+      if (mockJobsData.length > 0) {
+        setJobs(mockJobsData);
+      }
+    }
+  }, [jobs.length]);
+
   // Save jobs to localStorage whenever jobs state changes
   useEffect(() => {
     saveJobsToStorage(jobs);
@@ -55,6 +67,15 @@ export default function Index() {
     };
     setJobs(prev => [jobWithId, ...prev]);
     setCurrentView('master');
+    
+    // Show success notification
+    if (typeof window !== 'undefined' && (window as any).addNotification) {
+      (window as any).addNotification({
+        type: 'success',
+        title: 'Job Created Successfully',
+        message: `Job ${jobWithId.jobNumber} has been created and assigned to ${jobWithId.engineer}`
+      });
+    }
   };
 
   const handleCustomerCreate = (newCustomer: Omit<Customer, 'id'>) => {
@@ -74,6 +95,15 @@ export default function Index() {
       job.id === updatedJob.id ? updatedJob : job
     ));
     setSelectedJob(null);
+    
+    // Show success notification
+    if (typeof window !== 'undefined' && (window as any).addNotification) {
+      (window as any).addNotification({
+        type: 'success',
+        title: 'Job Updated Successfully',
+        message: `Job ${updatedJob.jobNumber} has been updated with new information`
+      });
+    }
   };
 
   const handleCustomerSelect = (customer: Customer) => {
@@ -190,6 +220,9 @@ export default function Index() {
         return (
           <EndOfShiftReport
             onBack={() => setCurrentView('master')}
+            jobs={jobs}
+            customers={customers}
+            onJobCreate={handleJobCreate}
           />
         );
       
@@ -294,6 +327,7 @@ export default function Index() {
         }}
         onSave={handleJobSave}
       />
+      <NotificationManager />
     </>
   );
 }

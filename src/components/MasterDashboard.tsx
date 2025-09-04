@@ -75,7 +75,19 @@ export default function MasterDashboard({
       (job.description && job.description.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (job.engineer && job.engineer.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
+    let matchesStatus = true;
+    if (statusFilter === 'all') {
+      matchesStatus = true;
+    } else if (statusFilter === 'active') {
+      matchesStatus = ['amber', 'red', 'new', 'allocated', 'attended', 'awaiting_parts'].includes(job.status);
+    } else if (statusFilter === 'completed') {
+      matchesStatus = ['green', 'completed', 'costed', 'reqs_invoice'].includes(job.status);
+    } else if (statusFilter === 'overdue') {
+      matchesStatus = ['red', 'awaiting_parts'].includes(job.status);
+    } else {
+      matchesStatus = job.status === statusFilter;
+    }
+    
     const matchesPriority = priorityFilter === 'all' || job.priority === priorityFilter;
     
     return matchesSearch && matchesStatus && matchesPriority;
@@ -84,17 +96,34 @@ export default function MasterDashboard({
   // Calculate statistics
   const stats = {
     total: jobs.length,
-    active: jobs.filter(job => job.status === 'amber' || job.status === 'red').length,
-    completed: jobs.filter(job => job.status === 'green').length,
+    active: jobs.filter(job => 
+      job.status === 'amber' || 
+      job.status === 'red' || 
+      job.status === 'new' || 
+      job.status === 'allocated' || 
+      job.status === 'attended' || 
+      job.status === 'awaiting_parts'
+    ).length,
+    completed: jobs.filter(job => 
+      job.status === 'green' || 
+      job.status === 'completed' || 
+      job.status === 'costed' || 
+      job.status === 'reqs_invoice'
+    ).length,
     critical: jobs.filter(job => job.priority === 'Critical').length,
-    overdue: jobs.filter(job => job.status === 'red').length
+    overdue: jobs.filter(job => 
+      job.status === 'red' || 
+      job.status === 'awaiting_parts'
+    ).length
   };
 
   // Calculate total alerts - jobs that need attention
   const totalAlerts = jobs.filter(job => 
     job.status === 'red' || 
     job.priority === 'Critical' ||
-    (job.status === 'amber' && job.priority === 'High')
+    (job.status === 'amber' && job.priority === 'High') ||
+    job.status === 'new' ||
+    job.status === 'awaiting_parts'
   ).length;
 
   // Get latest alerts for dropdown
@@ -102,7 +131,9 @@ export default function MasterDashboard({
     .filter(job => 
       job.status === 'red' || 
       job.priority === 'Critical' ||
-      (job.status === 'amber' && job.priority === 'High')
+      (job.status === 'amber' && job.priority === 'High') ||
+      job.status === 'new' ||
+      job.status === 'awaiting_parts'
     )
     .sort((a, b) => new Date(b.dateLogged).getTime() - new Date(a.dateLogged).getTime())
     .slice(0, 10);
@@ -173,19 +204,22 @@ export default function MasterDashboard({
       setPriorityFilter('all');
       setSearchTerm('');
     } else if (statType === 'active') {
-      setStatusFilter('amber');
+      // Show all active statuses (both old and new)
+      setStatusFilter('active');
       setPriorityFilter('all');
       setSearchTerm('');
     } else if (statType === 'completed') {
-      setStatusFilter('green');
+      // Show all completed statuses (both old and new)
+      setStatusFilter('completed');
       setPriorityFilter('all');
       setSearchTerm('');
     } else if (statType === 'critical') {
-      setStatusFilter('red');
+      setStatusFilter('all');
       setPriorityFilter('Critical');
       setSearchTerm('');
     } else if (statType === 'overdue') {
-      setStatusFilter('red');
+      // Show overdue statuses (both old and new)
+      setStatusFilter('overdue');
       setPriorityFilter('all');
       setSearchTerm('');
     }
@@ -258,10 +292,13 @@ export default function MasterDashboard({
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1">
                                   <Badge 
-                                    variant={job.status === 'red' ? 'destructive' : 'secondary'}
+                                    variant={job.status === 'red' || job.status === 'new' || job.status === 'awaiting_parts' ? 'destructive' : 'secondary'}
                                     className="text-xs"
                                   >
-                                    {job.status === 'red' ? 'Critical' : job.priority}
+                                    {job.status === 'red' ? 'Critical' : 
+                                     job.status === 'new' ? 'New Job' : 
+                                     job.status === 'awaiting_parts' ? 'Awaiting Parts' : 
+                                     job.priority}
                                   </Badge>
                                   <span className="text-xs text-gray-500">
                                     {new Date(job.dateLogged).toLocaleDateString()}
@@ -284,7 +321,13 @@ export default function MasterDashboard({
                               <div className="ml-3">
                                 <div className={`w-3 h-3 rounded-full ${
                                   job.status === 'red' ? 'bg-red-500' : 
-                                  job.status === 'amber' ? 'bg-amber-500' : 'bg-green-500'
+                                  job.status === 'amber' ? 'bg-amber-500' : 
+                                  job.status === 'new' ? 'bg-blue-500' : 
+                                  job.status === 'allocated' ? 'bg-yellow-500' : 
+                                  job.status === 'attended' ? 'bg-orange-500' : 
+                                  job.status === 'awaiting_parts' ? 'bg-purple-500' : 
+                                  job.status === 'completed' || job.status === 'costed' || job.status === 'reqs_invoice' ? 'bg-green-500' : 
+                                  'bg-gray-500'
                                 }`} />
                               </div>
                             </div>
@@ -400,7 +443,14 @@ export default function MasterDashboard({
             <span className="text-sm font-medium text-blue-700">Active Filters:</span>
             {statusFilter !== 'all' && (
               <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                Status: {statusFilter === 'green' ? 'Completed' : statusFilter === 'amber' ? 'In Progress' : 'Overdue'}
+                Status: {statusFilter === 'active' ? 'Active Jobs' : 
+                         statusFilter === 'completed' ? 'Completed' : 
+                         statusFilter === 'overdue' ? 'Overdue' : 
+                         statusFilter === 'new' ? 'New' : 
+                         statusFilter === 'allocated' ? 'Allocated' : 
+                         statusFilter === 'attended' ? 'Attended' : 
+                         statusFilter === 'awaiting_parts' ? 'Awaiting Parts' : 
+                         statusFilter}
               </Badge>
             )}
             {priorityFilter !== 'all' && (
@@ -429,14 +479,14 @@ export default function MasterDashboard({
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
           <Input
             placeholder="Search by customer, site, description, or engineer..."
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             onFocus={() => searchTerm.length >= 2 && setShowSearchDropdown(true)}
             onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
-            className="pl-10"
+            className="pl-10 min-w-0"
           />
           
           {/* Search Dropdown */}
@@ -467,15 +517,16 @@ export default function MasterDashboard({
                         variant="secondary" 
                         className={`${getStatusColor(job.status)} text-white text-xs`}
                       >
-                        {job.status === 'green' ? 'Completed' : 
+                        {job.status === 'new' ? 'New' : 
+                         job.status === 'allocated' ? 'Allocated' : 
+                         job.status === 'attended' ? 'Attended' : 
+                         job.status === 'awaiting_parts' ? 'Awaiting Parts' : 
+                         job.status === 'completed' ? 'Completed' : 
+                         job.status === 'costed' ? 'Costed' : 
+                         job.status === 'reqs_invoice' ? 'Invoice Ready' : 
+                         job.status === 'green' ? 'Completed' : 
                          job.status === 'amber' ? 'In Process' : 
                          job.status === 'red' ? 'Issue' : 
-                         job.status === 'OOH' ? 'Out of Hours' :
-                         job.status === 'On call' ? 'On Call' :
-                         job.status === 'travel' ? 'Traveling' :
-                         job.status === 'require_revisit' ? 'Requires Revisit' :
-                         job.status === 'sick' ? 'Sick Leave' :
-                         job.status === 'training' ? 'Training' :
                          String(job.status).toUpperCase()}
                       </Badge>
                     </div>
@@ -566,9 +617,13 @@ export default function MasterDashboard({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="green">Completed</SelectItem>
-              <SelectItem value="amber">In Progress</SelectItem>
-              <SelectItem value="red">Overdue</SelectItem>
+              <SelectItem value="active">Active Jobs</SelectItem>
+              <SelectItem value="completed">Completed</SelectItem>
+              <SelectItem value="overdue">Overdue</SelectItem>
+              <SelectItem value="new">New</SelectItem>
+              <SelectItem value="allocated">Allocated</SelectItem>
+              <SelectItem value="attended">Attended</SelectItem>
+              <SelectItem value="awaiting_parts">Awaiting Parts</SelectItem>
             </SelectContent>
           </Select>
 
@@ -610,15 +665,16 @@ export default function MasterDashboard({
                       variant="secondary" 
                       className={`${getStatusColor(job.status)} text-white text-xs`}
                     >
-                      {job.status === 'green' ? 'Completed' : 
+                      {job.status === 'new' ? 'New' : 
+                       job.status === 'allocated' ? 'Allocated' : 
+                       job.status === 'attended' ? 'Attended' : 
+                       job.status === 'awaiting_parts' ? 'Awaiting Parts' : 
+                       job.status === 'completed' ? 'Completed' : 
+                       job.status === 'costed' ? 'Costed' : 
+                       job.status === 'reqs_invoice' ? 'Invoice Ready' : 
+                       job.status === 'green' ? 'Completed' : 
                        job.status === 'amber' ? 'In Process' : 
                        job.status === 'red' ? 'Issue' : 
-                       job.status === 'OOH' ? 'Out of Hours' :
-                       job.status === 'On call' ? 'On Call' :
-                       job.status === 'travel' ? 'Traveling' :
-                       job.status === 'require_revisit' ? 'Requires Revisit' :
-                       job.status === 'sick' ? 'Sick Leave' :
-                       job.status === 'training' ? 'Training' :
                        String(job.status).toUpperCase()}
                     </Badge>
                     <Badge 

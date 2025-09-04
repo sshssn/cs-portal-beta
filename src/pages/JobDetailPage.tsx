@@ -39,7 +39,8 @@ import {
   FileText as FileInvoice,
   Play,
   Pause,
-  Square
+  Square,
+  RefreshCw
 } from 'lucide-react';
 import { loadCommunicationFromStorage, saveCommunicationToStorage, loadNotesFromStorage, saveNotesToStorage } from '@/lib/jobUtils';
 
@@ -76,6 +77,7 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
     tags: [],
     requiresAction: false
   });
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Load communications and notes from localStorage
   useEffect(() => {
@@ -108,11 +110,66 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
     if (foundJob) {
       setJob(foundJob);
       setEditedJob({ ...foundJob });
+      
+      // Auto-add communication for job creation/updates
+      if (foundJob.dateLogged && foundJob.dateLogged > new Date(Date.now() - 60000)) {
+        // Job was created in the last minute
+        const creationComm: CommunicationEvent = {
+          id: `auto-${Date.now()}`,
+          timestamp: foundJob.dateLogged,
+          type: 'note',
+          direction: 'inbound',
+          from: 'System',
+          to: 'Current User',
+          content: `Job ${foundJob.jobNumber} created via Job Log Wizard`,
+          status: 'sent',
+          priority: 'medium',
+          tags: ['auto', 'creation'],
+          relatedJobId: jobId,
+          requiresFollowUp: false
+        };
+        setCommunications(prev => [creationComm, ...prev]);
+      }
     }
   }, [jobId, jobs]);
 
   const handleSave = () => {
-    if (editedJob) {
+    if (editedJob && job) {
+      // Check what changed and add appropriate communications
+      const changes: string[] = [];
+      
+      if (editedJob.description !== job.description) {
+        changes.push('Description updated');
+      }
+      if (editedJob.status !== job.status) {
+        changes.push(`Status changed to ${editedJob.status}`);
+      }
+      if (editedJob.priority !== job.priority) {
+        changes.push(`Priority changed to ${editedJob.priority}`);
+      }
+      if (editedJob.engineer !== job.engineer) {
+        changes.push(`Engineer changed to ${editedJob.engineer}`);
+      }
+      
+      // Add communication for changes
+      if (changes.length > 0) {
+        const changeComm: CommunicationEvent = {
+          id: `change-${Date.now()}`,
+          timestamp: new Date(),
+          type: 'status_update',
+          direction: 'inbound',
+          from: 'Current User',
+          to: 'System',
+          content: `Job details updated: ${changes.join(', ')}`,
+          status: 'sent',
+          priority: 'medium',
+          tags: ['auto', 'update'],
+          relatedJobId: jobId,
+          requiresFollowUp: false
+        };
+        setCommunications(prev => [changeComm, ...prev]);
+      }
+      
       onJobUpdate(editedJob);
       setJob(editedJob);
       setIsEditing(false);
@@ -178,6 +235,24 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
       };
       
       setCommunications(prev => [communication, ...prev]);
+      
+      // Auto-add communication for communication addition
+      const commUpdate: CommunicationEvent = {
+        id: `update-${Date.now()}`,
+        timestamp: new Date(),
+        type: 'status_update',
+        direction: 'inbound',
+        from: 'System',
+        to: 'Current User',
+        content: `Communication added: ${newCommunication.type} to ${newCommunication.to}`,
+        status: 'sent',
+        priority: 'medium',
+        tags: ['auto', 'communication'],
+        relatedJobId: jobId || '',
+        requiresFollowUp: false
+      };
+      setCommunications(prev => [commUpdate, ...prev]);
+      
       setNewCommunication({
         type: 'note',
         direction: 'outbound',
@@ -213,6 +288,24 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
       };
       
       setNotes(prev => [note, ...prev]);
+      
+      // Auto-add communication for note addition
+      const noteComm: CommunicationEvent = {
+        id: `note-${Date.now()}`,
+        timestamp: new Date(),
+        type: 'note',
+        direction: 'inbound',
+        from: 'Current User',
+        to: 'System',
+        content: `Note added: ${newNote.content.substring(0, 50)}${newNote.content.length > 50 ? '...' : ''}`,
+        status: 'sent',
+        priority: 'medium',
+        tags: ['auto', 'note'],
+        relatedJobId: jobId || '',
+        requiresFollowUp: false
+      };
+      setCommunications(prev => [noteComm, ...prev]);
+      
       setNewNote({
         content: '',
         type: 'general',
@@ -230,6 +323,46 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
 
   const deleteNote = (id: string) => {
     setNotes(prev => prev.filter(note => note.id !== id));
+  };
+
+  const handleSyncWithMobile = async () => {
+    setIsSyncing(true);
+    
+    // Simulate API call to sync with engineer mobile app
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Update job status based on engineer's mobile app data
+    if (job) {
+      const mobileStatuses = ['onsite', 'accepted', 'traveling', 'completed', 'awaiting_parts'];
+      const randomStatus = mobileStatuses[Math.floor(Math.random() * mobileStatuses.length)];
+      
+      // Create a communication event for the sync
+      const syncComm: CommunicationEvent = {
+        id: `sync-${Date.now()}`,
+        timestamp: new Date(),
+        type: 'status_update',
+        direction: 'inbound',
+        from: 'Mobile App',
+        to: 'System',
+        content: `Synced with engineer mobile app - Status: ${randomStatus}`,
+        status: 'sent',
+        priority: 'medium',
+        tags: ['auto', 'mobile-sync'],
+        relatedJobId: jobId || '',
+        requiresFollowUp: false
+      };
+      
+      setCommunications(prev => [syncComm, ...prev]);
+      
+      // Update job status if it's different
+      if (randomStatus !== job.status) {
+        const updatedJob = { ...job, status: randomStatus as Job['status'] };
+        setJob(updatedJob);
+        // Don't call onJobUpdate here to prevent duplicate status updates
+      }
+    }
+    
+    setIsSyncing(false);
   };
 
   const getCommunicationIcon = (type: CommunicationEvent['type']) => {
@@ -525,10 +658,21 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
             {/* Basic Information */}
             <Card className={getCardClasses('hover')}>
               <CardHeader className={UI_CONSTANTS.card.header}>
-                <CardTitle className={`flex items-center ${UI_CONSTANTS.typography.title}`}>
-                  <Briefcase className={`${UI_CONSTANTS.spacing.icon} ${getIconClasses('md', 'primary')}`} />
-                  Job Information
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle className={`flex items-center ${UI_CONSTANTS.typography.title}`}>
+                    <Briefcase className={`${UI_CONSTANTS.spacing.icon} ${getIconClasses('md', 'primary')}`} />
+                    Job Information
+                  </CardTitle>
+                  <Button
+                    onClick={handleSyncWithMobile}
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-2 border-green-300 text-green-700 hover:bg-green-50"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    {isSyncing ? 'Syncing...' : 'Sync Mobile'}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className={UI_CONSTANTS.card.content}>
                 <div className={`grid grid-cols-1 md:grid-cols-2 ${UI_CONSTANTS.spacing.card.grid}`}>
@@ -557,6 +701,37 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                     )}
                   </div>
                   <div className={UI_CONSTANTS.spacing.card.field}>
+                    <label className={UI_CONSTANTS.typography.subtitle}>Job Status</label>
+                    {isEditing ? (
+                      <Select 
+                        value={currentJob?.status || 'new'} 
+                        onValueChange={(value) => setEditedJob(prev => prev ? { ...prev, status: value as Job['status'] } : null)}
+                      >
+                        <SelectTrigger className={getFormClasses('select')}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="new">New</SelectItem>
+                          <SelectItem value="allocated">Allocated</SelectItem>
+                          <SelectItem value="awaiting_parts">Awaiting Parts</SelectItem>
+                          <SelectItem value="attended">Attended</SelectItem>
+                          <SelectItem value="completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="mt-1">
+                        <Badge className={`${getStatusColor(job.status)} ${UI_CONSTANTS.badge.base}`}>
+                          {job.status === 'new' ? 'New' : 
+                           job.status === 'allocated' ? 'Allocated' : 
+                           job.status === 'awaiting_parts' ? 'Awaiting Parts' : 
+                           job.status === 'attended' ? 'Attended' : 
+                           job.status === 'completed' ? 'Completed' : 
+                           String(job.status).toUpperCase()}
+                        </Badge>
+                      </div>
+                    )}
+                  </div>
+                  <div className={UI_CONSTANTS.spacing.card.field}>
                     <label className={UI_CONSTANTS.typography.subtitle}>Engineer</label>
                     {isEditing ? (
                       <Input 
@@ -565,45 +740,16 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                         className={getFormClasses('input')}
                       />
                     ) : (
-                      <div className={`flex items-center ${UI_CONSTANTS.spacing.element}`}>
-                        <User className={getIconClasses('sm', 'primary')} />
-                        <span className={UI_CONSTANTS.typography.body}>{job.engineer}</span>
+                      <div className={`flex items-center justify-between ${UI_CONSTANTS.spacing.element}`}>
+                        <div className="flex items-center gap-2">
+                          <User className={getIconClasses('sm', 'primary')} />
+                          <span className={UI_CONSTANTS.typography.body}>{job.engineer}</span>
+                        </div>
+
                       </div>
                     )}
                   </div>
-                  <div className={UI_CONSTANTS.spacing.card.field}>
-                    <label className={UI_CONSTANTS.typography.subtitle}>Status</label>
-                    {isEditing ? (
-                      <Select 
-                        value={currentJob?.status || 'amber'} 
-                        onValueChange={(value) => setEditedJob(prev => prev ? { ...prev, status: value as Job['status'] } : null)}
-                      >
-                        <SelectTrigger className={getFormClasses('select')}>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="green">Green</SelectItem>
-                          <SelectItem value="amber">Amber</SelectItem>
-                          <SelectItem value="red">Red</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <div className="mt-1">
-                        <Badge className={`${getStatusColor(job.status)} ${UI_CONSTANTS.badge.base}`}>
-                          {job.status === 'green' ? 'Completed' : 
-                           job.status === 'amber' ? 'In Process' : 
-                           job.status === 'red' ? 'Issue' : 
-                           job.status === 'OOH' ? 'Out of Hours' :
-                           job.status === 'On call' ? 'On Call' :
-                           job.status === 'travel' ? 'Traveling' :
-                           job.status === 'require_revisit' ? 'Requires Revisit' :
-                           job.status === 'sick' ? 'Sick Leave' :
-                           job.status === 'training' ? 'Training' :
-                           String(job.status).toUpperCase()}
-                        </Badge>
-                      </div>
-                    )}
-                  </div>
+
                   <div className={UI_CONSTANTS.spacing.card.field}>
                     <label className={UI_CONSTANTS.typography.subtitle}>Priority</label>
                     {isEditing ? (
@@ -622,9 +768,11 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                         </SelectContent>
                       </Select>
                     ) : (
-                      <Badge className={`${getPriorityColor(job.priority)} ${UI_CONSTANTS.badge.base}`}>
-                        {job.priority}
-                      </Badge>
+                      <div className="mt-2">
+                        <Badge className={`${getPriorityColor(job.priority)} ${UI_CONSTANTS.badge.base}`}>
+                          {job.priority}
+                        </Badge>
+                      </div>
                     )}
                   </div>
                   <div>
@@ -714,6 +862,58 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                       />
                     ) : (
                       <p className="text-gray-900">{job.endDate ? job.endDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not set'}</p>
+                    )}
+                  </div>
+                  
+                  {/* Target Attendance Date & Time */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Target Attendance Date</label>
+                    {isEditing ? (
+                      <Input 
+                        type="date"
+                        value={currentJob?.targetAttendanceDate ? currentJob.targetAttendanceDate.toISOString().split('T')[0] : ''} 
+                        onChange={(e) => setEditedJob(prev => prev ? { ...prev, targetAttendanceDate: e.target.value ? new Date(e.target.value) : null } : null)}
+                      />
+                    ) : (
+                      <p className="text-gray-900">{job.targetAttendanceDate ? job.targetAttendanceDate.toLocaleDateString() : 'Not set'}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Target Attendance Time</label>
+                    {isEditing ? (
+                      <Input 
+                        type="time"
+                        value={currentJob?.targetAttendanceTime || ''} 
+                        onChange={(e) => setEditedJob(prev => prev ? { ...prev, targetAttendanceTime: e.target.value } : null)}
+                      />
+                    ) : (
+                      <p className="text-gray-900">{job.targetAttendanceTime || 'Not set'}</p>
+                    )}
+                  </div>
+                  
+                  {/* Allocated Visit Date & Time */}
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Allocated Visit Date</label>
+                    {isEditing ? (
+                      <Input 
+                        type="date"
+                        value={currentJob?.allocatedVisitDate ? currentJob.allocatedVisitDate.toISOString().split('T')[0] : ''} 
+                        onChange={(e) => setEditedJob(prev => prev ? { ...prev, allocatedVisitDate: e.target.value ? new Date(e.target.value) : null } : null)}
+                      />
+                    ) : (
+                      <p className="text-gray-900">{job.allocatedVisitDate ? job.allocatedVisitDate.toLocaleDateString() : 'Not set'}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Allocated Visit Time</label>
+                    {isEditing ? (
+                      <Input 
+                        type="time"
+                        value={currentJob?.allocatedVisitTime || ''} 
+                        onChange={(e) => setEditedJob(prev => prev ? { ...prev, allocatedVisitTime: e.target.value } : null)}
+                      />
+                    ) : (
+                      <p className="text-gray-900">{job.allocatedVisitTime || 'Not set'}</p>
                     )}
                   </div>
                 </div>
@@ -818,20 +1018,16 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                 </div>
               </CardContent>
             </Card>
+          </div>
 
-            {/* Alerts */}
-            <Card className={getCardClasses('hover')}>
-              <CardHeader className={UI_CONSTANTS.card.header}>
-                <CardTitle className={`flex items-center justify-between ${UI_CONSTANTS.typography.title}`}>
-                  <div className="flex items-center">
-                    <div className="relative">
-                      <AlertTriangle className={`${UI_CONSTANTS.spacing.icon} ${getIconClasses('md', 'error')}`} />
-                      {currentJob?.alerts && currentJob.alerts.filter(alert => !alert.acknowledged).length > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                          {currentJob.alerts.filter(alert => !alert.acknowledged).length}
-                        </span>
-                      )}
-                    </div>
+          {/* Right Sidebar */}
+          <div className="lg:col-span-1 space-y-6">
+            {/* Alerts Container - Moved to top */}
+            <Card className="border-red-200 bg-red-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between text-lg text-red-900">
+                  <div className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5 text-red-600" />
                     Alerts
                   </div>
                   {isEditing && (
@@ -839,14 +1035,14 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                       size="sm" 
                       variant="outline"
                       onClick={() => addAlert('ACCEPTED')}
-                      className={getButtonClasses('outline')}
+                      className="border-red-300 text-red-700 hover:bg-red-100"
                     >
                       Add Alert
                     </Button>
                   )}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="pt-0">
                 {currentJob?.alerts && currentJob.alerts.length > 0 ? (
                   <div className="space-y-3">
                     {currentJob.alerts.map((alert) => (
@@ -854,15 +1050,15 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                         key={alert.id}
                         className={`p-3 rounded-lg border ${
                           alert.acknowledged 
-                            ? 'bg-gray-50 border-gray-200' 
-                            : 'bg-red-50 border-red-200'
+                            ? 'bg-white border-gray-200' 
+                            : 'bg-red-100 border-red-300'
                         }`}
                       >
                         <div className="flex items-center justify-between">
                           <div>
-                            <p className="font-medium text-sm">{alert.type}</p>
-                            <p className="text-xs text-gray-600">{alert.message}</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="font-medium text-sm text-red-900">{alert.type}</p>
+                            <p className="text-xs text-red-700">{alert.message}</p>
+                            <p className="text-xs text-red-600">
                               {alert.timestamp.toLocaleString()}
                             </p>
                           </div>
@@ -871,6 +1067,7 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                               size="sm"
                               variant="outline"
                               onClick={() => acknowledgeAlert(alert.id)}
+                              className="border-red-300 text-red-700 hover:bg-red-100"
                             >
                               <CheckCircle className="h-4 w-4" />
                             </Button>
@@ -883,361 +1080,137 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                     ))}
                   </div>
                 ) : (
-                  <p className="text-gray-500 text-sm">No alerts for this job</p>
+                  <div className="text-center py-4">
+                    <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                    <p className="text-sm text-green-700 font-medium">No Active Alerts</p>
+                    <p className="text-xs text-green-600">All systems running smoothly</p>
+                  </div>
                 )}
               </CardContent>
             </Card>
 
-            {/* Alerts */}
-            <Card className="col-span-full">
-              <CardHeader className={UI_CONSTANTS.card.header}>
-                <CardTitle className={`flex items-center justify-between ${UI_CONSTANTS.typography.title}`}>
-                  <div className="flex items-center">
-                    <div className="relative">
-                      <AlertTriangle className={`${UI_CONSTANTS.spacing.icon} ${getIconClasses('md', 'error')}`} />
-                      {currentJob?.alerts && currentJob.alerts.filter(alert => !alert.acknowledged).length > 0 && (
-                        <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                          {currentJob.alerts.filter(alert => !alert.acknowledged).length}
-                        </span>
-                      )}
-                    </div>
-                    Alerts
-                  </div>
-                  {isEditing && (
-                    <Button 
-                      size="sm" 
-                      variant="outline"
-                      onClick={() => addAlert('ACCEPTED')}
-                      className={getButtonClasses('outline')}
-                    >
-                      Add Alert
-                    </Button>
-                  )}
+            {/* Communications Timeline & Job Status - Simplified */}
+            <Card className="border-blue-200 bg-blue-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-lg text-blue-900">
+                  <Clock className="h-5 w-5 text-blue-600" />
+                  Communications & Status
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {currentJob?.alerts && currentJob.alerts.length > 0 ? (
-                  <div className="space-y-3">
-                    {currentJob.alerts.map((alert) => (
-                      <div 
-                        key={alert.id}
-                        className={`p-3 rounded-lg border ${
-                          alert.acknowledged 
-                            ? 'bg-gray-50 border-gray-200' 
-                            : 'bg-red-50 border-red-200'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-sm">{alert.type}</p>
-                            <p className="text-xs text-gray-600">{alert.message}</p>
-                            <p className="text-xs text-gray-500">
-                              {alert.timestamp.toLocaleString()}
-                            </p>
-                          </div>
-                          {!alert.acknowledged && isEditing && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => acknowledgeAlert(alert.id)}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                          )}
-                          {alert.acknowledged && (
-                            <CheckCircle className="h-4 w-4 text-green-600" />
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-gray-500 text-sm">No alerts for this job</p>
-                )}
-              </CardContent>
-            </Card>
+              <CardContent className="pt-0 space-y-4">
 
-            {/* Communication Timeline */}
-            <Card className="col-span-full">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Clock className="h-5 w-5" />
-                  Communication Timeline & Job Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {/* Job Status Workflow */}
-                <Card className="bg-gradient-to-br from-slate-50 to-blue-50 border-blue-200">
-                  <CardHeader className="pb-6">
-                    <CardTitle className="flex items-center gap-3 text-2xl text-gray-900">
-                      <div className="p-2 bg-blue-100 rounded-lg">
-                        <Clock className="h-6 w-6 text-blue-600" />
-                      </div>
-                      Job Status Workflow
-                    </CardTitle>
-                    <p className="text-muted-foreground">Track the progression of this job through its lifecycle stages</p>
-                  </CardHeader>
-                  <CardContent className="space-y-8">
-                    {/* Enhanced Status Progress Bar */}
-                    <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="space-y-1">
-                          <span className="text-lg font-semibold text-gray-900">Progress Overview</span>
-                          <p className="text-sm text-gray-600">Job completion status and current stage</p>
-                        </div>
-                        <div className="text-right">
-                          <div className="text-2xl font-bold text-blue-600">{getJobProgress()}%</div>
-                          <div className="text-sm text-gray-500">Stage {getCurrentStageIndex() + 1} of 8</div>
-                        </div>
-                      </div>
-                      <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                        <div 
-                          className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-500 shadow-sm min-w-[2px]" 
-                          style={{ width: `${Math.max(getJobProgress(), 2)}%` }}
-                        ></div>
-                      </div>
-                      <div className="flex justify-between mt-2 text-xs text-gray-500">
-                        <span>New Job</span>
-                        <span>Reqs. Invoice</span>
-                      </div>
-                    </div>
 
-                    {/* Status Stages - Better Layout */}
-                    <div className="space-y-6">
-                      <h3 className="text-lg font-semibold text-gray-900 text-center">Workflow Stages</h3>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-                        {jobStatusStages.map((stage, index) => {
-                          const isCompleted = isStageCompleted(stage.key);
-                          const isCurrent = isCurrentStage(stage.key);
-                          
-                          return (
-                            <div 
-                              key={stage.key}
-                              className={`relative p-6 rounded-xl border-2 transition-all duration-300 hover:shadow-lg ${
-                                isCompleted 
-                                  ? 'border-green-300 bg-green-50 shadow-md' 
-                                  : isCurrent 
-                                  ? 'border-blue-400 bg-blue-50 shadow-lg ring-2 ring-blue-200' 
-                                  : 'border-gray-200 bg-white hover:border-gray-300'
-                              }`}
-                            >
-                              {/* Stage Number */}
-                              <div className={`absolute -top-4 left-6 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold shadow-lg ${
-                                isCompleted 
-                                  ? 'bg-green-500 text-white' 
-                                  : isCurrent 
-                                  ? 'bg-blue-500 text-white' 
-                                  : 'bg-gray-400 text-white'
-                              }`}>
-                                {index + 1}
-                              </div>
-                              
-                              {/* Stage Icon */}
-                              <div className={`w-16 h-16 rounded-xl flex items-center justify-center mb-4 ${
-                                isCompleted 
-                                  ? 'bg-green-100 text-green-600' 
-                                  : isCurrent 
-                                  ? 'bg-blue-100 text-blue-600' 
-                                  : 'bg-gray-100 text-gray-400'
-                              }`}>
-                                {stage.icon}
-                              </div>
-                              
-                              {/* Stage Title */}
-                              <h4 className={`font-bold text-base mb-2 ${
-                                isCompleted 
-                                  ? 'text-green-800' 
-                                  : isCurrent 
-                                  ? 'text-blue-800' 
-                                  : 'text-gray-700'
-                              }`}>
-                                {stage.title}
-                              </h4>
-                              
-                              {/* Stage Description */}
-                              <p className={`text-sm leading-relaxed mb-4 ${
-                                isCompleted 
-                                  ? 'text-green-700' 
-                                  : isCurrent 
-                                  ? 'text-blue-700' 
-                                  : 'text-gray-600'
-                              }`}>
-                                {stage.description}
-                              </p>
-                              
-                              {/* Status Badge */}
-                              <div className="mb-3">
-                                <Badge 
-                                  variant={isCompleted ? 'default' : isCurrent ? 'secondary' : 'outline'}
-                                  className={`text-sm px-3 py-1 ${
-                                    isCompleted 
-                                      ? 'bg-green-100 text-green-800 border-green-200' 
-                                      : isCurrent 
-                                      ? 'bg-blue-100 text-blue-800 border-blue-200' 
-                                      : 'bg-gray-100 text-gray-600 border-gray-200'
-                                  }`}
-                                >
-                                  {isCompleted ? '✓ Completed' : isCurrent ? '🔄 In Progress' : '⏳ Pending'}
-                                </Badge>
-                              </div>
-                              
-                              {/* Current Stage Indicator */}
-                              {isCurrent && (
-                                <div className="absolute -top-3 -right-3 w-6 h-6 bg-blue-500 rounded-full animate-pulse shadow-lg"></div>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    {/* Enhanced Stage Navigation */}
-                    <div className="bg-white p-6 rounded-xl border border-blue-200 shadow-sm">
-                      <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <div className="text-sm font-medium text-gray-700">Current Status</div>
-                          <div className="text-lg font-semibold text-blue-600">{getCurrentStageTitle()}</div>
-                        </div>
-                        <div className="flex gap-3">
-                          <Button
-                            variant="outline"
-                            size="lg"
-                            onClick={moveToPreviousStage}
-                            disabled={!canMoveToPreviousStage()}
-                            className="px-6"
-                          >
-                            ← Previous Stage
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="lg"
-                            onClick={moveToNextStage}
-                            disabled={!canMoveToNextStage()}
-                            className="px-6 bg-blue-600 hover:bg-blue-700"
-                          >
-                            Next Stage →
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Current Status */}
-                <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="text-lg font-semibold text-blue-900 mb-2">Current Job Status</h4>
-                  <div className="flex items-center gap-3">
-                    <div className={`w-6 h-6 rounded-full ${
-                      job.status === 'completed' || job.status === 'costed' || job.status === 'reqs_invoice' 
-                        ? 'bg-green-500' 
-                        : 'bg-orange-500'
-                    }`}></div>
-                    <span className="text-lg font-semibold text-blue-900">
-                      {job.status === 'new' && 'New Job'}
-                      {job.status === 'allocated' && 'Allocated'}
-                      {job.status === 'attended' && 'Attended'}
-                      {job.status === 'awaiting_parts' && 'Awaiting Parts'}
-                      {job.status === 'parts_to_fit' && 'Parts to Fit'}
-                      {job.status === 'completed' && 'Completed'}
-                      {job.status === 'costed' && 'Costed'}
-                      {job.status === 'reqs_invoice' && 'Requires Invoicing'}
-                      {!['new', 'allocated', 'attended', 'awaiting_parts', 'parts_to_fit', 'completed', 'costed', 'reqs_invoice'].includes(job.status) && 'Open'}
-                    </span>
-                  </div>
+                {/* Quick Actions */}
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddCommunication(true)}
+                    className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Communication
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddNote(true)}
+                    className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Note
+                  </Button>
                 </div>
 
-                {/* Communication Events and Notes */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h4 className="text-lg font-semibold text-gray-900">Communication Events & Notes</h4>
-                    <div className="flex gap-2">
-                      <Button 
-                        onClick={() => setShowAddCommunication(true)} 
-                        variant="outline" 
-                        size="sm"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Communication
-                      </Button>
-                      <Button 
-                        onClick={() => setShowAddNote(true)} 
-                        variant="outline" 
-                        size="sm"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Note
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Combined Timeline */}
-                  <div className="space-y-3">
-                    {[...communications, ...notes]
+                {/* Recent Activity - Enhanced to show all job details, notes, dates, times */}
+                <div className="bg-white p-3 rounded-lg border border-blue-200">
+                  <h4 className="text-sm font-semibold text-blue-900 mb-3">Recent Activity</h4>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {/* Job Creation/Update Events */}
+                    {communications
                       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-                      .map((item, index) => (
-                        <div key={item.id} className="flex gap-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="flex-shrink-0">
-                            {getCommunicationIcon(item.type)}
-                          </div>
+                      .map((item) => (
+                        <div key={item.id} className="flex items-start gap-3 p-2 bg-gray-50 rounded text-xs">
+                          <div className={`w-2 h-2 rounded-full mt-1.5 ${
+                            item.type === 'escalation' ? 'bg-red-500' :
+                            item.type === 'resolution' ? 'bg-green-500' :
+                            item.type === 'note' ? 'bg-blue-500' :
+                            item.type === 'status_update' ? 'bg-orange-500' :
+                            'bg-gray-500'
+                          }`}></div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-medium text-gray-900">
-                                {item.type === 'note' ? 'Job Note' : 'Communication Event'}
+                              <span className="font-medium text-gray-900 capitalize">
+                                {item.type.replace('_', ' ')}
                               </span>
-                              <span className="text-xs text-gray-500">
-                                {new Date(item.timestamp).toLocaleString()}
-                              </span>
-                              {item.type !== 'note' && (
-                                <Badge 
-                                  variant={item.priority === 'urgent' ? 'destructive' : 'secondary'}
-                                  className="text-xs"
-                                >
-                                  {item.priority}
-                                </Badge>
+                              {item.tags.includes('auto') && (
+                                <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">Auto</span>
                               )}
                             </div>
-                            <p className="text-sm text-gray-700 mb-2">
-                              {item.content}
-                            </p>
-                            <div className="flex items-center gap-4 text-xs text-gray-500">
-                              <span>By: {item.author || 'System'}</span>
-                              {item.type !== 'note' && item.direction && (
-                                <span>Direction: {item.direction}</span>
-                              )}
-                              {item.type === 'note' && item.visibility && (
-                                <span>Visibility: {item.visibility}</span>
-                              )}
+                            <p className="text-gray-700 mb-1">{item.content}</p>
+                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(item.timestamp).toLocaleDateString()}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(item.timestamp).toLocaleTimeString()}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {item.from}
+                              </span>
                             </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => item.type === 'note' ? deleteNote(item.id) : deleteCommunication(item.id)}
-                            className="text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                        </div>
+                      ))}
+                    
+                    {/* Job Notes */}
+                    {notes
+                      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+                      .map((note) => (
+                        <div key={note.id} className="flex items-start gap-3 p-2 bg-blue-50 rounded text-xs border border-blue-200">
+                          <div className="w-2 h-2 rounded-full mt-1.5 bg-blue-500"></div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="font-medium text-blue-900">Job Note</span>
+                              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded capitalize">
+                                {note.visibility}
+                              </span>
+                            </div>
+                            <p className="text-blue-800 mb-1">{note.content}</p>
+                            <div className="flex items-center gap-3 text-xs text-blue-600">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {new Date(note.timestamp).toLocaleDateString()}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {new Date(note.timestamp).toLocaleTimeString()}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                {note.author}
+                              </span>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     
                     {communications.length === 0 && notes.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-                        <p className="text-sm">No communication events or notes yet</p>
-                        <p className="text-xs">Add the first communication event or note to start tracking this job</p>
+                      <div className="text-center py-6 text-gray-500">
+                        <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                        <p className="text-sm">No recent activity</p>
+                        <p className="text-xs">Activity will appear here as jobs are updated</p>
                       </div>
                     )}
                   </div>
                 </div>
+
+
               </CardContent>
             </Card>
-
-
-          </div>
-
-          {/* Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
-            {/* Additional sidebar content can go here */}
           </div>
         </div>
       </div>

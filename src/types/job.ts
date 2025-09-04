@@ -73,6 +73,10 @@ export interface Job {
   preferredAppointmentDate?: Date | null;
   startDate?: Date | null;
   endDate?: Date | null;
+  targetAttendanceDate?: Date | null;
+  targetAttendanceTime?: string;
+  allocatedVisitDate?: Date | null;
+  allocatedVisitTime?: string;
   lockVisitDateTime?: boolean;
   deployToMobile?: boolean;
   isRecurringJob?: boolean;

@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Job } from '@/types/job';
-import { Clock, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Clock, CheckCircle, AlertTriangle, User, Play, Package, Wrench, Square } from 'lucide-react';
 
 interface StatusBadgeProps {
   status: Job['status'];
@@ -10,29 +10,78 @@ interface StatusBadgeProps {
 export default function StatusBadge({ status, reason }: StatusBadgeProps) {
   const getStatusConfig = (status: Job['status']) => {
     switch (status) {
+      case 'new':
+        return {
+          icon: Square,
+          text: 'New',
+          className: 'bg-blue-500 hover:bg-blue-600 text-white border-blue-600 shadow-sm',
+        };
+      case 'allocated':
+        return {
+          icon: User,
+          text: 'Allocated',
+          className: 'bg-yellow-500 hover:bg-yellow-600 text-white border-yellow-600 shadow-sm',
+        };
+      case 'attended':
+        return {
+          icon: Play,
+          text: 'Attended',
+          className: 'bg-orange-500 hover:bg-orange-600 text-white border-orange-600 shadow-sm',
+        };
+      case 'awaiting_parts':
+        return {
+          icon: Package,
+          text: 'Awaiting Parts',
+          className: 'bg-purple-500 hover:bg-purple-600 text-white border-purple-600 shadow-sm',
+        };
+      case 'parts_to_fit':
+        return {
+          icon: Wrench,
+          text: 'Parts to Fit',
+          className: 'bg-indigo-500 hover:bg-indigo-600 text-white border-indigo-600 shadow-sm',
+        };
+      case 'completed':
+        return {
+          icon: CheckCircle,
+          text: 'Completed',
+          className: 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 shadow-sm',
+        };
+      case 'costed':
+        return {
+          icon: CheckCircle,
+          text: 'Costed',
+          className: 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 shadow-sm',
+        };
+      case 'reqs_invoice':
+        return {
+          icon: CheckCircle,
+          text: 'Invoice Ready',
+          className: 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 shadow-sm',
+        };
+      // Legacy statuses for backward compatibility
       case 'green':
         return {
           icon: CheckCircle,
           text: 'Completed',
-          className: 'bg-emerald-500 text-white border-emerald-600 shadow-sm',
+          className: 'bg-emerald-500 hover:bg-emerald-600 text-white border-emerald-600 shadow-sm',
         };
       case 'amber':
         return {
           icon: Clock,
           text: 'In Progress',
-          className: 'bg-amber-500 text-white border-amber-600 shadow-sm',
+          className: 'bg-amber-500 hover:bg-amber-600 text-white border-amber-600 shadow-sm',
         };
       case 'red':
         return {
           icon: AlertTriangle,
           text: 'Issue',
-          className: 'bg-red-500 text-white border-red-600 shadow-sm',
+          className: 'bg-red-500 hover:bg-red-600 text-white border-red-600 shadow-sm',
         };
       default:
         return {
           icon: Clock,
           text: 'Unknown',
-          className: 'bg-gray-500 text-white border-gray-600 shadow-sm',
+          className: 'bg-gray-500 hover:bg-gray-600 text-white border-gray-600 shadow-sm',
         };
     }
   };
@@ -42,7 +91,7 @@ export default function StatusBadge({ status, reason }: StatusBadgeProps) {
 
   return (
     <div className="flex flex-col gap-1">
-      <Badge className={`${config.className} flex items-center gap-1 w-fit`}>
+      <Badge className={`${config.className} flex items-center gap-1 w-fit transition-colors duration-200`}>
         <Icon size={12} />
         {config.text}
       </Badge>

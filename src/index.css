@@ -107,6 +107,106 @@
 }
 
 @layer components {
+  /* Comprehensive fix for placeholder overlapping issues */
+  
+  /* Base input styling with proper padding */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="password"],
+  input[type="search"],
+  input[type="url"],
+  input[type="datetime-local"],
+  input[type="date"],
+  input[type="time"],
+  textarea,
+  select {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  
+  /* Specific fixes for relative positioned containers */
+  .relative input[type="text"],
+  .relative input[type="email"],
+  .relative input[type="tel"],
+  .relative input[type="number"],
+  .relative input[type="password"],
+  .relative input[type="search"],
+  .relative input[type="url"],
+  .relative input[type="datetime-local"],
+  .relative input[type="date"],
+  .relative input[type="time"],
+  .relative textarea,
+  .relative select {
+    padding-left: 1rem !important;
+  }
+  
+  /* Phone number input with +44 prefix - specific fix */
+  .relative input[type="tel"][style*="paddingLeft: '3rem'"],
+  .relative input[type="tel"][style*="paddingLeft: \"3rem\""] {
+    padding-left: 3rem !important;
+  }
+  
+  /* Search inputs with search icon */
+  .relative input[type="search"] {
+    padding-left: 2.5rem !important;
+  }
+  
+  /* Ensure all placeholder elements don't overlap */
+  .relative span:first-child,
+  .relative .absolute:first-child,
+  .relative > span:first-child,
+  .relative > .absolute:first-child {
+    z-index: 20 !important;
+    pointer-events: none !important;
+    position: relative !important;
+  }
+  
+  /* Fix for search icon positioning */
+  .relative .absolute[class*="left-3"],
+  .relative .absolute[class*="left-2"],
+  .relative .absolute[class*="left-1"] {
+    z-index: 30 !important;
+    pointer-events: none !important;
+    position: absolute !important;
+  }
+  
+  /* Fix for any absolute positioned elements in relative containers */
+  .relative .absolute {
+    z-index: 25 !important;
+    pointer-events: none !important;
+  }
+  
+  /* Specific fix for JobLogWizard phone input */
+  .relative input[type="tel"] + span,
+  .relative input[type="tel"] ~ span {
+    z-index: 40 !important;
+    pointer-events: none !important;
+  }
+  
+  /* Ensure proper layering for all form elements */
+  .relative {
+    position: relative !important;
+  }
+  
+  .relative input,
+  .relative textarea,
+  .relative select {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  
+  /* Fix for any overlapping issues in forms */
+  form .relative input,
+  form .relative textarea,
+  form .relative select {
+    position: relative !important;
+    z-index: 1 !important;
+  }
+  
   /* Reduce overall font sizes and spacing */
   .text-3xl {
     font-size: 1.5rem !important;

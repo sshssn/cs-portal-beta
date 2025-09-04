@@ -5,8 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Job } from '@/types/job';
-import { mockJobs } from '@/lib/jobUtils';
+import { Job, Customer } from '@/types/job';
+import { generateJobNumber, mockJobTrades, mockTags } from '@/lib/jobUtils';
 import { 
   FileText, 
   ArrowLeft, 
@@ -22,14 +22,18 @@ import {
   MapPin,
   Mic,
   Sparkles,
-  StickyNote
+  StickyNote,
+  Plus
 } from 'lucide-react';
 
 interface EndOfShiftReportProps {
   onBack: () => void;
+  jobs: Job[];
+  customers: Customer[];
+  onJobCreate: (job: Omit<Job, 'id'>) => void;
 }
 
-export default function EndOfShiftReport({ onBack }: EndOfShiftReportProps) {
+export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate }: EndOfShiftReportProps) {
   const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
   const [shiftNotes, setShiftNotes] = useState('');
@@ -38,10 +42,20 @@ export default function EndOfShiftReport({ onBack }: EndOfShiftReportProps) {
   const [summaryType, setSummaryType] = useState<'concise' | 'pro' | 'detailed'>('concise');
   const [showFollowUpOptions, setShowFollowUpOptions] = useState(false);
   const [activeFilter, setActiveFilter] = useState<'all' | 'green' | 'amber' | 'red'>('all');
+  const [showCreateJobModal, setShowCreateJobModal] = useState(false);
+  const [newJobData, setNewJobData] = useState({
+    customer: '',
+    site: '',
+    description: '',
+    engineer: '',
+    priority: 'Medium' as Job['priority'],
+    category: 'General' as Job['category'],
+    jobType: 'Maintenance' as Job['jobType']
+  });
 
-  // Get all jobs for display
+  // Get all jobs for display - now using props instead of mockJobs
   const getAllJobs = () => {
-    return mockJobs;
+    return jobs;
   };
 
   // Get filtered jobs based on active filter
@@ -56,8 +70,8 @@ export default function EndOfShiftReport({ onBack }: EndOfShiftReportProps) {
   const allJobs = getAllJobs();
   const stats = {
     totalJobs: allJobs.length,
-    completed: allJobs.filter(job => job.status === 'green').length,
-    inProgress: allJobs.filter(job => job.status === 'amber').length,
+    completed: allJobs.filter(job => job.status === 'green' || job.status === 'completed' || job.status === 'costed' || job.status === 'reqs_invoice').length,
+    inProgress: allJobs.filter(job => job.status === 'amber' || job.status === 'new' || job.status === 'allocated' || job.status === 'attended' || job.status === 'awaiting_parts').length,
     issues: allJobs.filter(job => job.status === 'red').length,
   };
 
@@ -66,6 +80,80 @@ export default function EndOfShiftReport({ onBack }: EndOfShiftReportProps) {
 
   const handleTileClick = (filter: 'all' | 'green' | 'amber' | 'red') => {
     setActiveFilter(filter);
+  };
+
+  const handleCreateJob = () => {
+    if (!newJobData.customer || !newJobData.site || !newJobData.description || !newJobData.engineer) {
+      alert('Please fill in all required fields');
+      return;
+    }
+
+    const newJob: Omit<Job, 'id'> = {
+      jobNumber: generateJobNumber(),
+      customer: newJobData.customer,
+      site: newJobData.site,
+      description: newJobData.description,
+      engineer: newJobData.engineer,
+      status: 'new',
+      priority: newJobData.priority,
+      category: newJobData.category,
+      jobType: newJobData.jobType,
+      targetCompletionTime: 240,
+      dateLogged: new Date(),
+      dateAccepted: null,
+      dateOnSite: null,
+      dateCompleted: null,
+      reason: null,
+      contact: {
+        name: 'Shift Report',
+        number: '+447000000000',
+        email: 'shift@company.com',
+        relationship: 'Shift Manager'
+      },
+      reporter: {
+        name: 'Shift Report',
+        number: '+447000000000',
+        email: 'shift@company.com',
+        relationship: 'Shift Manager'
+      },
+      primaryJobTrade: newJobData.category,
+      secondaryJobTrades: ['General'],
+      tags: [newJobData.category, newJobData.jobType, 'Shift Report'],
+      customAlerts: {
+        acceptSLA: 30,
+        onsiteSLA: 90,
+        completedSLA: 240
+      },
+      project: 'Shift Report Jobs',
+      customerOrderNumber: '',
+      referenceNumber: '',
+      jobOwner: 'Shift Manager',
+      jobRef1: '',
+      jobRef2: '',
+      requiresApproval: false,
+      preferredAppointmentDate: null,
+      startDate: new Date(),
+      endDate: null,
+      lockVisitDateTime: false,
+      deployToMobile: true,
+      isRecurringJob: false,
+      completionTimeFromEngineerOnsite: false
+    };
+
+    onJobCreate(newJob);
+    setShowCreateJobModal(false);
+    setNewJobData({
+      customer: '',
+      site: '',
+      description: '',
+      engineer: '',
+      priority: 'Medium',
+      category: 'General',
+      jobType: 'Maintenance'
+    });
+    
+    // Add note about job creation
+    setShiftNotes(prev => prev + `\n\n[Job Created: ${newJob.jobNumber} - ${newJob.description} for ${newJob.customer} at ${newJob.site}]`);
   };
 
   const handleGenerateReport = () => {
@@ -150,10 +238,19 @@ export default function EndOfShiftReport({ onBack }: EndOfShiftReportProps) {
             Generate comprehensive reports for completed shifts
           </p>
         </div>
-        <Button onClick={onBack} variant="outline" className="flex items-center gap-2">
-          <ArrowLeft className="h-4 w-4" />
-          Back to Dashboard
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button 
+            onClick={() => setShowCreateJobModal(true)} 
+            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
+          >
+            <Plus className="h-4 w-4" />
+            Create Job
+          </Button>
+          <Button onClick={onBack} variant="outline" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
       </div>
 
       {/* Report Configuration */}
@@ -494,6 +591,106 @@ export default function EndOfShiftReport({ onBack }: EndOfShiftReportProps) {
             >
               Cancel
             </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Create Job Modal */}
+      {showCreateJobModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Create New Job</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-1 block">Customer</label>
+                <Select onValueChange={(value) => setNewJobData(prev => ({ ...prev, customer: value }))} value={newJobData.customer}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a customer" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {customers.map(customer => (
+                      <SelectItem key={customer.id} value={customer.name}>{customer.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Site</label>
+                <Input
+                  type="text"
+                  value={newJobData.site}
+                  onChange={(e) => setNewJobData(prev => ({ ...prev, site: e.target.value }))}
+                  placeholder="Enter site name"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Description</label>
+                <Input
+                  type="text"
+                  value={newJobData.description}
+                  onChange={(e) => setNewJobData(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter job description"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Engineer</label>
+                <Input
+                  type="text"
+                  value={newJobData.engineer}
+                  onChange={(e) => setNewJobData(prev => ({ ...prev, engineer: e.target.value }))}
+                  placeholder="Enter engineer name"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Priority</label>
+                <Select onValueChange={(value) => setNewJobData(prev => ({ ...prev, priority: value as Job['priority'] }))} value={newJobData.priority}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select priority" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Low">Low</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Category</label>
+                <Select onValueChange={(value) => setNewJobData(prev => ({ ...prev, category: value as Job['category'] }))} value={newJobData.category}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="General">General</SelectItem>
+                    <SelectItem value="HVAC">HVAC</SelectItem>
+                    <SelectItem value="Electrical">Electrical</SelectItem>
+                    <SelectItem value="Plumbing">Plumbing</SelectItem>
+                    <SelectItem value="Security">Security</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Job Type</label>
+                <Select onValueChange={(value) => setNewJobData(prev => ({ ...prev, jobType: value as Job['jobType'] }))} value={newJobData.jobType}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select job type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Maintenance">Maintenance</SelectItem>
+                    <SelectItem value="Installation">Installation</SelectItem>
+                    <SelectItem value="Repair">Repair</SelectItem>
+                    <SelectItem value="Inspection">Inspection</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <Button variant="outline" onClick={() => setShowCreateJobModal(false)}>Cancel</Button>
+              <Button onClick={handleCreateJob}>Create Job</Button>
+            </div>
           </div>
         </div>
       )}
