@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Job, Engineer } from '@/types/job';
 import { mockEngineers } from '@/lib/jobUtils';
+import CustomPromptModal from '@/components/ui/custom-prompt-modal';
 import { 
   User, 
   MapPin, 
@@ -49,6 +50,14 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('active');
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
+  const [alerts, setAlerts] = useState<EngineerActionAlert[]>([]);
+  const [showResolutionModal, setShowResolutionModal] = useState(false);
+  
+  // Generate alerts when jobs change
+  useEffect(() => {
+    const newAlerts = generateEngineerActionAlerts();
+    setAlerts(newAlerts);
+  }, [jobs]);
 
   // Handle clicking outside notifications dropdown
   useEffect(() => {
@@ -109,7 +118,6 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
     return alerts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   };
 
-  const alerts = generateEngineerActionAlerts();
   const activeAlerts = alerts.filter(alert => !alert.resolved);
   const resolvedAlerts = alerts.filter(alert => alert.resolved);
 
@@ -184,12 +192,22 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
           updatedJob.status = 'attended';
         }
         
-        // Mark alert as resolved
-        alert.resolved = true;
-        alert.resolvedBy = 'Current User';
-        alert.resolvedAt = new Date();
-        alert.resolution = resolution;
+        // Update alerts state immediately
+        setAlerts(prevAlerts => 
+          prevAlerts.map(a => 
+            a.id === alertId 
+              ? { 
+                  ...a, 
+                  resolved: true, 
+                  resolvedBy: 'Current User', 
+                  resolvedAt: new Date(), 
+                  resolution 
+                }
+              : a
+          )
+        );
         
+        // Update the job
         onJobUpdate(updatedJob);
         
         // Auto-dismiss notifications dropdown after resolving
@@ -267,9 +285,9 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
               </div>
             </div>
             
-            {/* Visit Status */}
+            {/* Job Status */}
             <div className="mb-3">
-              <span className="font-medium text-gray-700 text-sm">Visit Status:</span>
+              <span className="font-medium text-gray-700 text-sm">Job Status:</span>
               {(() => {
                 const job = jobs.find(j => j.id === alert.jobId);
                 if (!job) return <span className="text-gray-500 ml-2">Unknown</span>;
@@ -311,6 +329,37 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
                 return (
                   <Badge className={`${getStatusColor(job.status)} ml-2 px-2 py-1 text-xs font-medium border`}>
                     {getStatusDisplay(job.status)}
+                  </Badge>
+                );
+              })()}
+            </div>
+
+            {/* Visit Status */}
+            <div className="mb-3">
+              <span className="font-medium text-gray-700 text-sm">Visit Status:</span>
+              {(() => {
+                const job = jobs.find(j => j.id === alert.jobId);
+                if (!job) return <span className="text-gray-500 ml-2">Unknown</span>;
+                
+                const getVisitStatusDisplay = (job: Job) => {
+                  if (job.dateCompleted) return 'Visit Completed';
+                  if (job.dateOnSite) return 'On Site';
+                  if (job.dateAccepted) return 'En Route';
+                  if (job.status === 'allocated') return 'Pending Acceptance';
+                  return 'Not Started';
+                };
+
+                const getVisitStatusColor = (job: Job) => {
+                  if (job.dateCompleted) return 'bg-green-100 text-green-800 border-green-200';
+                  if (job.dateOnSite) return 'bg-blue-100 text-blue-800 border-blue-200';
+                  if (job.dateAccepted) return 'bg-orange-100 text-orange-800 border-orange-200';
+                  if (job.status === 'allocated') return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                  return 'bg-gray-100 text-gray-800 border-gray-200';
+                };
+
+                return (
+                  <Badge className={`${getVisitStatusColor(job)} ml-2 px-2 py-1 text-xs font-medium border`}>
+                    {getVisitStatusDisplay(job)}
                   </Badge>
                 );
               })()}
@@ -842,12 +891,7 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
                 </div>
                 
                 <Button
-                  onClick={() => {
-                    const resolution = prompt('Enter resolution notes:');
-                    if (resolution) {
-                      handleResolveAlert(selectedAlert.id, resolution);
-                    }
-                  }}
+                  onClick={() => setShowResolutionModal(true)}
                   className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 h-12 text-base font-medium"
                 >
                   <Check className="h-5 w-5 mr-2" />
@@ -858,6 +902,26 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Resolution Modal */}
+      <CustomPromptModal
+        isOpen={showResolutionModal}
+        onClose={() => setShowResolutionModal(false)}
+        onSubmit={(resolution) => {
+          if (selectedAlert) {
+            handleResolveAlert(selectedAlert.id, resolution);
+          }
+        }}
+        title="Resolve Alert"
+        message="Please enter resolution notes for this alert:"
+        placeholder="Enter resolution details..."
+        type="textarea"
+        submitText="Resolve Alert"
+        cancelText="Cancel"
+        icon="success"
+        required={true}
+        maxLength={500}
+      />
     </div>
   );
 }

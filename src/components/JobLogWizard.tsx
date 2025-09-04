@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Job, Customer, Engineer } from '@/types/job';
-import { mockEngineers, mockJobTrades, mockTags, generateJobNumber } from '@/lib/jobUtils';
+import { mockEngineers, mockJobTrades, mockTags, generateJobNumber, mockSiteEngineersMapping, mockJobs } from '@/lib/jobUtils';
 import { sendEngineerNotification } from '@/lib/engineerNotifications';
 import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Settings, Users, Check, FileText, Phone, Clock, Calendar, X, Plus, Trash2, StickyNote, Building2 } from 'lucide-react';
 import { UI_CONSTANTS } from '@/lib/ui-constants';
+import { showNotification } from '@/components/ui/toast-notification';
 
 interface JobLogWizardProps {
   customers: Customer[];
@@ -70,6 +71,48 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
   ]);
   const [newSiteNote, setNewSiteNote] = useState('');
   
+  // Local storage keys
+  const STORAGE_KEY = 'jobLogWizardData';
+  const SITE_ENGINEERS_KEY = 'siteEngineersMapping';
+  
+  // Validation functions
+  const validatePhone = (phone: string): boolean => {
+    // UK phone number format: only numbers after +44
+    const phoneRegex = /^\+44\d{10}$/;
+    return phoneRegex.test(phone);
+  };
+
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const isOutOfHours = (date: Date): boolean => {
+    const hour = date.getHours();
+    return hour < 8 || hour >= 17; // Before 8am or after 5pm
+  };
+
+  const isStepValid = (step: WizardStep): boolean => {
+    switch (step) {
+      case 1:
+        return !!(formData.customer && formData.reporterName &&
+                 formData.reporterPhone && formData.reporterEmail &&
+                 validatePhone(formData.reporterPhone) && validateEmail(formData.reporterEmail));
+      case 2:
+        return !!(formData.description && formData.jobNature);
+      case 3:
+        return !!(formData.jobType && formData.primaryTrade && formData.responseTime && formData.priority);
+      case 4:
+        return !!(formData.selectedEngineer && formData.callConfirmed &&
+                 formData.targetAttendanceDate && formData.targetAttendanceTime &&
+                 formData.allocatedVisitDate && formData.allocatedVisitTime);
+      case 5:
+        return !!(formData.preferredStartDateTime && formData.preferredEndDateTime);
+      default:
+        return false;
+    }
+  };
+  
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyPress = (event: KeyboardEvent) => {
@@ -90,56 +133,117 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
     return () => document.removeEventListener('keydown', handleKeyPress);
   }, [currentStep, isStepValid]);
 
-  const [formData, setFormData] = useState<JobFormData>({
-    customer: '',
-    site: '',
-    reporterName: '',
-    reporterPhone: '',
-    reporterEmail: '',
-    reporterRelationship: '',
-    description: '',
-    jobNature: '',
-    skillsRequired: [],
-    tags: [],
-    jobOwner: '',
-    isEmergency: false,
-    jobType: 'OOH',
-    primaryTrade: '',
-    responseTime: 60,
-    priority: 'Medium',
-    availableEngineers: [],
-    selectedEngineer: '',
-    callConfirmed: false,
-    finalEngineer: '',
-    jobNumber: generateJobNumber(),
-    preferredStartDateTime: new Date(),
-    preferredEndDateTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
-    targetAttendanceDate: new Date(),
-    targetAttendanceTime: new Date().toTimeString().slice(0, 5),
-    allocatedVisitDate: new Date(),
-    allocatedVisitTime: new Date().toTimeString().slice(0, 5),
-    siteNotes: []
+  const [formData, setFormData] = useState<JobFormData>(() => {
+    // Load from local storage on component mount
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        // Convert date strings back to Date objects
+        return {
+          ...parsed,
+          preferredStartDateTime: new Date(parsed.preferredStartDateTime || Date.now()),
+          preferredEndDateTime: new Date(parsed.preferredEndDateTime || Date.now() + 2 * 60 * 60 * 1000),
+          targetAttendanceDate: parsed.targetAttendanceDate ? new Date(parsed.targetAttendanceDate) : new Date(),
+          allocatedVisitDate: parsed.allocatedVisitDate ? new Date(parsed.allocatedVisitDate) : new Date(),
+        };
+      } catch (error) {
+        console.error('Error parsing saved form data:', error);
+      }
+    }
+    
+    // Default values
+    return {
+      customer: '',
+      site: '',
+      reporterName: '',
+      reporterPhone: '',
+      reporterEmail: '',
+      reporterRelationship: '',
+      description: '',
+      jobNature: '',
+      skillsRequired: [],
+      tags: [],
+      jobOwner: '',
+      isEmergency: false,
+      jobType: 'OOH',
+      primaryTrade: '',
+      responseTime: 60,
+      priority: 'Medium',
+      availableEngineers: [],
+      selectedEngineer: '',
+      callConfirmed: false,
+      finalEngineer: '',
+      jobNumber: generateJobNumber(),
+      preferredStartDateTime: new Date(),
+      preferredEndDateTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+      targetAttendanceDate: new Date(),
+      targetAttendanceTime: new Date().toTimeString().slice(0, 5),
+      allocatedVisitDate: new Date(),
+      allocatedVisitTime: new Date().toTimeString().slice(0, 5),
+      siteNotes: []
+    };
   });
 
-  // Validation functions
-  const validatePhone = (phone: string): boolean => {
-    // UK phone number format: only numbers after +44
-    const phoneRegex = /^\+44\d{10}$/;
-    return phoneRegex.test(phone);
-  };
-
-  const validateEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const isOutOfHours = (date: Date): boolean => {
-    const hour = date.getHours();
-    return hour < 8 || hour >= 17; // Before 8am or after 5pm
-  };
-
   const updateFormData = (updates: Partial<JobFormData>) => {
-    setFormData(prev => ({ ...prev, ...updates }));
+    setFormData(prev => {
+      const newData = { ...prev, ...updates };
+      // Save to local storage
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+      return newData;
+    });
+  };
+
+  // Get site-specific engineers
+  const getSiteEngineers = (site: string): Engineer[] => {
+    if (!site) return [];
+
+    // First try to get from mock data
+    const siteEngineers = mockSiteEngineersMapping[site] || [];
+
+    if (siteEngineers.length > 0) {
+      // Filter engineers based on job type and availability
+      return mockEngineers.filter(engineer => {
+        const isSiteEngineer = siteEngineers.includes(engineer.name);
+        if (formData.jobType === 'OOH') {
+          return isSiteEngineer && (engineer.status === 'OOH' || engineer.status === 'On call');
+        } else {
+          return isSiteEngineer && engineer.status !== 'completed';
+        }
+      });
+    }
+
+    // Fallback to all available engineers if no site-specific mapping
+    return mockEngineers.filter(engineer => {
+      if (formData.jobType === 'OOH') {
+        return engineer.status === 'OOH' || engineer.status === 'On call';
+      } else {
+        return engineer.status !== 'completed';
+      }
+    });
+  };
+
+  // Calculate site relevance/frequency
+  const getSiteRelevance = (site: string): { frequency: number; label: string; color: string } => {
+    const siteJobs = mockJobs.filter(job => job.site === site).length;
+    const customerJobs = mockJobs.filter(job => job.customer === formData.customer).length;
+
+    if (siteJobs >= 10) return { frequency: siteJobs, label: 'Very Frequent', color: 'bg-green-100 text-green-800' };
+    if (siteJobs >= 5) return { frequency: siteJobs, label: 'Frequent', color: 'bg-blue-100 text-blue-800' };
+    if (siteJobs >= 2) return { frequency: siteJobs, label: 'Occasional', color: 'bg-yellow-100 text-yellow-800' };
+    if (siteJobs === 1) return { frequency: siteJobs, label: 'First Visit', color: 'bg-purple-100 text-purple-800' };
+    return { frequency: siteJobs, label: 'New Site', color: 'bg-gray-100 text-gray-800' };
+  };
+
+  // Calculate customer relevance/frequency
+  const getCustomerRelevance = (customer: string): { frequency: number; label: string; color: string } => {
+    const customerJobs = mockJobs.filter(job => job.customer === customer).length;
+
+    if (customerJobs >= 20) return { frequency: customerJobs, label: 'High Volume', color: 'bg-green-100 text-green-800' };
+    if (customerJobs >= 10) return { frequency: customerJobs, label: 'Regular', color: 'bg-blue-100 text-blue-800' };
+    if (customerJobs >= 5) return { frequency: customerJobs, label: 'Occasional', color: 'bg-yellow-100 text-yellow-800' };
+    if (customerJobs >= 1) return { frequency: customerJobs, label: 'Returning', color: 'bg-purple-100 text-purple-800' };
+    return { frequency: customerJobs, label: 'New Customer', color: 'bg-gray-100 text-gray-800' };
   };
 
   const addSiteNote = () => {
@@ -187,14 +291,32 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
       setCurrentStep((prev) => (prev + 1) as WizardStep);
       
       if (currentStep === 3) {
-        const filteredEngineers = mockEngineers.filter(engineer => {
+        // Get site-specific engineers or general available engineers
+        const siteEngineers = formData.site ? getSiteEngineers(formData.site) : mockEngineers.filter(engineer => {
           if (formData.jobType === 'OOH') {
             return engineer.status === 'OOH' || engineer.status === 'On call';
           } else {
             return engineer.status !== 'completed';
           }
         });
-        updateFormData({ availableEngineers: filteredEngineers });
+        updateFormData({ availableEngineers: siteEngineers });
+
+        // Show notification about available engineers
+        if (siteEngineers.length > 0) {
+          const siteText = formData.site ? `for ${formData.site}` : 'generally available';
+          showNotification({
+            type: 'success',
+            title: 'Engineers Available',
+            message: `${siteEngineers.length} engineer(s) available ${siteText}: ${siteEngineers.map(e => e.name).join(', ')}`
+          });
+        } else {
+          const siteText = formData.site ? `for ${formData.site}` : 'generally';
+          showNotification({
+            type: 'warning',
+            title: 'No Engineers Available',
+            message: `No engineers are currently available ${siteText}. Please check engineer availability.`
+          });
+        }
       }
     }
   };
@@ -265,13 +387,14 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
     onJobCreate(draftJob);
     
     // Show info notification
-    if (typeof window !== 'undefined' && (window as any).addNotification) {
-      (window as any).addNotification({
-        type: 'info',
-        title: 'Draft Job Created',
-        message: `Draft job ${draftJob.jobNumber} has been saved for later completion`
-      });
-    }
+    showNotification({
+      type: 'info',
+      title: 'Draft Job Created',
+      message: `Draft job ${draftJob.jobNumber} has been saved for later completion`
+    });
+    
+    // Clear local storage after draft job creation
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   const handleSubmit = () => {
@@ -341,34 +464,14 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
     }
     
     // Show success notification
-    if (typeof window !== 'undefined' && (window as any).addNotification) {
-      (window as any).addNotification({
-        type: 'success',
-        title: 'Job Created Successfully',
-        message: `Job ${newJob.jobNumber} has been created and assigned to ${newJob.engineer}`
-      });
-    }
-  };
-
-  const isStepValid = (step: WizardStep): boolean => {
-    switch (step) {
-      case 1:
-        return !!(formData.customer && formData.site && formData.reporterName && 
-                 formData.reporterPhone && formData.reporterEmail && 
-                 validatePhone(formData.reporterPhone) && validateEmail(formData.reporterEmail));
-      case 2:
-        return !!(formData.description && formData.jobNature);
-      case 3:
-        return !!(formData.jobType && formData.primaryTrade && formData.responseTime && formData.priority);
-      case 4:
-        return !!(formData.selectedEngineer && formData.callConfirmed && 
-                 formData.targetAttendanceDate && formData.targetAttendanceTime && 
-                 formData.allocatedVisitDate && formData.allocatedVisitTime);
-      case 5:
-        return !!(formData.preferredStartDateTime && formData.preferredEndDateTime);
-      default:
-        return false;
-    }
+    showNotification({
+      type: 'success',
+      title: 'Job Created Successfully',
+      message: `Job ${newJob.jobNumber} has been created and assigned to ${newJob.engineer}`
+    });
+    
+    // Clear local storage after successful job creation
+    localStorage.removeItem(STORAGE_KEY);
   };
 
   return (
@@ -385,7 +488,15 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                 <p className={`${UI_CONSTANTS.typography.bodyMuted} mt-1`}>Create and manage service jobs efficiently</p>
               </div>
             </div>
-            <Button variant="outline" onClick={onCancel} className={`${UI_CONSTANTS.button.outline} border-blue-300 text-blue-700 hover:bg-blue-50`}>
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                // Clear local storage when canceling
+                localStorage.removeItem(STORAGE_KEY);
+                onCancel();
+              }} 
+              className={`${UI_CONSTANTS.button.outline} border-blue-300 text-blue-700 hover:bg-blue-50`}
+            >
               Cancel
             </Button>
           </div>
@@ -433,45 +544,116 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                   <div className="space-y-6">
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-3 block">Customer *</label>
-                      <Select value={formData.customer} onValueChange={(value) => updateFormData({ customer: value, site: '' })}>
+                      <Select
+                        value={formData.customer}
+                        onValueChange={(value) => {
+                          updateFormData({ customer: value, site: '' });
+                          // Show customer relevance information
+                          const relevance = getCustomerRelevance(value);
+                          showNotification({
+                            type: 'info',
+                            title: 'Customer Information',
+                            message: `${value} - ${relevance.label} (${relevance.frequency} previous jobs)`
+                          });
+                        }}
+                      >
                         <SelectTrigger className="h-14 w-full text-base border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500">
                           <SelectValue placeholder="Select customer" />
                         </SelectTrigger>
                         <SelectContent>
-                          {customers && customers.length > 0 ? customers.map(customer => (
-                            <SelectItem key={customer.id} value={customer.name}>
-                              {customer.name}
-                            </SelectItem>
-                          )) : (
+                          {customers && customers.length > 0 ? customers.map(customer => {
+                            const relevance = getCustomerRelevance(customer.name);
+                            return (
+                              <SelectItem key={customer.id} value={customer.name}>
+                                <div className="flex items-center justify-between w-full">
+                                  <span>{customer.name}</span>
+                                  <Badge className={`ml-2 text-xs ${relevance.color}`}>
+                                    {relevance.label}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            );
+                          }) : (
                             <SelectItem value="no-customers" disabled>No customers available</SelectItem>
                           )}
                         </SelectContent>
                       </Select>
+                      {formData.customer && (
+                        <div className="mt-2">
+                          {(() => {
+                            const relevance = getCustomerRelevance(formData.customer);
+                            return (
+                              <Badge className={`text-xs ${relevance.color}`}>
+                                {relevance.label} ({relevance.frequency} previous jobs)
+                              </Badge>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </div>
 
                     <div>
-                      <label className="text-sm font-medium text-gray-700 mb-3 block">Site *</label>
-                      <Select 
-                        value={formData.site} 
-                        onValueChange={(value) => updateFormData({ site: value })}
-                        disabled={!formData.customer}
+                      <label className="text-sm font-medium text-gray-700 mb-3 block">Site</label>
+                      <Select
+                        value={formData.site}
+                        onValueChange={(value) => {
+                          updateFormData({ site: value });
+                          // Show available engineers for this site
+                          if (value) {
+                            const siteEngineers = getSiteEngineers(value);
+                            const relevance = getSiteRelevance(value);
+                            if (siteEngineers.length > 0) {
+                              showNotification({
+                                type: 'info',
+                                title: 'Site Information',
+                                message: `${siteEngineers.length} engineer(s) available for ${value}. ${relevance.label} (${relevance.frequency} previous jobs)`
+                              });
+                            } else {
+                              showNotification({
+                                type: 'warning',
+                                title: 'Site Information',
+                                message: `No specific engineers for ${value}. ${relevance.label} (${relevance.frequency} previous jobs)`
+                              });
+                            }
+                          }
+                        }}
                       >
-                        <SelectTrigger className="h-14 w-full text-base border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 disabled:opacity-50">
-                          <SelectValue placeholder="Select site" />
+                        <SelectTrigger className="h-14 w-full text-base border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500">
+                          <SelectValue placeholder="Select site (optional)" />
                         </SelectTrigger>
                         <SelectContent>
                           {formData.customer && customers.length > 0 ? (
                             customers
-                              .find(c => c.name === formData.customer)?.sites?.map(site => (
-                                <SelectItem key={site} value={site}>
-                                  {site}
-                                </SelectItem>
-                              )) || <SelectItem value="no-sites" disabled>No sites available</SelectItem>
+                              .find(c => c.name === formData.customer)?.sites?.map(site => {
+                                const relevance = getSiteRelevance(site);
+                                return (
+                                  <SelectItem key={site} value={site}>
+                                    <div className="flex items-center justify-between w-full">
+                                      <span>{site}</span>
+                                      <Badge className={`ml-2 text-xs ${relevance.color}`}>
+                                        {relevance.label}
+                                      </Badge>
+                                    </div>
+                                  </SelectItem>
+                                );
+                              }) || <SelectItem value="no-sites" disabled>No sites available</SelectItem>
                           ) : (
-                            <SelectItem value="no-sites" disabled>Select customer first</SelectItem>
+                            <SelectItem value="no-sites" disabled>Select customer first for site suggestions</SelectItem>
                           )}
                         </SelectContent>
                       </Select>
+                      {formData.site && (
+                        <div className="mt-2">
+                          {(() => {
+                            const relevance = getSiteRelevance(formData.site);
+                            return (
+                              <Badge className={`text-xs ${relevance.color}`}>
+                                {relevance.label} ({relevance.frequency} previous jobs)
+                              </Badge>
+                            );
+                          })()}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

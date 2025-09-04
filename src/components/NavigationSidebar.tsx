@@ -1,14 +1,15 @@
-import { 
-  Sidebar, 
-  SidebarContent, 
-  SidebarFooter, 
-  SidebarGroup, 
-  SidebarGroupContent, 
-  SidebarGroupLabel, 
-  SidebarHeader, 
-  SidebarMenu, 
-  SidebarMenuButton, 
-  SidebarMenuItem 
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar
 } from '@/components/ui/sidebar';
 import { 
   LayoutDashboard, 
@@ -21,20 +22,46 @@ import {
   FileText,
   MapPin
 } from 'lucide-react';
+import { getCompanyLogo, getCompanyName } from '@/lib/companyUtils';
+import { useState, useEffect } from 'react';
 
 interface NavigationSidebarProps {
-  currentView: 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites';
-  onViewChange: (view: 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites') => void;
+  currentView: 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites' | 'profile' | 'settings';
+  onViewChange: (view: 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites' | 'profile' | 'settings') => void;
   onHomepageClick?: () => void;
   selectedCustomer?: string | null;
 }
 
-export default function NavigationSidebar({ 
-  currentView, 
-  onViewChange, 
+export default function NavigationSidebar({
+  currentView,
+  onViewChange,
   onHomepageClick,
-  selectedCustomer 
+  selectedCustomer
 }: NavigationSidebarProps) {
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>('Customer Service Portal');
+  const { state } = useSidebar();
+  const isOpen = state === 'expanded';
+
+  useEffect(() => {
+    // Load company logo and name
+    const logo = getCompanyLogo();
+    const name = getCompanyName();
+    setCompanyLogo(logo);
+    setCompanyName(name);
+
+    // Listen for storage changes to update logo/name when settings change
+    const handleStorageChange = () => {
+      const newLogo = getCompanyLogo();
+      const newName = getCompanyName();
+      setCompanyLogo(newLogo);
+      setCompanyName(newName);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   const menuItems = [
     {
       id: 'master',
@@ -80,11 +107,26 @@ export default function NavigationSidebar({
     }
   ];
 
+  const userMenuItems = [
+    {
+      id: 'profile',
+      label: 'Profile',
+      icon: User,
+      description: 'Manage your account information and preferences'
+    },
+    {
+      id: 'settings',
+      label: 'Settings',
+      icon: Settings,
+      description: 'Configure company settings and system preferences'
+    }
+  ];
+
   return (
-    <Sidebar>
-      <SidebarHeader className="border-b border-sidebar-border">
-        <div 
-          className="flex items-center gap-2 px-2 py-2 cursor-pointer hover:bg-sidebar-accent rounded-md transition-colors"
+    <Sidebar className="w-16 group-data-[state=expanded]:w-64 transition-all duration-300">
+      <SidebarHeader className="border-b border-sidebar-border h-40 flex items-center justify-center">
+        <div
+          className="flex items-center gap-3 px-3 py-4 cursor-pointer hover:bg-sidebar-accent rounded-md transition-colors w-full group"
           onClick={() => {
             onViewChange('master');
             if (onHomepageClick) {
@@ -93,11 +135,19 @@ export default function NavigationSidebar({
           }}
           title="Click to return to homepage"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            <LayoutDashboard className="h-4 w-4" />
+          <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-primary text-primary-foreground overflow-hidden flex-shrink-0">
+            {companyLogo ? (
+              <img
+                src={companyLogo}
+                alt="Company Logo"
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <LayoutDashboard className="h-8 w-8" />
+            )}
           </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">Customer Service</span>
+          <div className="flex flex-col min-w-0 opacity-0 group-data-[state=expanded]:opacity-100 transition-opacity duration-200">
+            <span className="text-sm font-semibold truncate">{companyName}</span>
             <span className="text-xs text-muted-foreground">Portal</span>
           </div>
         </div>
@@ -105,13 +155,15 @@ export default function NavigationSidebar({
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="opacity-0 group-data-[state=expanded]:opacity-100 transition-opacity duration-200">
+            Navigation
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = currentView === item.id;
-                
+
                 return (
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
@@ -124,9 +176,16 @@ export default function NavigationSidebar({
                       }}
                       isActive={isActive}
                       tooltip={item.description}
+                      className="group relative h-10"
                     >
-                      <Icon className="h-4 w-4" />
-                      <span>{item.label}</span>
+                      <Icon className={`h-5 w-5 transition-colors duration-200 ${
+                        isActive
+                          ? 'text-primary'
+                          : 'text-muted-foreground group-hover:text-foreground'
+                      }`} />
+                      <span className="ml-3 opacity-0 group-data-[state=expanded]:opacity-100 transition-opacity duration-200">
+                        {item.label}
+                      </span>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 );
@@ -134,28 +193,53 @@ export default function NavigationSidebar({
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-
       </SidebarContent>
 
       <SidebarFooter className="border-t border-sidebar-border">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="User Settings">
-              <User className="h-4 w-4" />
-              <span>Profile</span>
+            <SidebarMenuButton
+              onClick={() => onViewChange('profile')}
+              isActive={currentView === 'profile'}
+              tooltip="User Settings"
+              className="group relative h-10"
+            >
+              <User className={`h-5 w-5 transition-colors duration-200 ${
+                currentView === 'profile'
+                  ? 'text-primary'
+                  : 'text-muted-foreground group-hover:text-foreground'
+              }`} />
+              <span className="ml-3 opacity-0 group-data-[state=expanded]:opacity-100 transition-opacity duration-200">
+                Profile
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Application Settings">
-              <Settings className="h-4 w-4" />
-              <span>Settings</span>
+            <SidebarMenuButton
+              onClick={() => onViewChange('settings')}
+              isActive={currentView === 'settings'}
+              tooltip="Application Settings"
+              className="group relative h-10"
+            >
+              <Settings className={`h-5 w-5 transition-colors duration-200 ${
+                currentView === 'settings'
+                  ? 'text-primary'
+                  : 'text-muted-foreground group-hover:text-foreground'
+              }`} />
+              <span className="ml-3 opacity-0 group-data-[state=expanded]:opacity-100 transition-opacity duration-200">
+                Settings
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Sign out">
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
+            <SidebarMenuButton
+              tooltip="Sign out"
+              className="group relative h-10"
+            >
+              <LogOut className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
+              <span className="ml-3 opacity-0 group-data-[state=expanded]:opacity-100 transition-opacity duration-200">
+                Sign Out
+              </span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

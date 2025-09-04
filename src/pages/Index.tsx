@@ -12,6 +12,10 @@ import {
   loadEngineersFromStorage,
   saveEngineersToStorage
 } from '@/lib/jobUtils';
+import { showNotification } from '@/components/ui/toast-notification';
+
+// Debug mock jobs
+console.log('Index.tsx - mockJobs imported:', mockJobs);
 import MasterDashboard from '@/components/MasterDashboard';
 import CustomerDashboard from '@/components/CustomerDashboard';
 import CustomerDetailPage from '@/components/CustomerDetailPage';
@@ -23,21 +27,24 @@ import JobEditModal from '@/components/JobEditModal';
 import GlobalAlertsPortal from '@/components/GlobalAlertsPortal';
 import SitesPage from '@/components/SitesPage';
 import NavigationSidebar from '@/components/NavigationSidebar';
-import { SidebarInset, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarInset, SidebarTrigger, SidebarProvider } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Users, Bell } from 'lucide-react';
 import EndOfShiftReport from '@/components/EndOfShiftReport';
 import NotificationManager from '@/components/NotificationManager';
 import EngineerAlertsPage from '@/pages/EngineerAlertsPage';
+import ProfilePage from '@/pages/ProfilePage';
+import SettingsPage from '@/pages/SettingsPage';
 
-type View = 'master' | 'customer' | 'customer-dashboard' | 'customer-detail' | 'customer-alerts' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'job-detail' | 'sites';
+type View = 'master' | 'customer' | 'customer-dashboard' | 'customer-detail' | 'customer-alerts' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'job-detail' | 'sites' | 'profile' | 'settings';
 
 export default function Index() {
   const { jobId } = useParams<{ jobId: string }>();
+  console.log('Index.tsx - useParams jobId:', jobId);
   const navigate = useNavigate();
   
   // Load jobs from localStorage on component mount
-  const [jobs, setJobs] = useState<Job[]>(() => loadJobsFromStorage());
+  const [jobs, setJobs] = useState<Job[]>([]);
   
   const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
   const [currentView, setCurrentView] = useState<View>('master');
@@ -45,16 +52,11 @@ export default function Index() {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  // Ensure demo jobs are always available
+  // Load jobs on component mount
   useEffect(() => {
-    if (jobs.length === 0) {
-      // If no jobs exist, load the mock jobs
-      const mockJobsData = loadJobsFromStorage();
-      if (mockJobsData.length > 0) {
-        setJobs(mockJobsData);
-      }
-    }
-  }, [jobs.length]);
+    // Force use mock jobs for now to ensure they work
+    setJobs(mockJobs);
+  }, []);
 
   // Save jobs to localStorage whenever jobs state changes
   useEffect(() => {
@@ -70,13 +72,11 @@ export default function Index() {
     setCurrentView('master');
     
     // Show success notification
-    if (typeof window !== 'undefined' && (window as any).addNotification) {
-      (window as any).addNotification({
-        type: 'success',
-        title: 'Job Created Successfully',
-        message: `Job ${jobWithId.jobNumber} has been created and assigned to ${jobWithId.engineer}`
-      });
-    }
+    showNotification({
+      type: 'success',
+      title: 'Job Created Successfully',
+      message: `Job ${jobWithId.jobNumber} has been created and assigned to ${jobWithId.engineer}`
+    });
   };
 
   const handleCustomerCreate = (newCustomer: Omit<Customer, 'id'>) => {
@@ -98,13 +98,11 @@ export default function Index() {
     setSelectedJob(null);
     
     // Show success notification
-    if (typeof window !== 'undefined' && (window as any).addNotification) {
-      (window as any).addNotification({
-        type: 'success',
-        title: 'Job Updated Successfully',
-        message: `Job ${updatedJob.jobNumber} has been updated with new information`
-      });
-    }
+    showNotification({
+      type: 'success',
+      title: 'Job Updated Successfully',
+      message: `Job ${updatedJob.jobNumber} has been updated with new information`
+    });
   };
 
   const handleCustomerSelect = (customer: Customer) => {
@@ -127,6 +125,7 @@ export default function Index() {
 
   // If we're on a job detail page, show the JobDetailPage
   if (jobId) {
+    console.log('Index.tsx - Rendering job detail page, jobId:', jobId, 'jobs:', jobs);
     return (
       <>
         <NavigationSidebar 
@@ -206,6 +205,8 @@ export default function Index() {
           <GlobalAlertsPortal
             onBack={() => setCurrentView('master')}
             onJobUpdate={handleJobSave}
+            customers={customers}
+            jobs={jobs}
           />
         );
       
@@ -213,6 +214,8 @@ export default function Index() {
         return (
           <EngineerAlertsPage
             onBack={() => setCurrentView('master')}
+            jobs={jobs}
+            onJobUpdate={handleJobSave}
           />
         );
       
@@ -255,10 +258,10 @@ export default function Index() {
       
       case 'job-detail':
         return (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Job Detail View</h3>
-            <p className="text-muted-foreground">This view is handled by the router.</p>
-          </div>
+          <JobDetailPage
+            jobs={jobs}
+            onJobUpdate={handleJobSave}
+          />
         );
       
       case 'customer-detail':
@@ -292,14 +295,20 @@ export default function Index() {
           </div>
         );
       
+      case 'profile':
+        return <ProfilePage />;
+      
+      case 'settings':
+        return <SettingsPage />;
+      
       default:
         return null;
     }
   };
 
   return (
-    <>
-      <NavigationSidebar 
+    <SidebarProvider>
+      <NavigationSidebar
         currentView={currentView}
         onViewChange={handleViewChange}
         onHomepageClick={handleHomepageClick}
@@ -320,6 +329,8 @@ export default function Index() {
               {currentView === 'engineer-alerts' && 'Engineer Action Alerts'}
               {currentView === 'wizard' && 'New Job Wizard'}
               {currentView === 'reports' && 'End of Shift Report'}
+              {currentView === 'profile' && 'Profile'}
+              {currentView === 'settings' && 'Settings'}
             </h1>
           </div>
         </header>
@@ -327,7 +338,7 @@ export default function Index() {
           {renderCurrentView()}
         </div>
       </SidebarInset>
-      
+
       <JobEditModal
         job={selectedJob}
         isOpen={isEditModalOpen}
@@ -338,6 +349,6 @@ export default function Index() {
         onSave={handleJobSave}
       />
       <NotificationManager />
-    </>
+    </SidebarProvider>
   );
 }

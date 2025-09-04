@@ -26,6 +26,7 @@ import {
   Plus
 } from 'lucide-react';
 import CreateAlertModal from './CreateAlertModal';
+import CustomPromptModal from '@/components/ui/custom-prompt-modal';
 
 interface CustomerAlertsPortalProps {
   customer: Customer;
@@ -46,6 +47,8 @@ export default function CustomerAlertsPortal({
   const [alertTypeFilter, setAlertTypeFilter] = useState<string>('all');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [customAlerts, setCustomAlerts] = useState<JobAlert[]>([]);
+  const [showResolutionModal, setShowResolutionModal] = useState(false);
+  const [selectedAlertForResolution, setSelectedAlertForResolution] = useState<JobAlert | null>(null);
 
   // Filter jobs for this customer
   const customerJobs = jobs.filter(job => job.customer === customer.name);
@@ -387,10 +390,8 @@ export default function CustomerAlertsPortal({
                             size="sm" 
                             variant="default"
                             onClick={() => {
-                              const resolution = prompt('Enter resolution notes:');
-                              if (resolution) {
-                                handleResolveAlert(alert.id, resolution);
-                              }
+                              setSelectedAlertForResolution(alert);
+                              setShowResolutionModal(true);
                             }}
                           >
                             Resolve
@@ -423,6 +424,29 @@ export default function CustomerAlertsPortal({
         onClose={() => setIsCreateModalOpen(false)}
         jobs={customerJobs}
         onAlertCreate={handleCreateAlert}
+      />
+
+      {/* Resolution Modal */}
+      <CustomPromptModal
+        isOpen={showResolutionModal}
+        onClose={() => {
+          setShowResolutionModal(false);
+          setSelectedAlertForResolution(null);
+        }}
+        onSubmit={(resolution) => {
+          if (selectedAlertForResolution) {
+            handleResolveAlert(selectedAlertForResolution.id, resolution);
+          }
+        }}
+        title="Resolve Alert"
+        message="Please enter resolution notes for this alert:"
+        placeholder="Enter resolution details..."
+        type="textarea"
+        submitText="Resolve Alert"
+        cancelText="Cancel"
+        icon="success"
+        required={true}
+        maxLength={500}
       />
     </div>
   );

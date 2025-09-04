@@ -1,262 +1,117 @@
-# 🚀 Customer Service Portal
+# Customer Service Portal
 
-A modern, responsive Customer Service Portal built with React, TypeScript, and Tailwind CSS. This application provides comprehensive job management, alert systems, and customer service tools for field service operations.
+A comprehensive field service management application built with React, TypeScript, and modern UI components.
 
-## 🌟 Live Demo
+## Features
 
-**🔗 [View Live Application](https://flophero.github.io/customer-service-portal)**
+### Core Functionality
+- **Master Dashboard**: Overview of all jobs and customers
+- **Customer Management**: View and manage customer accounts
+- **Job Management**: Create, track, and manage support jobs
+- **Alerts Portal**: Monitor system alerts and notifications
+- **Engineer Management**: Track engineer assignments and status
+- **Site Management**: Monitor customer sites and locations
+- **Reporting**: Generate end-of-shift reports
 
-## ✨ Features
+### New Features (Profile & Settings)
 
-### 🎯 Core Functionality
-- **📋 Job Management**: Create, view, edit, and track service jobs
-- **🧙‍♂️ 5-Step Job Logging Wizard**: Streamlined job creation process
-- **🚨 Real-time Alerts**: Inline alert system with toast notifications
-- **👥 Customer Dashboard**: Customer-specific job views and management
-- **👨‍🔧 Engineer Management**: Track engineer availability and assignments
-- **⏱️ SLA Monitoring**: Automated status tracking (Green/Amber/Red)
+#### Profile Page
+- **User Information**: Display and edit personal details
+- **Role & Permissions**: View current role and system permissions
+- **Account Status**: Monitor account status and last login
+- **Department Info**: View department and location details
+- **Profile Picture**: Upload and manage profile avatar
 
-### 🎨 User Experience
-- **📱 Responsive Design**: Works on desktop, tablet, and mobile devices
-- **🎨 Modern UI**: Built with Shadcn/UI components and Tailwind CSS
-- **🔍 Advanced Filtering**: Search and filter jobs by multiple criteria
-- **📊 Dashboard Analytics**: Real-time job statistics and insights
-- **🔄 Real-time Updates**: Live status updates and notifications
+#### Settings Page
+- **Company Setup**: Configure company information and branding
+- **Logo Upload**: Upload company logo to replace default icons
+- **Business Hours**: Set operating hours for each day of the week
+- **Contact Information**: Manage company address, phone, email, website
+- **Notification Preferences**: Configure alert and notification settings
+- **Appearance Settings**: Customize theme and display preferences
+- **Security Settings**: Manage authentication and security options
 
-### 🚨 Alert System
-- **Inline Alerts**: No more disruptive browser popups
-- **Toast Notifications**: Elegant, non-intrusive user feedback
-- **Alert Management**: Acknowledge and track alert status
-- **SLA Violations**: Automatic alerts for missed deadlines
+## Technical Details
 
-## 🛠️ Tech Stack
+### Storage
+- Uses localStorage for persistent data storage
+- Company logo and settings are automatically saved
+- Profile information is persisted across sessions
 
-- **Frontend**: React 19, TypeScript, Vite
-- **UI Components**: Shadcn/UI, Radix UI
-- **Styling**: Tailwind CSS
-- **Routing**: React Router DOM
-- **State Management**: React Hooks
-- **Notifications**: Sonner
-- **Icons**: Lucide React
-- **Build Tool**: Vite
-- **Package Manager**: pnpm
+### Logo Integration
+- Company logo automatically replaces default dashboard icon
+- Logo is stored as base64 data for offline access
+- Updates in real-time when settings are changed
 
-## 🚀 Quick Start
+### Business Hours
+- Configurable schedule for each day of the week
+- Support for open/closed status per day
+- Time-based scheduling with open/close times
+- Automatic status detection (open/closed)
 
-### Prerequisites
-- Node.js 18+ 
-- pnpm (recommended) or npm
+## Getting Started
 
-### Installation
-
-1. **Clone the repository**
+1. Install dependencies:
    ```bash
-   git clone https://github.com/flophero/customer-service-portal.git
-   cd customer-service-portal
-   ```
-
-2. **Install dependencies**
-   ```bash
-   pnpm install
-   # or
    npm install
    ```
 
-3. **Start development server**
+2. Start the development server:
    ```bash
-   pnpm run dev
-   # or
    npm run dev
    ```
 
-4. **Open your browser**
-   Navigate to `http://localhost:5173`
+3. Navigate to the Profile or Settings page to configure your company
 
-## 📦 Available Scripts
+## Usage
 
-| Script | Description |
-|--------|-------------|
-| `pnpm run dev` | Start development server |
-| `pnpm run build` | Build for production |
-| `pnpm run preview` | Preview production build |
-| `pnpm run lint` | Run ESLint |
-| `pnpm run deploy` | Deploy to GitHub Pages |
+### Setting Company Logo
+1. Go to Settings → Company Setup
+2. Click on the logo upload area
+3. Select an image file
+4. Save changes to apply throughout the application
 
-## 🏗️ Project Structure
+### Configuring Business Hours
+1. Go to Settings → Business Hours
+2. Toggle open/closed for each day
+3. Set opening and closing times
+4. Save changes to apply
+
+### Managing Profile
+1. Go to Profile page
+2. Click "Edit Profile" to make changes
+3. Update personal information
+4. Save changes to persist
+
+## File Structure
 
 ```
 src/
-├── components/          # Reusable UI components
-│   ├── ui/             # Shadcn/UI components
-│   ├── MasterDashboard.tsx
-│   ├── CustomerDashboard.tsx
-│   ├── JobLogWizard.tsx
-│   ├── CustomerAlertsPortal.tsx
+├── pages/
+│   ├── ProfilePage.tsx      # User profile management
+│   ├── SettingsPage.tsx     # Company settings and configuration
 │   └── ...
-├── pages/              # Main application pages
-│   ├── Index.tsx       # Main dashboard
-│   └── JobDetailPage.tsx
-├── types/              # TypeScript type definitions
-│   └── job.ts
-├── lib/                # Utility functions
-│   ├── jobUtils.ts
-│   └── utils.ts
-├── hooks/              # Custom React hooks
-└── App.tsx             # Main application component
+├── components/
+│   ├── NavigationSidebar.tsx # Updated with profile/settings navigation
+│   └── ...
+├── lib/
+│   ├── companyUtils.ts      # Company-related utility functions
+│   └── ...
+└── types/
+    └── company.ts           # Company and user profile types
 ```
 
-## 🎯 Usage Guide
+## Dependencies
 
-### Job Management
-1. **Create Jobs**: Click "Log New Job" to start the 5-step wizard
-2. **View Jobs**: Browse all jobs on the master dashboard
-3. **Filter & Search**: Use the search bar and filters to find specific jobs
-4. **Edit Jobs**: Click on any job card to view and edit details
+- React 18+
+- TypeScript
+- Tailwind CSS
+- Lucide React (icons)
+- Radix UI components
+- Local storage for data persistence
 
-### Alert System
-1. **Create Alerts**: Use the Customer Alerts Portal to trigger SLA alerts
-2. **View Alerts**: Alerts appear inline on job cards with red highlighting
-3. **Acknowledge Alerts**: Mark alerts as resolved to clear them
+## Browser Support
 
-### Customer Portal
-1. **Select Customer**: Choose a customer from the master dashboard
-2. **View Customer Jobs**: See all jobs for the selected customer
-3. **Manage Alerts**: Access customer-specific alert management
-
-## 🔧 Configuration
-
-### Adding New Job Categories
-Edit `src/types/job.ts` to add new categories:
-```typescript
-category: 'Electrical' | 'Mechanical' | 'Plumbing' | 'HVAC' | 'General' | 'YourNewCategory';
-```
-
-### Modifying SLA Times
-Update the `CustomAlerts` interface in `src/types/job.ts`:
-```typescript
-export interface CustomAlerts {
-  acceptSLA: number; // minutes
-  onsiteSLA: number; // minutes
-  completedSLA: number; // minutes
-}
-```
-
-### Customizing Styles
-- Modify `src/index.css` for global styles
-- Update Tailwind classes in components for specific styling
-- Customize Shadcn/UI components in `src/components/ui/`
-
-## 🚀 Deployment
-
-### GitHub Pages (Current)
-The application is currently deployed on GitHub Pages:
-- **Live URL**: https://flophero.github.io/customer-service-portal
-- **Repository**: https://github.com/flophero/customer-service-portal
-
-### Deploy to Other Platforms
-
-#### Vercel
-1. Connect your GitHub repository to Vercel
-2. Deploy automatically with each push
-
-#### Netlify
-1. Drag and drop the `dist` folder to Netlify
-2. Or connect your GitHub repository
-
-#### Manual Deployment
-```bash
-pnpm run build
-# Upload the dist/ folder to any web hosting service
-```
-
-## 🔄 Updating Your Deployment
-
-### Quick Update Workflow
-```bash
-# 1. Make your changes
-# 2. Add and commit changes
-git add .
-git commit -m "Add new feature: describe your changes"
-git push origin main
-
-# 3. Deploy to GitHub Pages
-pnpm run deploy
-```
-
-### Common Update Commands
-```bash
-# Check what changed
-git status
-
-# Add all changes
-git add .
-
-# Commit with message
-git commit -m "Your descriptive message"
-
-# Push to GitHub
-git push origin main
-
-# Deploy to live site
-pnpm run deploy
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- [Shadcn/UI](https://ui.shadcn.com/) for the beautiful component library
-- [Tailwind CSS](https://tailwindcss.com/) for the utility-first CSS framework
-- [Vite](https://vitejs.dev/) for the fast build tool
-- [React](https://react.dev/) for the amazing frontend library
-- [Lucide React](https://lucide.dev/) for the beautiful icons
-
-## 📞 Support
-
-If you have any questions or need help:
-
-- **Open an issue** on GitHub
-- **Check the documentation** above
-- **Review the code comments** for implementation details
-
-## 🎉 Features Showcase
-
-### 🎨 Modern UI Components
-- Responsive card layouts
-- Interactive buttons and forms
-- Beautiful color-coded status indicators
-- Smooth animations and transitions
-
-### 📊 Dashboard Analytics
-- Real-time job statistics
-- Status distribution charts
-- Performance metrics
-- End-of-shift reports
-
-### 🔍 Advanced Search & Filtering
-- Search by job number, customer, or description
-- Filter by status, priority, or category
-- Sort by date, priority, or status
-- Quick filter buttons
-
-### 📱 Mobile-First Design
-- Touch-friendly interface
-- Responsive grid layouts
-- Mobile-optimized navigation
-- Cross-device compatibility
-
----
-
-**Built with ❤️ for better customer service management**
-
-*Last updated: January 2025*
+- Modern browsers with ES6+ support
+- Local storage support required
+- File upload support for logo functionality

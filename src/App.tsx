@@ -3,7 +3,10 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { ThemeProvider } from '@/contexts/ThemeContext';
 import Index from './pages/Index';
+import WizardPage from './pages/WizardPage';
+import { ToastManager } from './components/ui/toast-notification';
 
 const queryClient = new QueryClient();
 
@@ -12,17 +15,21 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <SidebarProvider>
-        <TooltipProvider>
-          <Toaster />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/job/:jobId" element={<Index />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </SidebarProvider>
+      <ThemeProvider>
+        <SidebarProvider>
+          <TooltipProvider>
+            <Toaster />
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/job/:jobId" element={<Index />} />
+                <Route path="/wizard" element={<WizardPage />} />
+              </Routes>
+            </BrowserRouter>
+            <ToastManager />
+          </TooltipProvider>
+        </SidebarProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };

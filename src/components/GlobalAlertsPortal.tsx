@@ -1,18 +1,21 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Job, JobAlert } from '@/types/job';
-import { mockJobs } from '@/lib/jobUtils';
-import { 
-  Bell, 
-  Search, 
-  Filter, 
-  CheckCircle, 
-  Clock, 
-  AlertTriangle, 
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Job, JobAlert, Customer, Engineer } from '@/types/job';
+import { mockJobs, mockEngineers, getStatusColor, getPriorityColor } from '@/lib/jobUtils';
+import {
+  Bell,
+  Search,
+  Filter,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
   XCircle,
   ArrowLeft,
   Eye,
@@ -20,13 +23,27 @@ import {
   X,
   Plus,
   User,
-  MapPin
+  MapPin,
+  Building2,
+  Briefcase,
+  Calendar,
+  Phone,
+  Mail,
+  ChevronDown,
+  FileText,
+  Wrench,
+  MapPinIcon,
+  Globe,
+  Settings
 } from 'lucide-react';
 import CreateAlertModal from './CreateAlertModal';
+import CustomPromptModal from '@/components/ui/custom-prompt-modal';
 
 interface GlobalAlertsPortalProps {
   onBack: () => void;
   onJobUpdate: (job: Job) => void;
+  customers: Customer[];
+  jobs: Job[];
 }
 
 interface SystemAlert extends JobAlert {
@@ -43,7 +60,68 @@ interface SystemAlert extends JobAlert {
   resolution?: string;
 }
 
-export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlertsPortalProps) {
+interface EngineerActionAlert {
+  id: string;
+  type: 'ENGINEER_ACCEPT' | 'ENGINEER_ONSITE';
+  jobId: string;
+  jobNumber: string;
+  customer: string;
+  site: string;
+  engineer: string;
+  priority: Job['priority'];
+  status: Job['status'];
+  timestamp: Date;
+  acknowledged: boolean;
+  resolved: boolean;
+  resolvedBy?: string;
+  resolvedAt?: Date;
+  resolution?: string;
+}
+
+interface SiteInfo {
+  name: string;
+  customer: string;
+  customerId: number;
+  totalJobs: number;
+  activeJobs: number;
+  completedJobs: number;
+  criticalJobs: number;
+  urgentJobs: number;
+  lastJobDate: Date | null;
+  engineers: string[];
+}
+
+interface SiteAlert {
+  id: string;
+  siteId: string;
+  customerId: string;
+  type: 'SLA_VIOLATION' | 'EQUIPMENT_ISSUE' | 'ACCESS_PROBLEM' | 'SAFETY_CONCERN' | 'MAINTENANCE_OVERDUE';
+  message: string;
+  timestamp: Date;
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  acknowledged: boolean;
+  resolved: boolean;
+  resolvedBy?: string;
+  resolvedAt?: Date;
+  resolution?: string;
+}
+
+interface NewSite {
+  name: string;
+  customer: string;
+  address: string;
+  city: string;
+  postcode: string;
+  contactPerson: string;
+  phone: string;
+  email: string;
+  siteType: string;
+  accessNotes: string;
+  specialRequirements: string;
+}
+
+export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, jobs }: GlobalAlertsPortalProps) {
+  // Main alerts and filters
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
@@ -51,12 +129,78 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
   const [resolvedFilter, setResolvedFilter] = useState<string>('unresolved');
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [customAlerts, setCustomAlerts] = useState<SystemAlert[]>([]);
+  const [showResolutionModal, setShowResolutionModal] = useState(false);
+  const [selectedAlertForResolution, setSelectedAlertForResolution] = useState<SystemAlert | null>(null);
+
+  // Engineer alerts
+  const [engineerAlerts, setEngineerAlerts] = useState<EngineerActionAlert[]>([]);
+  const [selectedEngineerAlert, setSelectedEngineerAlert] = useState<EngineerActionAlert | null>(null);
+  const [isEngineerDetailModalOpen, setIsEngineerDetailModalOpen] = useState(false);
+  const [activeEngineerTab, setActiveEngineerTab] = useState('active');
+  const [showEngineerNotificationsDropdown, setShowEngineerNotificationsDropdown] = useState(false);
+
+  // Sites functionality
+  const [customerFilter, setCustomerFilter] = useState<string>('all');
+  const [showAddSite, setShowAddSite] = useState(false);
+  const [selectedSite, setSelectedSite] = useState<SiteInfo | null>(null);
+  const [showSiteAlerts, setShowSiteAlerts] = useState(false);
+  const [siteAlerts, setSiteAlerts] = useState<SiteAlert[]>([
+    {
+      id: '1',
+      siteId: 'London HQ',
+      customerId: 'Demo Corporation',
+      type: 'SLA_VIOLATION',
+      message: 'HVAC maintenance overdue by 3 days',
+      timestamp: new Date('2024-01-15T10:00:00'),
+      severity: 'high',
+      acknowledged: false,
+      resolved: false
+    },
+    {
+      id: '2',
+      siteId: 'Manchester Office',
+      customerId: 'Demo Corporation',
+      type: 'EQUIPMENT_ISSUE',
+      message: 'Fire alarm system showing fault',
+      timestamp: new Date('2024-01-14T15:30:00'),
+      severity: 'critical',
+      acknowledged: true,
+      resolved: false
+    },
+    {
+      id: '3',
+      siteId: 'Birmingham Site',
+      customerId: 'Demo Corporation',
+      type: 'ACCESS_PROBLEM',
+      message: 'Security card reader malfunction',
+      timestamp: new Date('2024-01-13T09:15:00'),
+      severity: 'medium',
+      acknowledged: false,
+      resolved: false
+    }
+  ]);
+  const [newSite, setNewSite] = useState<NewSite>({
+    name: '',
+    customer: '',
+    address: '',
+    city: '',
+    postcode: '',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    siteType: '',
+    accessNotes: '',
+    specialRequirements: ''
+  });
+
+  // Main tabs
+  const [activeMainTab, setActiveMainTab] = useState('engineer-alerts');
 
   // Generate system alerts from jobs
   const generateSystemAlerts = (): SystemAlert[] => {
     const alerts: SystemAlert[] = [];
-    
-    mockJobs.forEach(job => {
+
+    jobs.forEach(job => {
       // Generate alerts based on job status and timing
       const now = new Date();
       const timeSinceLogged = now.getTime() - job.dateLogged.getTime();
@@ -143,26 +287,383 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
     return alerts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   };
 
+  // Generate Engineer Action Alerts from jobs
+  const generateEngineerActionAlerts = (): EngineerActionAlert[] => {
+    const alerts: EngineerActionAlert[] = [];
+
+    jobs.forEach(job => {
+      // Engineer Accept Alert - when job is allocated but not accepted
+      if (job.status === 'allocated' && !job.dateAccepted) {
+        alerts.push({
+          id: `engineer-accept-${job.id}`,
+          type: 'ENGINEER_ACCEPT',
+          jobId: job.id,
+          jobNumber: job.jobNumber,
+          customer: job.customer,
+          site: job.site,
+          engineer: job.engineer,
+          priority: job.priority,
+          status: job.status,
+          timestamp: job.dateLogged,
+          acknowledged: false,
+          resolved: false
+        });
+      }
+
+      // Engineer Onsite Alert - when job is accepted but engineer not on site
+      if (job.dateAccepted && !job.dateOnSite && job.status !== 'completed') {
+        alerts.push({
+          id: `engineer-onsite-${job.id}`,
+          type: 'ENGINEER_ONSITE',
+          jobId: job.id,
+          jobNumber: job.jobNumber,
+          customer: job.customer,
+          site: job.site,
+          engineer: job.engineer,
+          priority: job.priority,
+          status: job.status,
+          timestamp: job.dateAccepted,
+          acknowledged: false,
+          resolved: false
+        });
+      }
+    });
+
+    return alerts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
+  };
+
+  // Get all unique sites with aggregated information
+  const getSitesInfo = (): SiteInfo[] => {
+    const sitesMap = new Map<string, SiteInfo>();
+
+    jobs.forEach(job => {
+      if (!sitesMap.has(job.site)) {
+        const customer = customers.find(c => c.name === job.customer);
+        sitesMap.set(job.site, {
+          name: job.site,
+          customer: job.customer,
+          customerId: customer?.id || 0,
+          totalJobs: 0,
+          activeJobs: 0,
+          completedJobs: 0,
+          criticalJobs: 0,
+          urgentJobs: 0,
+          lastJobDate: null,
+          engineers: []
+        });
+      }
+
+      const siteInfo = sitesMap.get(job.site)!;
+      siteInfo.totalJobs++;
+
+      if (['green', 'completed', 'costed', 'reqs_invoice'].includes(job.status)) {
+        siteInfo.completedJobs++;
+      } else {
+        siteInfo.activeJobs++;
+      }
+
+      if (job.priority === 'Critical') {
+        siteInfo.criticalJobs++;
+      }
+
+      if (job.status === 'red') {
+        siteInfo.urgentJobs++;
+      }
+
+      if (!siteInfo.engineers.includes(job.engineer)) {
+        siteInfo.engineers.push(job.engineer);
+      }
+
+      if (!siteInfo.lastJobDate || new Date(job.dateLogged) > siteInfo.lastJobDate) {
+        siteInfo.lastJobDate = new Date(job.dateLogged);
+      }
+    });
+
+    return Array.from(sitesMap.values()).sort((a, b) => b.totalJobs - a.totalJobs);
+  };
+
+  // Handle clicking outside engineer notifications dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showEngineerNotificationsDropdown && !(event.target as Element).closest('.engineer-notifications-dropdown')) {
+        setShowEngineerNotificationsDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showEngineerNotificationsDropdown]);
+
+  // Generate engineer alerts when jobs change
+  useEffect(() => {
+    const newEngineerAlerts = generateEngineerActionAlerts();
+    setEngineerAlerts(newEngineerAlerts);
+  }, [jobs]);
+
   const [alerts, setAlerts] = useState<SystemAlert[]>(generateSystemAlerts());
   const allAlerts = [...alerts, ...customAlerts];
 
+  // Sites data
+  const sitesInfo = getSitesInfo();
+  const allCustomers = Array.from(new Set(customers.map(c => c.name))).sort();
+
+  // Calculate overall statistics for sites
+  const totalStats = {
+    sites: sitesInfo.length,
+    totalJobs: sitesInfo.reduce((sum, site) => sum + site.totalJobs, 0),
+    activeJobs: sitesInfo.reduce((sum, site) => sum + site.activeJobs, 0),
+    completedJobs: sitesInfo.reduce((sum, site) => sum + site.completedJobs, 0),
+    criticalJobs: sitesInfo.reduce((sum, site) => sum + site.criticalJobs, 0),
+    urgentJobs: sitesInfo.reduce((sum, site) => sum + site.urgentJobs, 0)
+  };
+
+  // Engineer alerts data
+  const activeEngineerAlerts = engineerAlerts.filter(alert => !alert.resolved);
+  const resolvedEngineerAlerts = engineerAlerts.filter(alert => alert.resolved);
+
+  // Filter sites based on search and filters
+  const filteredSites = sitesInfo.filter(site => {
+    const matchesSearch = searchQuery === '' ||
+      site.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      site.customer.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesCustomer = customerFilter === 'all' || site.customer === customerFilter;
+
+    const matchesStatus = statusFilter === 'all' ||
+      (statusFilter === 'active' && site.activeJobs > 0) ||
+      (statusFilter === 'completed' && site.completedJobs > 0) ||
+      (statusFilter === 'urgent' && site.urgentJobs > 0);
+
+    const matchesPriority = priorityFilter === 'all' ||
+      (priorityFilter === 'critical' && site.criticalJobs > 0);
+
+    return matchesSearch && matchesCustomer && matchesStatus && matchesPriority;
+  });
+
   const filteredAlerts = allAlerts.filter(alert => {
-    const matchesSearch = 
+    const matchesSearch =
       alert.jobNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       alert.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
       alert.site.toLowerCase().includes(searchQuery.toLowerCase()) ||
       alert.engineer.toLowerCase().includes(searchQuery.toLowerCase()) ||
       alert.message.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || alert.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || alert.priority === priorityFilter;
     const matchesAlertType = alertTypeFilter === 'all' || alert.type === alertTypeFilter;
-    const matchesResolved = resolvedFilter === 'all' || 
+    const matchesResolved = resolvedFilter === 'all' ||
       (resolvedFilter === 'resolved' && alert.resolved) ||
       (resolvedFilter === 'unresolved' && !alert.resolved);
-    
+
     return matchesSearch && matchesStatus && matchesPriority && matchesAlertType && matchesResolved;
   });
+
+  // Helper functions
+  const getEngineerDetails = (engineerName: string): Engineer | null => {
+    return mockEngineers.find(e => e.name === engineerName) || null;
+  };
+
+  const getPriorityColor = (priority: Job['priority']) => {
+    switch (priority) {
+      case 'Critical':
+        return 'bg-red-600 text-white';
+      case 'High':
+        return 'bg-orange-500 text-white';
+      case 'Medium':
+        return 'bg-yellow-500 text-white';
+      case 'Low':
+        return 'bg-green-500 text-white';
+      default:
+        return 'bg-gray-500 text-white';
+    }
+  };
+
+  const getAlertIcon = (type: EngineerActionAlert['type']) => {
+    switch (type) {
+      case 'ENGINEER_ACCEPT':
+        return <User className="h-5 w-5 text-blue-600" />;
+      case 'ENGINEER_ONSITE':
+        return <MapPin className="h-5 w-5 text-green-600" />;
+      default:
+        return <AlertTriangle className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  const getAlertColor = (type: EngineerActionAlert['type']) => {
+    switch (type) {
+      case 'ENGINEER_ACCEPT':
+        return 'bg-blue-50 border-blue-200 hover:bg-blue-100';
+      case 'ENGINEER_ONSITE':
+        return 'bg-green-50 border-green-200 hover:bg-green-100';
+      default:
+        return 'bg-gray-50 border-gray-200';
+    }
+  };
+
+  const getAlertTitle = (type: EngineerActionAlert['type']) => {
+    switch (type) {
+      case 'ENGINEER_ACCEPT':
+        return 'Engineer Accept Alert';
+      case 'ENGINEER_ONSITE':
+        return 'Engineer Onsite Alert';
+      default:
+        return 'Alert';
+    }
+  };
+
+  const getAlertDescription = (type: EngineerActionAlert['type'], jobNumber: string) => {
+    switch (type) {
+      case 'ENGINEER_ACCEPT':
+        return `Engineer needs to accept job ${jobNumber}`;
+      case 'ENGINEER_ONSITE':
+        return `Engineer needs to arrive on site for job ${jobNumber}`;
+      default:
+        return 'Action required';
+    }
+  };
+
+  const getAlertSeverityColor = (severity: SiteAlert['severity']) => {
+    switch (severity) {
+      case 'critical': return 'bg-red-500 text-white';
+      case 'high': return 'bg-orange-500 text-white';
+      case 'medium': return 'bg-yellow-500 text-white';
+      case 'low': return 'bg-blue-500 text-white';
+      default: return 'bg-gray-500 text-white';
+    }
+  };
+
+  const getAlertTypeIcon = (type: SiteAlert['type']) => {
+    switch (type) {
+      case 'SLA_VIOLATION': return <Clock className="h-4 w-4" />;
+      case 'EQUIPMENT_ISSUE': return <AlertTriangle className="h-4 w-4" />;
+      case 'ACCESS_PROBLEM': return <User className="h-4 w-4" />;
+      case 'SAFETY_CONCERN': return <AlertTriangle className="h-4 w-4" />;
+      case 'MAINTENANCE_OVERDUE': return <Wrench className="h-4 w-4" />;
+      default: return <AlertTriangle className="h-4 w-4" />;
+    }
+  };
+
+  // Handler functions
+  const handleEngineerAlertClick = (alert: EngineerActionAlert) => {
+    setSelectedEngineerAlert(alert);
+    setIsEngineerDetailModalOpen(true);
+  };
+
+  const handleCallEngineer = (engineerName: string) => {
+    const engineer = mockEngineers.find(e => e.name === engineerName);
+    if (engineer) {
+      window.open(`tel:${engineer.phone}`, '_self');
+    }
+  };
+
+  const handleResolveEngineerAlert = (alertId: string, resolution: string) => {
+    const alert = engineerAlerts.find(a => a.id === alertId);
+    if (alert) {
+      const job = jobs.find(j => j.id === alert.jobId);
+      if (job) {
+        let updatedJob = { ...job };
+
+        if (alert.type === 'ENGINEER_ACCEPT') {
+          updatedJob.dateAccepted = new Date();
+          updatedJob.status = 'attended';
+        } else if (alert.type === 'ENGINEER_ONSITE') {
+          updatedJob.dateOnSite = new Date();
+          updatedJob.status = 'attended';
+        }
+
+        setEngineerAlerts(prevAlerts =>
+          prevAlerts.map(a =>
+            a.id === alertId
+              ? {
+                  ...a,
+                  resolved: true,
+                  resolvedBy: 'Current User',
+                  resolvedAt: new Date(),
+                  resolution
+                }
+              : a
+          )
+        );
+
+        onJobUpdate(updatedJob);
+        setIsEngineerDetailModalOpen(false);
+        setSelectedEngineerAlert(null);
+      }
+    }
+  };
+
+  const handleSiteClick = (site: SiteInfo) => {
+    setSelectedSite(site);
+  };
+
+  const handleBackToSites = () => {
+    setSelectedSite(null);
+    setShowSiteAlerts(false);
+  };
+
+  const handleAcknowledgeAlert = (alertId: string) => {
+    setSiteAlerts(prev => prev.map(alert =>
+      alert.id === alertId ? { ...alert, acknowledged: true } : alert
+    ));
+  };
+
+  const handleResolveSiteAlert = (alertId: string, resolution: string) => {
+    setSiteAlerts(prev => prev.map(alert =>
+      alert.id === alertId ? {
+        ...alert,
+        resolved: true,
+        resolvedBy: 'Current User',
+        resolvedAt: new Date(),
+        resolution
+      } : alert
+    ));
+  };
+
+  const handleAddSite = () => {
+    if (newSite.name && newSite.customer && newSite.address) {
+      console.log('Adding new site:', newSite);
+      setNewSite({
+        name: '',
+        customer: '',
+        address: '',
+        city: '',
+        postcode: '',
+        contactPerson: '',
+        phone: '',
+        email: '',
+        siteType: '',
+        accessNotes: '',
+        specialRequirements: ''
+      });
+      setShowAddSite(false);
+    }
+  };
+
+  const loadDemoData = () => {
+    setNewSite({
+      name: 'Main Office Building',
+      customer: 'Demo Corporation',
+      address: '123 Business Park Drive',
+      city: 'Manchester',
+      postcode: 'M1 1AA',
+      contactPerson: 'John Smith',
+      phone: '0161 123 4567',
+      email: 'john.smith@democorp.com',
+      siteType: 'Office',
+      accessNotes: 'Main entrance, security badge required, parking available',
+      specialRequirements: '24/7 access, CCTV monitored, fire alarm system'
+    });
+  };
+
+  const getSiteAlerts = (siteName: string): SiteAlert[] => {
+    return siteAlerts.filter(alert => alert.siteId === siteName);
+  };
+
+  const getSiteJobs = (siteName: string): Job[] => {
+    return jobs.filter(job => job.site === siteName);
+  };
 
   const handleResolveAlert = (alertId: string, resolution: string) => {
     // Check if it's a custom alert
@@ -226,7 +727,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
 
 
 
-  const getAlertIcon = (type: JobAlert['type']) => {
+  const getSystemAlertIcon = (type: JobAlert['type']) => {
     switch (type) {
       case 'ENGINEER_ACCEPT':
         return <User className="h-4 w-4 text-blue-600" />;
@@ -245,7 +746,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
     }
   };
 
-  const getAlertColor = (type: JobAlert['type']) => {
+  const getSystemAlertColor = (type: JobAlert['type']) => {
     switch (type) {
       case 'ENGINEER_ACCEPT':
         return 'bg-blue-50 border-blue-200';
@@ -416,12 +917,12 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
       {/* Alerts List */}
       <div className="space-y-4">
         {filteredAlerts.map((alert) => (
-          <Card key={alert.id} className={`${getAlertColor(alert.type)} ${alert.resolved ? 'opacity-75' : ''}`}>
+          <Card key={alert.id} className={`${getSystemAlertColor(alert.type)} ${alert.resolved ? 'opacity-75' : ''}`}>
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4 flex-1">
                   <div className="flex items-center gap-2">
-                    {getAlertIcon(alert.type)}
+                    {getSystemAlertIcon(alert.type)}
                     <Badge variant={alert.priority === 'Critical' ? 'destructive' : 'secondary'}>
                       {alert.priority}
                     </Badge>
@@ -473,10 +974,8 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
                       variant="default"
                       size="sm"
                       onClick={() => {
-                        const resolution = prompt('Enter resolution notes:');
-                        if (resolution) {
-                          handleResolveAlert(alert.id, resolution);
-                        }
+                        setSelectedAlertForResolution(alert);
+                        setShowResolutionModal(true);
                       }}
                     >
                       <Check className="h-4 w-4 mr-1" />
@@ -509,6 +1008,29 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate }: GlobalAlerts
         onClose={() => setIsCreateModalOpen(false)}
         jobs={mockJobs}
         onAlertCreate={handleCreateAlert}
+      />
+
+      {/* Resolution Modal */}
+      <CustomPromptModal
+        isOpen={showResolutionModal}
+        onClose={() => {
+          setShowResolutionModal(false);
+          setSelectedAlertForResolution(null);
+        }}
+        onSubmit={(resolution) => {
+          if (selectedAlertForResolution) {
+            handleResolveAlert(selectedAlertForResolution.id, resolution);
+          }
+        }}
+        title="Resolve Alert"
+        message="Please enter resolution notes for this alert:"
+        placeholder="Enter resolution details..."
+        type="textarea"
+        submitText="Resolve Alert"
+        cancelText="Cancel"
+        icon="success"
+        required={true}
+        maxLength={500}
       />
     </div>
   );

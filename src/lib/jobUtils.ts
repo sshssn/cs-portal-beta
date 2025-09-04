@@ -79,6 +79,20 @@ export const mockTags = [
   'Compliance'
 ];
 
+// Site-Engineer mapping for better job allocation
+export const mockSiteEngineersMapping: Record<string, string[]> = {
+  'Main Office': ['John Smith', 'Sarah Johnson', 'Mike Wilson'],
+  'Warehouse A': ['John Smith', 'David Brown'],
+  'Warehouse B': ['Sarah Johnson', 'Mike Wilson'],
+  'Distribution Center': ['Mike Wilson', 'David Brown', 'Lisa Davis'],
+  'Retail Store 1': ['John Smith', 'Lisa Davis'],
+  'Retail Store 2': ['Sarah Johnson', 'Mike Wilson'],
+  'Manufacturing Plant': ['David Brown', 'Lisa Davis'],
+  'Call Center': ['John Smith', 'Sarah Johnson'],
+  'Data Center': ['Mike Wilson', 'David Brown'],
+  'Parking Garage': ['Lisa Davis', 'John Smith']
+};
+
 export const mockEngineers: Engineer[] = [
   {
     name: 'John Smith',

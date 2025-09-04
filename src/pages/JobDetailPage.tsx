@@ -92,6 +92,11 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
     }
   }, [jobId]);
 
+  // Debug jobs prop changes
+  useEffect(() => {
+    console.log('JobDetailPage - jobs prop changed:', jobs);
+  }, [jobs]);
+
   // Save communications and notes to localStorage
   useEffect(() => {
     if (communications.length > 0) {
@@ -597,10 +602,13 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
   };
 
   if (!job) {
+    console.log('JobDetailPage - Job not found, jobId:', jobId, 'jobs:', jobs);
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Job Not Found</h1>
+          <p className="text-gray-600 mb-4">Job ID: {jobId}</p>
+          <p className="text-gray-600 mb-4">Available jobs: {jobs.length}</p>
           <Button onClick={() => navigate('/')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Dashboard
@@ -711,26 +719,54 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="new">New</SelectItem>
-                          <SelectItem value="allocated">Allocated</SelectItem>
+                          <SelectItem value="new">New Job</SelectItem>
+                          <SelectItem value="allocated">Allocated to Engineer</SelectItem>
+                          <SelectItem value="attended">Engineer Accepted</SelectItem>
                           <SelectItem value="awaiting_parts">Awaiting Parts</SelectItem>
-                          <SelectItem value="attended">Attended</SelectItem>
+                          <SelectItem value="parts_to_fit">Parts to Fit</SelectItem>
                           <SelectItem value="completed">Completed</SelectItem>
+                          <SelectItem value="costed">Costed</SelectItem>
+                          <SelectItem value="reqs_invoice">Requires Invoice</SelectItem>
+                          <SelectItem value="green">On Track</SelectItem>
+                          <SelectItem value="amber">Attention Required</SelectItem>
+                          <SelectItem value="red">Critical Issue</SelectItem>
                         </SelectContent>
                       </Select>
                     ) : (
                       <div className="mt-1">
-                        <Badge className={`${getStatusColor(job.status)} ${UI_CONSTANTS.badge.base}`}>
-                          {job.status === 'new' ? 'New' : 
-                           job.status === 'allocated' ? 'Allocated' : 
+                        <Badge className="bg-gray-100 text-gray-800 border-gray-200 px-2 py-1 text-xs font-medium border">
+                          {job.status === 'new' ? 'New Job' : 
+                           job.status === 'allocated' ? 'Allocated to Engineer' : 
                            job.status === 'awaiting_parts' ? 'Awaiting Parts' : 
-                           job.status === 'attended' ? 'Attended' : 
+                           job.status === 'parts_to_fit' ? 'Parts to Fit' : 
+                           job.status === 'attended' ? 'Engineer Accepted' : 
                            job.status === 'completed' ? 'Completed' : 
-                           String(job.status).toUpperCase()}
+                           job.status === 'costed' ? 'Costed' : 
+                           job.status === 'reqs_invoice' ? 'Requires Invoice' : 
+                           job.status === 'green' ? 'On Track' : 
+                           job.status === 'amber' ? 'Attention Required' : 
+                           job.status === 'red' ? 'Critical Issue' : 
+                           String(job.status).charAt(0).toUpperCase() + String(job.status).slice(1).replace(/_/g, ' ')}
                         </Badge>
                       </div>
                     )}
                   </div>
+                  
+                  <div className={UI_CONSTANTS.spacing.card.field}>
+                    <label className={UI_CONSTANTS.typography.subtitle}>Visit Status</label>
+                    <div className="mt-1">
+                      <Badge className="bg-blue-100 text-blue-800 border-blue-200 px-2 py-1 text-xs font-medium border">
+                        {(() => {
+                          if (job.dateCompleted) return 'Visit Completed';
+                          if (job.dateOnSite) return 'On Site';
+                          if (job.dateAccepted) return 'En Route';
+                          if (job.status === 'allocated') return 'Pending Acceptance';
+                          return 'Not Started';
+                        })()}
+                      </Badge>
+                    </div>
+                  </div>
+                  
                   <div className={UI_CONSTANTS.spacing.card.field}>
                     <label className={UI_CONSTANTS.typography.subtitle}>Engineer</label>
                     {isEditing ? (

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { FileText as FileTextIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Job, Customer } from '@/types/job';
 import { getStatusColor, getPriorityColor } from '@/lib/jobUtils';
+import { showNotification } from '@/components/ui/toast-notification';
 import { 
   Search, 
   Filter, 
@@ -55,6 +57,9 @@ export default function MasterDashboard({
     engineers: string[];
   }>({ jobs: [], customers: [], sites: [], engineers: [] });
 
+  // Draft job state
+  const [draftJobData, setDraftJobData] = useState<any>(null);
+
   // Handle clicking outside alerts dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -67,6 +72,23 @@ export default function MasterDashboard({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
+  }, []);
+
+  // Check for draft job data
+  useEffect(() => {
+    const STORAGE_KEY = 'jobLogWizardData';
+    const savedData = localStorage.getItem(STORAGE_KEY);
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        // Check if there's meaningful data (more than just defaults)
+        if (parsed.customer || parsed.site || parsed.description || parsed.reporterName) {
+          setDraftJobData(parsed);
+        }
+      } catch (error) {
+        console.error('Error parsing draft job data:', error);
+      }
+    }
   }, []);
 
   // Filter jobs based on search and filters
@@ -82,10 +104,10 @@ export default function MasterDashboard({
       matchesStatus = true;
     } else if (statusFilter === 'active') {
       matchesStatus = ['amber', 'red', 'new', 'allocated', 'attended', 'awaiting_parts'].includes(job.status);
-    } else if (statusFilter === 'completed') {
-      matchesStatus = ['green', 'completed', 'costed', 'reqs_invoice'].includes(job.status);
     } else if (statusFilter === 'overdue') {
       matchesStatus = ['red', 'awaiting_parts'].includes(job.status);
+    } else if (statusFilter === 'completed') {
+      matchesStatus = ['green', 'completed', 'costed', 'reqs_invoice'].includes(job.status);
     } else {
       matchesStatus = job.status === statusFilter;
     }
@@ -94,6 +116,8 @@ export default function MasterDashboard({
     
     return matchesSearch && matchesStatus && matchesPriority;
   });
+
+
 
   // Calculate statistics
   const stats = {
@@ -370,6 +394,69 @@ export default function MasterDashboard({
           </div>
       </div>
 
+      {/* Draft Job Card */}
+      {draftJobData && (
+        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 shadow-lg">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <FileTextIcon className="h-5 w-5 text-orange-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg text-orange-900">Draft Job In Progress</CardTitle>
+                  <p className="text-sm text-orange-700">Resume your unfinished job creation</p>
+                </div>
+              </div>
+              <Badge variant="secondary" className="bg-orange-200 text-orange-800">
+                Draft
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                {draftJobData.customer && (
+                  <div>
+                    <span className="font-medium text-orange-800">Customer:</span>
+                    <p className="text-orange-900">{draftJobData.customer}</p>
+                  </div>
+                )}
+                {draftJobData.site && (
+                  <div>
+                    <span className="font-medium text-orange-800">Site:</span>
+                    <p className="text-orange-900">{draftJobData.site}</p>
+                  </div>
+                )}
+                {draftJobData.jobNumber && (
+                  <div>
+                    <span className="font-medium text-orange-800">Job Number:</span>
+                    <p className="text-orange-900 font-mono">{draftJobData.jobNumber}</p>
+                  </div>
+                )}
+              </div>
+              {draftJobData.description && (
+                <div>
+                  <span className="font-medium text-orange-800 text-sm">Description:</span>
+                  <p className="text-orange-900 text-sm mt-1">{draftJobData.description}</p>
+                </div>
+              )}
+              <div className="flex items-center justify-between pt-2">
+                <p className="text-xs text-orange-700">
+                  Last modified: {new Date().toLocaleString()}
+                </p>
+                <Button
+                  onClick={onJobCreate}
+                  className="bg-orange-600 hover:bg-orange-700 text-white text-sm px-4 py-2"
+                >
+                  Resume Job Creation
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card 
@@ -489,7 +576,7 @@ export default function MasterDashboard({
       )}
 
       {/* Search and Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
           <Input
@@ -498,7 +585,7 @@ export default function MasterDashboard({
             onChange={(e) => handleSearchChange(e.target.value)}
             onFocus={() => searchTerm.length >= 2 && setShowSearchDropdown(true)}
             onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
-            className="pl-10 min-w-0"
+            className="pl-10 min-w-0 h-12 text-base"
           />
           
           {/* Search Dropdown */}
