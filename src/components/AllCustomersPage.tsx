@@ -15,7 +15,6 @@ import {
   MapPin,
   Users,
   Briefcase,
-  Filter,
   Plus,
   X
 } from 'lucide-react';
@@ -28,7 +27,6 @@ interface AllCustomersPageProps {
 
 export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerCreate }: AllCustomersPageProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedSite, setSelectedSite] = useState<string>('all');
   const [showAddCustomer, setShowAddCustomer] = useState(false);
   const [newCustomer, setNewCustomer] = useState({
     name: '',
@@ -38,18 +36,13 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
     notes: ''
   });
   
-  // Get all unique sites from all customers
-  const allSites = Array.from(new Set(mockCustomers.flatMap(customer => customer.sites))).sort();
-  
-  // Filter customers based on search query and selected site
+  // Filter customers based on search query only
   const filteredCustomers = mockCustomers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          customer.sites.some(site => site.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    const matchesSite = selectedSite === 'all' || customer.sites.includes(selectedSite);
-    
-    return matchesSearch && matchesSite;
+    return matchesSearch;
   });
 
   const totalCustomers = mockCustomers.length;
@@ -165,79 +158,36 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
             <MapPin className="h-4 w-4 text-purple-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-900">{allSites.length}</div>
+            <div className="text-2xl font-bold text-purple-900">
+              {Array.from(new Set(mockCustomers.flatMap(customer => customer.sites))).length}
+            </div>
             <p className="text-xs text-purple-700">Managed locations</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search and Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {/* Search Bar */}
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search customers by name, email, or site..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Site Filter */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Filter by Site:</span>
-              </div>
-              
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant={selectedSite === 'all' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setSelectedSite('all')}
-                  className="text-xs"
-                >
-                  All Sites
-                </Button>
-                {allSites.map(site => (
-                  <Button
-                    key={site}
-                    variant={selectedSite === site ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => setSelectedSite(site)}
-                    className="text-xs"
-                  >
-                    {site}
-                  </Button>
-                ))}
-              </div>
-              
-              {selectedSite !== 'all' && (
-                <div className="flex items-center gap-2 pt-2">
-                  <span className="text-sm text-gray-600">
-                    Currently filtering by: <span className="font-medium text-blue-600">{selectedSite}</span>
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setSelectedSite('all')}
-                    className="text-xs text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                  >
-                    Clear Filter
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Search Bar */}
+      <div className="relative max-w-2xl">
+        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Input
+          placeholder="Search customers by name, email, or site..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-12 h-12 text-base border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl shadow-sm"
+        />
+      </div>
+
+      {/* Divider */}
+      <div className="border-t border-gray-200 pt-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Customer Results ({filteredCustomers.length})
+          </h2>
+          <span className="text-sm text-gray-500">
+            {filteredCustomers.length === mockCustomers.length ? 'Showing all customers' : 'Search results'}
+          </span>
+        </div>
+      </div>
 
       {/* Customer Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -62,22 +62,22 @@ export default function NotificationToast({ notification, onDismiss }: Notificat
 
   return (
     <div className={`
-      fixed top-4 right-4 z-50 max-w-sm w-full
+      fixed top-4 right-4 z-50 max-w-2xl w-full
       transform transition-all duration-300 ease-in-out
       ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}
     `}>
       <div className={`
-        border rounded-lg shadow-lg p-4 ${getTypeStyles()}
+        border-2 rounded-xl shadow-xl p-6 ${getTypeStyles()}
         backdrop-blur-sm bg-opacity-95
       `}>
-        <div className="flex items-start gap-3">
-          <div className="flex-shrink-0 mt-0.5">
+        <div className="flex items-center gap-4">
+          <div className="flex-shrink-0">
             {getIcon()}
           </div>
           
           <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-1">
-              <h4 className="text-sm font-semibold">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-base font-semibold">
                 {notification.title}
               </h4>
               <button
@@ -85,25 +85,22 @@ export default function NotificationToast({ notification, onDismiss }: Notificat
                   setIsVisible(false);
                   setTimeout(() => onDismiss(notification.id), 300);
                 }}
-                className="flex-shrink-0 ml-2 text-gray-400 hover:text-gray-600 transition-colors"
+                className="flex-shrink-0 ml-3 text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-white hover:bg-opacity-50"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
             
-            <p className="text-sm text-gray-700 mb-2">
+            <p className="text-sm text-gray-700 mb-3">
               {notification.message}
             </p>
             
             <div className="flex items-center justify-between">
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs font-medium">
                 {notification.type.toUpperCase()}
               </Badge>
               <span className="text-xs text-gray-500">
-                {notification.timestamp.toLocaleTimeString([], { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })}
+                {notification.timestamp.toLocaleTimeString()}
               </span>
             </div>
           </div>

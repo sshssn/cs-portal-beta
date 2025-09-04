@@ -28,8 +28,9 @@ import { Button } from '@/components/ui/button';
 import { Users, Bell } from 'lucide-react';
 import EndOfShiftReport from '@/components/EndOfShiftReport';
 import NotificationManager from '@/components/NotificationManager';
+import EngineerAlertsPage from '@/pages/EngineerAlertsPage';
 
-type View = 'master' | 'customer' | 'customer-dashboard' | 'customer-detail' | 'customer-alerts' | 'alerts' | 'wizard' | 'reports' | 'job-detail' | 'sites';
+type View = 'master' | 'customer' | 'customer-dashboard' | 'customer-detail' | 'customer-alerts' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'job-detail' | 'sites';
 
 export default function Index() {
   const { jobId } = useParams<{ jobId: string }>();
@@ -171,6 +172,7 @@ export default function Index() {
             onJobCreate={() => setCurrentView('wizard')}
             onJobClick={handleJobClick}
             onAlertsClick={() => setCurrentView('alerts')}
+            onEngineerAlertsClick={() => setCurrentView('engineer-alerts')}
           />
         );
       
@@ -204,6 +206,13 @@ export default function Index() {
           <GlobalAlertsPortal
             onBack={() => setCurrentView('master')}
             onJobUpdate={handleJobSave}
+          />
+        );
+      
+      case 'engineer-alerts':
+        return (
+          <EngineerAlertsPage
+            onBack={() => setCurrentView('master')}
           />
         );
       
@@ -308,6 +317,7 @@ export default function Index() {
               {currentView === 'customer-detail' && selectedCustomer && `${selectedCustomer.name} Details`}
               {currentView === 'customer-alerts' && selectedCustomer && `${selectedCustomer.name} Alerts`}
               {currentView === 'alerts' && 'Global Alerts Portal'}
+              {currentView === 'engineer-alerts' && 'Engineer Action Alerts'}
               {currentView === 'wizard' && 'New Job Wizard'}
               {currentView === 'reports' && 'End of Shift Report'}
             </h1>

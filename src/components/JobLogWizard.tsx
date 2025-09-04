@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Job, Customer, Engineer } from '@/types/job';
 import { mockEngineers, mockJobTrades, mockTags, generateJobNumber } from '@/lib/jobUtils';
+import { sendEngineerNotification } from '@/lib/engineerNotifications';
 import { ArrowLeft, ArrowRight, CheckCircle, User, Briefcase, Settings, Users, Check, FileText, Phone, Clock, Calendar, X, Plus, Trash2, StickyNote, Building2 } from 'lucide-react';
 import { UI_CONSTANTS } from '@/lib/ui-constants';
 
@@ -68,6 +69,27 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
     { id: '3', text: 'Equipment room key available from reception', timestamp: new Date('2024-01-13T16:45:00'), author: 'Maintenance Lead' }
   ]);
   const [newSiteNote, setNewSiteNote] = useState('');
+  
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // Only handle if not typing in input fields
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement || event.target instanceof HTMLSelectElement) {
+        return;
+      }
+      
+      if (event.key.toLowerCase() === 'n' && !event.ctrlKey && !event.altKey && !event.shiftKey) {
+        event.preventDefault();
+        if (currentStep < 5 && isStepValid(currentStep)) {
+          nextStep();
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyPress);
+    return () => document.removeEventListener('keydown', handleKeyPress);
+  }, [currentStep]);
+
   const [formData, setFormData] = useState<JobFormData>({
     customer: '',
     site: '',
@@ -92,10 +114,10 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
     jobNumber: generateJobNumber(),
     preferredStartDateTime: new Date(),
     preferredEndDateTime: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
-    targetAttendanceDate: null,
-    targetAttendanceTime: '',
-    allocatedVisitDate: null,
-    allocatedVisitTime: '',
+    targetAttendanceDate: new Date(),
+    targetAttendanceTime: new Date().toTimeString().slice(0, 5),
+    allocatedVisitDate: new Date(),
+    allocatedVisitTime: new Date().toTimeString().slice(0, 5),
     siteNotes: []
   });
 
@@ -188,7 +210,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
       site: formData.site,
       description: formData.description,
       engineer: 'Unassigned',
-      status: 'amber',
+      status: 'new',
       priority: formData.priority,
       category: (formData.primaryTrade as any) || 'General',
       jobType: 'Draft',
@@ -259,7 +281,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
       site: formData.site,
       description: formData.description,
       engineer: formData.selectedEngineer,
-      status: 'amber',
+      status: 'allocated',
       priority: formData.priority,
       category: (formData.primaryTrade as any),
       jobType: formData.jobType === 'OOH' ? 'Out of Hours' : 'Call Out',
@@ -311,6 +333,11 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
 
     onJobCreate(newJob);
     
+    // Send engineer notification
+    if (newJob.engineer && newJob.engineer !== 'Unassigned') {
+      sendEngineerNotification(newJob.engineer, `New job ${newJob.jobNumber} has been assigned to you. Customer: ${newJob.customer}, Site: ${newJob.site}`);
+    }
+    
     // Show success notification
     if (typeof window !== 'undefined' && (window as any).addNotification) {
       (window as any).addNotification({
@@ -343,8 +370,8 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
   };
 
   return (
-    <div className="max-w-[95vw] xl:max-w-[90vw] 2xl:max-w-[85vw] mx-auto p-4">
-      <Card className={`${UI_CONSTANTS.card.base} border-0 w-full`}>
+    <div className="w-full max-w-7xl mx-auto p-6">
+      <Card className="w-full border-0 shadow-lg">
         <CardHeader className={`${UI_CONSTANTS.card.header} bg-gradient-to-r from-blue-50 to-indigo-50 border-b-2 border-blue-200`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -362,7 +389,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
           </div>
         </CardHeader>
         
-        <CardContent className={`${UI_CONSTANTS.card.content} p-6 w-full`}>
+        <CardContent className="p-8 w-full">
           <div className="flex items-center justify-center mb-8">
             {[1, 2, 3, 4, 5].map((step) => (
               <div key={step} className="flex items-center">
@@ -385,125 +412,134 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
           </div>
           
           {currentStep === 1 && (
-            <div className={`${UI_CONSTANTS.spacing.section} space-y-6 w-full`}>
-              <div className="text-center mb-6">
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                  <User className="h-8 w-8 text-blue-600" />
+            <div className="space-y-8 w-full">
+              <div className="text-center mb-8">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-100 rounded-full mb-6">
+                  <User className="h-10 w-10 text-blue-600" />
                 </div>
-                <h2 className={`${UI_CONSTANTS.typography.title} text-lg mb-2`}>Reporter Details</h2>
-                <p className={`${UI_CONSTANTS.typography.bodyMuted}`}>Who is reporting this job?</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-3">Reporter Details</h2>
+                <p className="text-gray-600 text-lg">Who is reporting this job?</p>
               </div>
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 w-full">
-                <div className={`${UI_CONSTANTS.card.content} bg-gray-50 p-6 rounded-lg border ${UI_CONSTANTS.colors.border.secondary} w-full`}>
-                  <h3 className={`${UI_CONSTANTS.typography.subtitle} flex items-center gap-2`}>
-                    <Building2 className="h-4 w-4 text-blue-600" />
+                <div className="bg-gray-50 p-8 rounded-xl border-2 border-gray-200 w-full">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-3 mb-6">
+                    <Building2 className="h-5 w-5 text-blue-600" />
                     Job Location
                   </h3>
                   
-                  <div className={`${UI_CONSTANTS.spacing.card.field} mb-6`}>
-                    <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Customer *</label>
-                    <Select value={formData.customer} onValueChange={(value) => updateFormData({ customer: value, site: '' })}>
-                      <SelectTrigger className={`h-12 ${UI_CONSTANTS.form.select} w-full`}>
-                        <SelectValue placeholder="Select customer" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {customers && customers.length > 0 ? customers.map(customer => (
-                          <SelectItem key={customer.id} value={customer.name}>
-                            {customer.name}
-                          </SelectItem>
-                        )) : (
-                          <SelectItem value="no-customers" disabled>No customers available</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-3 block">Customer *</label>
+                      <Select value={formData.customer} onValueChange={(value) => updateFormData({ customer: value, site: '' })}>
+                        <SelectTrigger className="h-14 w-full text-base border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500">
+                          <SelectValue placeholder="Select customer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {customers && customers.length > 0 ? customers.map(customer => (
+                            <SelectItem key={customer.id} value={customer.name}>
+                              {customer.name}
+                            </SelectItem>
+                          )) : (
+                            <SelectItem value="no-customers" disabled>No customers available</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  <div className={`${UI_CONSTANTS.spacing.card.field} mb-6`}>
-                    <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Site *</label>
-                    <Select 
-                      value={formData.site} 
-                      onValueChange={(value) => updateFormData({ site: value })}
-                      disabled={!formData.customer}
-                    >
-                      <SelectTrigger className={`h-12 ${UI_CONSTANTS.form.select} w-full`}>
-                        <SelectValue placeholder="Select site" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {formData.customer && customers.length > 0 ? (
-                          customers
-                            .find(c => c.name === formData.customer)?.sites?.map(site => (
-                              <SelectItem key={site} value={site}>
-                                {site}
-                              </SelectItem>
-                            )) || <SelectItem value="no-sites" disabled>No sites available</SelectItem>
-                        ) : (
-                          <SelectItem value="no-sites" disabled>Select customer first</SelectItem>
-                        )}
-                      </SelectContent>
-                    </Select>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-3 block">Site *</label>
+                      <Select 
+                        value={formData.site} 
+                        onValueChange={(value) => updateFormData({ site: value })}
+                        disabled={!formData.customer}
+                      >
+                        <SelectTrigger className="h-14 w-full text-base border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500 disabled:opacity-50">
+                          <SelectValue placeholder="Select site" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {formData.customer && customers.length > 0 ? (
+                            customers
+                              .find(c => c.name === formData.customer)?.sites?.map(site => (
+                                <SelectItem key={site} value={site}>
+                                  {site}
+                                </SelectItem>
+                              )) || <SelectItem value="no-sites" disabled>No sites available</SelectItem>
+                          ) : (
+                            <SelectItem value="no-sites" disabled>Select customer first</SelectItem>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
-                <div className={`${UI_CONSTANTS.card.content} bg-blue-50 p-6 rounded-lg border border-blue-200 w-full`}>
-                  <h3 className={`${UI_CONSTANTS.typography.subtitle} flex items-center gap-2`}>
-                    <User className="h-4 w-4 text-blue-600" />
+                <div className="bg-blue-50 p-8 rounded-xl border-2 border-blue-200 w-full">
+                  <h3 className="text-xl font-semibold text-blue-900 flex items-center gap-3 mb-6">
+                    <User className="h-5 w-5 text-blue-600" />
                     Reporter Information
                   </h3>
                   
-                  <div className={`${UI_CONSTANTS.spacing.card.field} mb-6`}>
-                    <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Reporter Name *</label>
-                    <Input
-                      value={formData.reporterName}
-                      onChange={(e) => updateFormData({ reporterName: e.target.value })}
-                      placeholder="Enter reporter name"
-                      className={`h-12 ${UI_CONSTANTS.form.input} w-full`}
-                    />
-                  </div>
-
-                  <div className={`${UI_CONSTANTS.spacing.card.field} mb-6`}>
-                    <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Reporter Phone *</label>
-                    <div className="relative w-full">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 text-sm font-medium z-20 pointer-events-none">+44</span>
+                  <div className="space-y-6">
+                    <div>
+                      <label className="text-sm font-medium text-blue-900 mb-3 block">Reporter Name *</label>
                       <Input
-                        value={formData.reporterPhone.replace('+44', '')}
-                        onChange={(e) => {
-                          const value = e.target.value.replace(/\D/g, ''); // Only allow numbers
-                          if (value.length <= 10) {
-                            updateFormData({ reporterPhone: '+44' + value });
-                          }
-                        }}
-                        placeholder="7123456789"
-                        className={`h-12 pl-12 ${UI_CONSTANTS.form.input} w-full ${formData.reporterPhone && !validatePhone(formData.reporterPhone) ? 'border-red-500' : ''}`}
-                        style={{ paddingLeft: '3rem' }}
+                        value={formData.reporterName}
+                        onChange={(e) => updateFormData({ reporterName: e.target.value })}
+                        placeholder="Enter reporter name"
+                        className="h-14 w-full text-base border-2 border-blue-200 hover:border-blue-300 focus:border-blue-500"
                       />
                     </div>
-                    {formData.reporterPhone && !validatePhone(formData.reporterPhone) && (
-                      <p className={`${UI_CONSTANTS.typography.caption} text-red-500 mt-1`}>Please enter a valid UK phone number (10 digits after +44)</p>
-                    )}
-                  </div>
 
-                  <div className={`${UI_CONSTANTS.spacing.card.field} mb-6`}>
-                    <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Reporter Email *</label>
-                    <Input
-                      value={formData.reporterEmail}
-                      onChange={(e) => updateFormData({ reporterEmail: e.target.value })}
-                      placeholder="Enter email address"
-                      className={`h-12 ${UI_CONSTANTS.form.input} w-full ${formData.reporterEmail && !validateEmail(formData.reporterEmail) ? 'border-red-500' : ''}`}
-                    />
-                    {formData.reporterEmail && !validateEmail(formData.reporterEmail) && (
-                      <p className={`${UI_CONSTANTS.typography.caption} text-red-500 mt-1`}>Please enter a valid email address</p>
-                    )}
-                  </div>
+                    <div>
+                      <label className="text-sm font-medium text-blue-900 mb-3 block">Reporter Phone *</label>
+                      <div className="flex w-full">
+                        <div className="flex-shrink-0 bg-blue-100 px-4 py-3 rounded-l-lg border-2 border-r-0 border-blue-200 flex items-center justify-center">
+                          <span className="text-blue-700 font-medium text-base">+44</span>
+                        </div>
+                        <Input
+                          value={formData.reporterPhone.replace('+44', '')}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/\D/g, '');
+                            if (value.length <= 10) {
+                              updateFormData({ reporterPhone: '+44' + value });
+                            }
+                          }}
+                          placeholder="7123456789"
+                          className={`h-14 flex-1 text-base rounded-l-none border-l-0 border-2 border-blue-200 hover:border-blue-300 focus:border-blue-500 ${
+                            formData.reporterPhone && !validatePhone(formData.reporterPhone) ? 'border-red-500' : ''
+                          }`}
+                        />
+                      </div>
+                      {formData.reporterPhone && !validatePhone(formData.reporterPhone) && (
+                        <p className="text-red-500 text-sm mt-2">Please enter a valid UK phone number (10 digits after +44)</p>
+                      )}
+                    </div>
 
-                  <div className={`${UI_CONSTANTS.spacing.card.field} mb-6`}>
-                    <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Relationship</label>
-                    <Input
-                      value={formData.reporterRelationship}
-                      onChange={(e) => updateFormData({ reporterRelationship: e.target.value })}
-                      placeholder="e.g., Facilities Manager"
-                      className={`h-12 ${UI_CONSTANTS.form.input} w-full`}
-                    />
+                    <div>
+                      <label className="text-sm font-medium text-blue-900 mb-3 block">Reporter Email *</label>
+                      <Input
+                        value={formData.reporterEmail}
+                        onChange={(e) => updateFormData({ reporterEmail: e.target.value })}
+                        placeholder="Enter email address"
+                        className={`h-14 w-full text-base border-2 border-blue-200 hover:border-blue-300 focus:border-blue-500 ${
+                          formData.reporterEmail && !validateEmail(formData.reporterEmail) ? 'border-red-500' : ''
+                        }`}
+                      />
+                      {formData.reporterEmail && !validateEmail(formData.reporterEmail) && (
+                        <p className="text-red-500 text-sm mt-2">Please enter a valid email address</p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="text-sm font-medium text-blue-900 mb-3 block">Relationship</label>
+                      <Input
+                        value={formData.reporterRelationship}
+                        onChange={(e) => updateFormData({ reporterRelationship: e.target.value })}
+                        placeholder="e.g., Facilities Manager"
+                        className="h-14 w-full text-base border-2 border-blue-200 hover:border-blue-300 focus:border-blue-500"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -772,72 +808,20 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                 )}
               </div>
 
+                            {/* Confirmation Checkbox */}
               {formData.selectedEngineer && (
-                <>
-                  {/* Target Attendance Date & Time */}
-                  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
-                    <h4 className={`${UI_CONSTANTS.typography.subtitle} text-blue-900 mb-3`}>Target Attendance Date & Time</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className={`${UI_CONSTANTS.spacing.card.field}`}>
-                        <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Target Date *</label>
-                        <Input
-                          type="date"
-                          value={formData.targetAttendanceDate ? formData.targetAttendanceDate.toISOString().split('T')[0] : ''}
-                          onChange={(e) => updateFormData({ targetAttendanceDate: e.target.value ? new Date(e.target.value) : null })}
-                          className={`h-12 ${UI_CONSTANTS.form.input} w-full`}
-                        />
-                      </div>
-                      <div className={`${UI_CONSTANTS.spacing.card.field}`}>
-                        <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Target Time *</label>
-                        <Input
-                          type="time"
-                          value={formData.targetAttendanceTime || ''}
-                          onChange={(e) => updateFormData({ targetAttendanceTime: e.target.value })}
-                          className={`h-12 ${UI_CONSTANTS.form.input} w-full`}
-                        />
-                      </div>
-                    </div>
+                <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg mt-6">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="callConfirmed"
+                      checked={formData.callConfirmed}
+                      onCheckedChange={(checked) => updateFormData({ callConfirmed: !!checked })}
+                    />
+                    <label htmlFor="callConfirmed" className="text-sm font-medium">
+                      I have called {formData.selectedEngineer} and confirmed they can accept this job *
+                    </label>
                   </div>
-
-                  {/* Allocated Visit Date & Time */}
-                  <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-4">
-                    <h4 className={`${UI_CONSTANTS.typography.subtitle} text-green-900 mb-3`}>Allocated Visit Date & Time</h4>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className={`${UI_CONSTANTS.spacing.card.field}`}>
-                        <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Visit Date *</label>
-                        <Input
-                          type="date"
-                          value={formData.allocatedVisitDate ? formData.allocatedVisitDate.toISOString().split('T')[0] : ''}
-                          onChange={(e) => updateFormData({ allocatedVisitDate: e.target.value ? new Date(e.target.value) : null })}
-                          className={`h-12 ${UI_CONSTANTS.form.input} w-full`}
-                        />
-                      </div>
-                      <div className={`${UI_CONSTANTS.spacing.card.field}`}>
-                        <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Visit Time *</label>
-                        <Input
-                          type="time"
-                          value={formData.allocatedVisitTime || ''}
-                          onChange={(e) => updateFormData({ allocatedVisitTime: e.target.value })}
-                          className={`h-12 ${UI_CONSTANTS.form.input} w-full`}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Confirmation Checkbox */}
-                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="callConfirmed"
-                        checked={formData.callConfirmed}
-                        onCheckedChange={(checked) => updateFormData({ callConfirmed: !!checked })}
-                      />
-                      <label htmlFor="callConfirmed" className="text-sm font-medium">
-                        I have called {formData.selectedEngineer} and confirmed they can accept this job *
-                      </label>
-                    </div>
-                  </div>
-                </>
+                </div>
               )}
             </div>
           )}
@@ -846,11 +830,11 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
             <div className={`${UI_CONSTANTS.spacing.section}`}>
               <div className="text-center mb-6">
                 <CheckCircle className="mx-auto h-10 w-10 text-green-600 mb-4" />
-                <h2 className={`${UI_CONSTANTS.typography.title} text-lg`}>Schedule & Review</h2>
-                <p className={`${UI_CONSTANTS.typography.bodyMuted}`}>Set preferred date/time and review job details</p>
+                <h2 className={`${UI_CONSTANTS.typography.title} text-lg`}>Schedule & Allocation</h2>
+                <p className={`${UI_CONSTANTS.typography.bodyMuted}`}>Set preferred date/time and allocate visit times</p>
               </div>
 
-              <div className="bg-gray-50 p-4 rounded-lg">
+              <div className="bg-gray-50 p-4 rounded-lg mb-6">
                 <h3 className={`${UI_CONSTANTS.typography.title} mb-4`}>Job Summary</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                   <div>
@@ -886,7 +870,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
               </div>
 
               <div className={`${UI_CONSTANTS.spacing.card.content}`}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                   <div className={`${UI_CONSTANTS.spacing.card.field}`}>
                     <label className={`${UI_CONSTANTS.typography.subtitle}`}>Preferred Start Date & Time *</label>
                     <Input
@@ -915,6 +899,56 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                         ⚠️ Out of Hours (OOH) may apply - End time is outside 8am-5pm
                       </p>
                     )}
+                  </div>
+                </div>
+
+                {/* Target Attendance Date & Time */}
+                <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+                  <h4 className={`${UI_CONSTANTS.typography.subtitle} text-blue-900 mb-3`}>Target Attendance Date & Time</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                      <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Target Date *</label>
+                      <Input
+                        type="date"
+                        value={formData.targetAttendanceDate ? formData.targetAttendanceDate.toISOString().split('T')[0] : ''}
+                        onChange={(e) => updateFormData({ targetAttendanceDate: e.target.value ? new Date(e.target.value) : null })}
+                        className={`h-12 ${UI_CONSTANTS.form.input} w-full`}
+                      />
+                    </div>
+                    <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                      <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Target Time *</label>
+                      <Input
+                        type="time"
+                        value={formData.targetAttendanceTime || ''}
+                        onChange={(e) => updateFormData({ targetAttendanceTime: e.target.value })}
+                        className={`h-12 ${UI_CONSTANTS.form.input} w-full`}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Allocated Visit Date & Time */}
+                <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-4">
+                  <h4 className={`${UI_CONSTANTS.typography.subtitle} text-green-900 mb-3`}>Allocated Visit Date & Time</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                      <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Visit Date *</label>
+                      <Input
+                        type="date"
+                        value={formData.allocatedVisitDate ? formData.allocatedVisitDate.toISOString().split('T')[0] : ''}
+                        onChange={(e) => updateFormData({ allocatedVisitDate: e.target.value ? new Date(e.target.value) : null })}
+                        className={`h-12 ${UI_CONSTANTS.form.input} w-full`}
+                      />
+                    </div>
+                    <div className={`${UI_CONSTANTS.spacing.card.field}`}>
+                      <label className={`${UI_CONSTANTS.typography.subtitle} mb-2 block`}>Visit Time *</label>
+                      <Input
+                        type="time"
+                        value={formData.allocatedVisitTime || ''}
+                        onChange={(e) => updateFormData({ allocatedVisitTime: e.target.value })}
+                        className={`h-12 ${UI_CONSTANTS.form.input} w-full`}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -959,6 +993,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
               >
                 Next
                 <ArrowRight size={18} className="ml-2" />
+                <span className="ml-2 text-xs opacity-75">(N)</span>
               </Button>
             )}
             
@@ -970,6 +1005,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
               >
                 <CheckCircle size={18} className="mr-2" />
                 Create Job
+                <span className="ml-2 text-xs opacity-75">(N)</span>
               </Button>
             )}
           </div>

@@ -31,6 +31,7 @@ interface MasterDashboardProps {
   onJobCreate: () => void;
   onJobClick: (job: Job) => void;
   onAlertsClick: () => void;
+  onEngineerAlertsClick: () => void;
 }
 
 export default function MasterDashboard({ 
@@ -38,7 +39,8 @@ export default function MasterDashboard({
   customers, 
   onJobCreate, 
   onJobClick,
-  onAlertsClick
+  onAlertsClick,
+  onEngineerAlertsClick
 }: MasterDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -234,6 +236,16 @@ export default function MasterDashboard({
           <p className="text-muted-foreground">Out of Hours Support Management</p>
         </div>
                   <div className="flex items-center gap-3">
+            {/* Engineer Action Alerts Button */}
+            <Button 
+              onClick={onEngineerAlertsClick}
+              variant="outline" 
+              className="flex items-center gap-2 hover:bg-blue-50 transition-colors border-blue-200 text-blue-700"
+            >
+              <User className="h-5 w-5 text-blue-600" />
+              <span className="text-blue-700 font-medium">Engineer Alerts</span>
+            </Button>
+
             {/* Enhanced Alerts Indicator */}
             <div className="relative" ref={alertsDropdownRef}>
               <Button 
@@ -719,17 +731,20 @@ export default function MasterDashboard({
                   </div>
                 </div>
 
-                {/* Alerts */}
-                {job.alerts && job.alerts.length > 0 && (
-                  <div className="space-y-1">
-                    {job.alerts.filter(alert => !alert.acknowledged).map((alert) => (
-                      <div key={alert.id} className="flex items-center space-x-1 text-red-600 bg-red-50 px-2 py-1 rounded">
-                        <AlertTriangle className="h-3 w-3" />
-                        <p className="text-xs font-medium">{alert.type}</p>
-                      </div>
-                    ))}
+                {/* Engineer Action Alerts */}
+                {job.status === 'allocated' && !job.dateAccepted && (
+                  <div className="flex items-center space-x-1 text-blue-600 bg-blue-50 px-2 py-1 rounded">
+                    <User className="h-3 w-3" />
+                    <p className="text-xs font-medium">Engineer Accept Required</p>
                   </div>
                 )}
+                {job.dateAccepted && !job.dateOnSite && job.status !== 'completed' && (
+                  <div className="flex items-center space-x-1 text-green-600 bg-green-50 px-2 py-1 rounded">
+                    <MapPin className="h-3 w-3" />
+                    <p className="text-xs font-medium">Engineer Onsite Required</p>
+                  </div>
+                )}
+                {/* General Alerts */}
                 {(!job.alerts || job.alerts.length === 0) && (job.status === 'red' || job.priority === 'Critical') && (
                   <div className="flex items-center space-x-1 text-red-600">
                     <AlertTriangle className="h-3 w-3" />

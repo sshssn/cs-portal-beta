@@ -23,8 +23,8 @@ import {
 } from 'lucide-react';
 
 interface NavigationSidebarProps {
-  currentView: 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites';
-  onViewChange: (view: 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites') => void;
+  currentView: 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites';
+  onViewChange: (view: 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites') => void;
   onHomepageClick?: () => void;
   selectedCustomer?: string | null;
 }
@@ -59,6 +59,12 @@ export default function NavigationSidebar({
       label: 'Alerts Portal',
       icon: Bell,
       description: 'Monitor and manage all system alerts across all customers and jobs'
+    },
+    {
+      id: 'engineer-alerts',
+      label: 'Engineer Alerts',
+      icon: User,
+      description: 'Monitor engineer job acceptance and onsite status alerts'
     },
     {
       id: 'wizard',
@@ -110,7 +116,7 @@ export default function NavigationSidebar({
                   <SidebarMenuItem key={item.id}>
                     <SidebarMenuButton
                       onClick={() => {
-                        onViewChange(item.id as 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites');
+                        onViewChange(item.id as 'master' | 'customer' | 'customer-dashboard' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'customer-detail' | 'customer-alerts' | 'job-detail' | 'sites');
                         // If it's Master Dashboard, also trigger homepage navigation
                         if (item.id === 'master' && onHomepageClick) {
                           onHomepageClick();
