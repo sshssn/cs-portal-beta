@@ -88,12 +88,6 @@ export default function NavigationSidebar({
       description: 'Monitor and manage all system alerts across all customers and jobs'
     },
     {
-      id: 'engineer-alerts',
-      label: 'Engineer Alerts',
-      icon: User,
-      description: 'Monitor engineer job acceptance and onsite status alerts'
-    },
-    {
       id: 'wizard',
       label: 'New Job Wizard',
       icon: PlusCircle,
