@@ -267,6 +267,55 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
               </div>
             </div>
             
+            {/* Visit Status */}
+            <div className="mb-3">
+              <span className="font-medium text-gray-700 text-sm">Visit Status:</span>
+              {(() => {
+                const job = jobs.find(j => j.id === alert.jobId);
+                if (!job) return <span className="text-gray-500 ml-2">Unknown</span>;
+                
+                const getStatusDisplay = (status: string) => {
+                  switch (status) {
+                    case 'new': return 'New Job';
+                    case 'allocated': return 'Allocated';
+                    case 'attended': return 'Accepted';
+                    case 'awaiting_parts': return 'Awaiting Parts';
+                    case 'parts_to_fit': return 'Parts to Fit';
+                    case 'completed': return 'Completed';
+                    case 'costed': return 'Costed';
+                    case 'reqs_invoice': return 'Requires Invoice';
+                    case 'green': return 'On Track';
+                    case 'amber': return 'Attention';
+                    case 'red': return 'Critical';
+                    default: return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
+                  }
+                };
+
+                const getStatusColor = (status: string) => {
+                  switch (status) {
+                    case 'new': return 'bg-blue-100 text-blue-800 border-blue-200';
+                    case 'allocated': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                    case 'attended': return 'bg-green-100 text-green-800 border-green-200';
+                    case 'awaiting_parts': return 'bg-orange-100 text-orange-800 border-orange-200';
+                    case 'parts_to_fit': return 'bg-purple-100 text-purple-800 border-purple-200';
+                    case 'completed': return 'bg-green-600 text-white border-green-700';
+                    case 'costed': return 'bg-blue-600 text-white border-blue-700';
+                    case 'reqs_invoice': return 'bg-indigo-600 text-white border-indigo-700';
+                    case 'green': return 'bg-green-100 text-green-800 border-green-200';
+                    case 'amber': return 'bg-amber-100 text-amber-800 border-amber-200';
+                    case 'red': return 'bg-red-100 text-red-800 border-red-200';
+                    default: return 'bg-gray-100 text-gray-800 border-gray-200';
+                  }
+                };
+
+                return (
+                  <Badge className={`${getStatusColor(job.status)} ml-2 px-2 py-1 text-xs font-medium border`}>
+                    {getStatusDisplay(job.status)}
+                  </Badge>
+                );
+              })()}
+            </div>
+            
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Clock className="h-4 w-4" />
               <span>{alert.timestamp.toLocaleString()}</span>
@@ -371,6 +420,55 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
                                   <span>•</span>
                                   <User className="h-3 w-3" />
                                   <span>{alert.engineer}</span>
+                                </div>
+                                
+                                {/* Visit Status in notifications */}
+                                <div className="flex items-center gap-2 mt-1">
+                                  <span className="text-xs text-gray-500">Status:</span>
+                                  {(() => {
+                                    const job = jobs.find(j => j.id === alert.jobId);
+                                    if (!job) return <span className="text-gray-400">Unknown</span>;
+                                    
+                                    const getStatusDisplay = (status: string) => {
+                                      switch (status) {
+                                        case 'new': return 'New';
+                                        case 'allocated': return 'Allocated';
+                                        case 'attended': return 'Accepted';
+                                        case 'awaiting_parts': return 'Awaiting Parts';
+                                        case 'parts_to_fit': return 'Parts to Fit';
+                                        case 'completed': return 'Completed';
+                                        case 'costed': return 'Costed';
+                                        case 'reqs_invoice': return 'Requires Invoice';
+                                        case 'green': return 'On Track';
+                                        case 'amber': return 'Attention';
+                                        case 'red': return 'Critical';
+                                        default: return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
+                                      }
+                                    };
+
+                                    const getStatusColor = (status: string) => {
+                                      switch (status) {
+                                        case 'new': return 'bg-blue-500 text-white';
+                                        case 'allocated': return 'bg-yellow-500 text-white';
+                                        case 'attended': return 'bg-green-500 text-white';
+                                        case 'awaiting_parts': return 'bg-orange-500 text-white';
+                                        case 'parts_to_fit': return 'bg-purple-500 text-white';
+                                        case 'completed': return 'bg-green-600 text-white';
+                                        case 'costed': return 'bg-blue-600 text-white';
+                                        case 'reqs_invoice': return 'bg-indigo-600 text-white';
+                                        case 'green': return 'bg-green-500 text-white';
+                                        case 'amber': return 'bg-amber-500 text-white';
+                                        case 'red': return 'bg-red-500 text-white';
+                                        default: return 'bg-gray-500 text-white';
+                                      }
+                                    };
+
+                                    return (
+                                      <Badge className={`${getStatusColor(job.status)} px-2 py-0.5 text-xs font-medium`}>
+                                        {getStatusDisplay(job.status)}
+                                      </Badge>
+                                    );
+                                  })()}
                                 </div>
                               </div>
                               <div className="ml-3">
@@ -540,6 +638,116 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
                 </CardContent>
               </Card>
 
+              {/* Visit Status */}
+              <Card className="bg-amber-50 border-2 border-amber-200">
+                <CardHeader>
+                  <CardTitle className="text-lg text-amber-900">Visit Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const job = jobs.find(j => j.id === selectedAlert.jobId);
+                    if (!job) return <p className="text-red-600">Job not found</p>;
+                    
+                    const getStatusDisplay = (status: string) => {
+                      switch (status) {
+                        case 'new': return 'New Job';
+                        case 'allocated': return 'Allocated to Engineer';
+                        case 'attended': return 'Engineer Accepted';
+                        case 'awaiting_parts': return 'Awaiting Parts';
+                        case 'parts_to_fit': return 'Parts to Fit';
+                        case 'completed': return 'Completed';
+                        case 'costed': return 'Costed';
+                        case 'reqs_invoice': return 'Requires Invoice';
+                        case 'green': return 'On Track';
+                        case 'amber': return 'Attention Required';
+                        case 'red': return 'Critical';
+                        default: return status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ');
+                      }
+                    };
+
+                    const getStatusColor = (status: string) => {
+                      switch (status) {
+                        case 'new': return 'bg-blue-100 text-blue-800 border-blue-200';
+                        case 'allocated': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+                        case 'attended': return 'bg-green-100 text-green-800 border-green-200';
+                        case 'awaiting_parts': return 'bg-orange-100 text-orange-800 border-orange-200';
+                        case 'parts_to_fit': return 'bg-purple-100 text-purple-800 border-purple-200';
+                        case 'completed': return 'bg-green-600 text-white border-green-700';
+                        case 'costed': return 'bg-blue-600 text-white border-blue-700';
+                        case 'reqs_invoice': return 'bg-indigo-600 text-white border-indigo-700';
+                        case 'green': return 'bg-green-100 text-green-800 border-green-200';
+                        case 'amber': return 'bg-amber-100 text-amber-800 border-amber-200';
+                        case 'red': return 'bg-red-100 text-red-800 border-red-200';
+                        default: return 'bg-gray-100 text-gray-800 border-gray-200';
+                      }
+                    };
+
+                    return (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-amber-900">Current Status:</span>
+                          <Badge className={`${getStatusColor(job.status)} px-3 py-1 text-sm font-medium border`}>
+                            {getStatusDisplay(job.status)}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium text-amber-900">Date Logged:</span>
+                            <p className="text-amber-800">{job.dateLogged.toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-amber-900">Date Accepted:</span>
+                            <p className="text-amber-800">
+                              {job.dateAccepted ? job.dateAccepted.toLocaleDateString() : 'Not yet accepted'}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-amber-900">Date On Site:</span>
+                            <p className="text-amber-800">
+                              {job.dateOnSite ? job.dateOnSite.toLocaleDateString() : 'Not yet on site'}
+                            </p>
+                          </div>
+                          <div>
+                            <span className="font-medium text-amber-900">Date Completed:</span>
+                            <p className="text-amber-800">
+                              {job.dateCompleted ? job.dateCompleted.toLocaleDateString() : 'Not yet completed'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {job.dateAccepted && (
+                          <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 text-green-800">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="font-medium">Engineer accepted job on {job.dateAccepted.toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {job.dateOnSite && (
+                          <div className="bg-blue-50 border border-blue-200 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 text-blue-800">
+                              <MapPin className="h-4 w-4" />
+                              <span className="font-medium">Engineer arrived on site on {job.dateOnSite.toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        )}
+
+                        {job.dateCompleted && (
+                          <div className="bg-green-50 border border-green-200 p-3 rounded-lg">
+                            <div className="flex items-center gap-2 text-green-800">
+                              <CheckCircle className="h-4 w-4" />
+                              <span className="font-medium">Job completed on {job.dateCompleted.toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
               {/* Engineer Information */}
               <Card className="bg-blue-50 border-2 border-blue-200">
                 <CardHeader>
@@ -653,3 +861,4 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
     </div>
   );
 }
+

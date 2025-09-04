@@ -88,7 +88,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
 
     document.addEventListener('keydown', handleKeyPress);
     return () => document.removeEventListener('keydown', handleKeyPress);
-  }, [currentStep]);
+  }, [currentStep, isStepValid]);
 
   const [formData, setFormData] = useState<JobFormData>({
     customer: '',
@@ -158,6 +158,8 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
   const deleteSiteNote = (id: string) => {
     setSiteNotes(prev => prev.filter(note => note.id !== id));
   };
+
+
 
 
 
