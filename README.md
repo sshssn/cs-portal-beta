@@ -1,8 +1,77 @@
+<<<<<<< HEAD
 # 🚀 Customer Service Portal
+=======
+# 🚀 Help Desk Portal
+>>>>>>> 3c396263baa4ba5b8458540773d22c4e1e551e0e
 
 A modern, responsive Customer Service Portal built with React, TypeScript, and Tailwind CSS. This application provides comprehensive job management, alert systems, and customer service tools for field service operations.
 
 ![Customer Service Portal Screenshot](https://pikwy.com/web/68b99e77e1a7ba5469357618)
+
+<<<<<<< HEAD
+## 🌟 Live Demo
+
+**🔗 [View Live Application](https://cs-portal-beta.vercel.app/)**
+
+## ✨ Features
+
+### 🎯 Core Functionality
+
+* **📋 Job Management**: Create, view, edit, and track service jobs
+* **🧙‍♂️ 5-Step Job Logging Wizard**: Streamlined job creation process
+* **🚨 Real-time Alerts**: Inline alert system with toast notifications
+* **👥 Customer Dashboard**: Customer-specific job views and management
+* **👨‍🔧 Engineer Management**: Track engineer availability and assignments
+* **⏱️ SLA Monitoring**: Automated status tracking (Green/Amber/Red)
+* **🔔 Global Alerts Portal**: Unified portal for all system alerts including engineer alerts
+* **📊 End of Shift Reports**: Comprehensive end-of-day reporting
+
+### 🎨 User Experience
+
+* **📱 Responsive Design**: Works on desktop, tablet, and mobile devices
+* **🎨 Modern UI**: Built with Shadcn/UI components and Tailwind CSS
+* **🔍 Advanced Filtering**: Search and filter jobs by multiple criteria
+* **📊 Dashboard Analytics**: Real-time job statistics and insights
+* **🔄 Real-time Updates**: Live status updates and notifications
+
+### 🚨 Enhanced Alert System (Latest Update)
+
+* **🔄 Unified Alerts**: Integrated Engineer Alerts into Global Alerts Portal
+* **🎨 Modern Card UI**: Sleek, color-coded alert cards with priority indicators
+* **🏢 Customer Alerts**: Dedicated section for customer-specific alerts
+* **👷‍♂️ Engineer Alerts**: Monitor engineer job acceptance and on-site status
+* **🏗️ Site Alerts**: Track site-specific issues and maintenance
+* **🔔 Alert Categories**: Organized by customer, job, and site for better management
+* **📊 Dynamic Metrics**: KPIs that update based on selected alert view
+
+## 🛠️ Tech Stack
+
+* **Frontend**: React 19, TypeScript, Vite
+* **UI Components**: Shadcn/UI, Radix UI
+* **Styling**: Tailwind CSS
+* **Routing**: React Router DOM
+* **State Management**: React Hooks
+* **Notifications**: Sonner
+* **Icons**: Lucide React
+* **Build Tool**: Vite
+* **Package Manager**: pnpm
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+* Node.js 18+
+* pnpm (recommended) or npm
+
+### Installation
+
+1. **Clone the repository**  
+```bash
+git clone https://github.com/flophero/mock-portal.git
+cd mock-portal
+```
+
+=======
 
 ## 🌟 Live Demo
 
@@ -66,6 +135,7 @@ git clone https://github.com/flophero/mock-portal.git
 cd mock-portal
 ```
 
+>>>>>>> 3c396263baa4ba5b8458540773d22c4e1e551e0e
 2. **Install dependencies**  
 ```bash
 pnpm install
@@ -216,8 +286,16 @@ This project is licensed under the MIT License.
 * React for the amazing frontend library
 * Lucide React for the beautiful icons
 
+<<<<<<< HEAD
 ---
 
 **Built with ❤️ for better customer service management**
 
 _Last updated: September 2025_
+=======
+Made with <3 with a lot of VibeCoding
+
+**Built with ❤️ for better customer service management**
+
+_Last updated: September 2025_
+>>>>>>> 3c396263baa4ba5b8458540773d22c4e1e551e0e
