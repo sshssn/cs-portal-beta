@@ -47,7 +47,7 @@ export interface Job {
   engineer: string;
   contact: JobContact;
   reporter: Reporter;
-  status: 'green' | 'amber' | 'red' | 'new' | 'allocated' | 'attended' | 'awaiting_parts' | 'parts_to_fit' | 'completed' | 'costed' | 'reqs_invoice';
+  status: 'new' | 'allocated' | 'attended' | 'awaiting_parts' | 'parts_to_fit' | 'completed' | 'costed' | 'reqs_invoice';
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
   dateLogged: Date;
   dateAccepted: Date | null;

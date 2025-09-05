@@ -43,6 +43,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { loadCommunicationFromStorage, saveCommunicationToStorage, loadNotesFromStorage, saveNotesToStorage } from '@/lib/jobUtils';
+import { trackJobUpdate, trackStatusChange, trackAlertCreated, trackAlertResolved } from '@/lib/auditTrailUtils';
 
 interface JobDetailPageProps {
   jobs: Job[];
@@ -138,6 +139,58 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
     }
   }, [jobId, jobs]);
 
+  // Define what fields can be edited based on job status
+  const getEditableFields = (status: Job['status']): (keyof Job)[] => {
+    // Fields that can be edited regardless of status
+    const alwaysEditable: (keyof Job)[] = ['description', 'jobNotes'];
+    
+    // Fields that can only be edited for new jobs
+    const newJobEditable: (keyof Job)[] = [
+      'customer', 'site', 'contact', 'reporter', 'priority', 'category',
+      'jobType', 'targetCompletionTime', 'customAlerts', 'preferredAppointmentDate',
+      'targetAttendanceDate', 'targetAttendanceTime', 'jobOwner', 'tags'
+    ];
+    
+    // Fields that can be edited before job is allocated
+    const preAllocationEditable: (keyof Job)[] = [
+      'engineer', 'allocatedVisitDate', 'allocatedVisitTime'
+    ];
+    
+    // Return appropriate fields based on status
+    switch (status) {
+      case 'new':
+        return [...alwaysEditable, ...newJobEditable, ...preAllocationEditable];
+      case 'allocated':
+        return [...alwaysEditable, 'priority', 'engineer', 'allocatedVisitDate', 'allocatedVisitTime'];
+      case 'attended':
+      case 'awaiting_parts':
+      case 'parts_to_fit':
+        return [...alwaysEditable, 'priority', 'reason'];
+      case 'completed':
+      case 'costed':
+      case 'reqs_invoice':
+        return alwaysEditable;
+      default:
+        return alwaysEditable;
+    }
+  };
+  
+  // Check if a specific field can be edited
+  const canEditField = (fieldName: keyof Job): boolean => {
+    if (!job) return false;
+    const editableFields = getEditableFields(job.status);
+    return editableFields.includes(fieldName);
+  };
+
+  // Show restricted field warning
+  const showRestrictedFieldWarning = (fieldName: string) => {
+    showNotification({
+      type: 'warning',
+      title: 'Field Cannot Be Edited',
+      message: `The ${fieldName} field cannot be edited when job status is '${job?.status}'. Contact your supervisor for assistance.`
+    });
+  };
+
   const handleSave = () => {
     if (editedJob && job) {
       // Check what changed and add appropriate communications
@@ -156,23 +209,17 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
         changes.push(`Engineer changed to ${editedJob.engineer}`);
       }
       
-      // Add communication for changes
+      // Add audit trail for changes
       if (changes.length > 0) {
-        const changeComm: CommunicationEvent = {
-          id: `change-${Date.now()}`,
-          timestamp: new Date(),
-          type: 'status_update',
-          direction: 'inbound',
-          from: 'Current User',
-          to: 'System',
-          content: `Job details updated: ${changes.join(', ')}`,
-          status: 'sent',
-          priority: 'medium',
-          tags: ['auto', 'update'],
-          relatedJobId: jobId,
-          requiresFollowUp: false
-        };
-        setCommunications(prev => [changeComm, ...prev]);
+        // Track job update in audit trail system
+        const auditEvent = trackJobUpdate(editedJob, changes);
+        setCommunications(prev => [auditEvent, ...prev]);
+        
+        // If status changed, add specific audit trail entry
+        if (editedJob.status !== job.status) {
+          const statusEvent = trackStatusChange(editedJob, job.status, editedJob.status);
+          setCommunications(prev => [statusEvent, ...prev]);
+        }
       }
       
       onJobUpdate(editedJob);
@@ -196,6 +243,10 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
       timestamp: new Date(),
       acknowledged: false
     };
+    
+    // Track alert creation in audit trail
+    const auditEvent = trackAlertCreated(editedJob, newAlert);
+    setCommunications(prev => [auditEvent, ...prev]);
 
     const updatedJob = {
       ...editedJob,
@@ -208,14 +259,24 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
   const acknowledgeAlert = (alertId: string) => {
     if (!editedJob) return;
     
+    // Find the alert that's being acknowledged
+    const alertToAcknowledge = editedJob.alerts?.find(alert => alert.id === alertId);
+    
     const updatedJob = {
       ...editedJob,
       alerts: editedJob.alerts?.map(alert => 
-        alert.id === alertId ? { ...alert, acknowledged: true } : alert
+        alert.id === alertId ? { ...alert, acknowledged: true, resolution: 'Alert acknowledged by operator', resolvedAt: new Date() } : alert
       ) || []
     };
     
     setEditedJob(updatedJob);
+    
+    // Track alert resolution in audit trail if alert was found
+    if (alertToAcknowledge) {
+      const resolvedAlert = { ...alertToAcknowledge, acknowledged: true, resolution: 'Alert acknowledged by operator', resolvedAt: new Date() };
+      const auditEvent = trackAlertResolved(editedJob, resolvedAlert);
+      setCommunications(prev => [auditEvent, ...prev]);
+    }
   };
 
   const addCommunication = () => {
@@ -641,7 +702,15 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
           </div>
           <div className="flex items-center space-x-2">
             {!isEditing ? (
-              <Button onClick={() => setIsEditing(true)}>
+              <Button onClick={() => {
+                setIsEditing(true);
+                // Show toast explaining edit limitations
+                showNotification({
+                  type: 'info',
+                  title: 'Job Editing Restrictions',
+                  message: `Some fields may be locked based on job status (${job.status}). Only authorized fields can be modified.`
+                });
+              }}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Job
               </Button>
@@ -660,9 +729,10 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {/* Main Job Details */}
-          <div className="lg:col-span-3 space-y-6">
+        {/* Main Content - Horizontal Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 max-w-7xl mx-auto">
+          {/* Job Information - Left Column */}
+          <div className="space-y-6">
             {/* Basic Information */}
             <Card className={getCardClasses('hover')}>
               <CardHeader className={UI_CONSTANTS.card.header}>
@@ -689,8 +759,15 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                     {isEditing ? (
                       <Input 
                         value={currentJob?.customer || ''} 
-                        onChange={(e) => setEditedJob(prev => prev ? { ...prev, customer: e.target.value } : null)}
-                        className={getFormClasses('input')}
+                        onChange={(e) => {
+                          if (canEditField('customer')) {
+                            setEditedJob(prev => prev ? { ...prev, customer: e.target.value } : null)
+                          } else {
+                            showRestrictedFieldWarning('Customer');
+                          }
+                        }}
+                        className={`${getFormClasses('input')} ${!canEditField('customer') ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        disabled={!canEditField('customer')}
                       />
                     ) : (
                       <p className={UI_CONSTANTS.typography.body}>{job.customer}</p>
@@ -701,8 +778,15 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                     {isEditing ? (
                       <Input 
                         value={currentJob?.site || ''} 
-                        onChange={(e) => setEditedJob(prev => prev ? { ...prev, site: e.target.value } : null)}
-                        className={getFormClasses('input')}
+                        onChange={(e) => {
+                          if (canEditField('site')) {
+                            setEditedJob(prev => prev ? { ...prev, site: e.target.value } : null)
+                          } else {
+                            showRestrictedFieldWarning('Site');
+                          }
+                        }}
+                        className={`${getFormClasses('input')} ${!canEditField('site') ? 'bg-gray-100 cursor-not-allowed' : ''}`}
+                        disabled={!canEditField('site')}
                       />
                     ) : (
                       <p className={UI_CONSTANTS.typography.body}>{job.site}</p>
@@ -713,7 +797,16 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                     {isEditing ? (
                       <Select 
                         value={currentJob?.status || 'new'} 
-                        onValueChange={(value) => setEditedJob(prev => prev ? { ...prev, status: value as Job['status'] } : null)}
+                        onValueChange={(value) => {
+                          // Status can only be changed by supervisors or specific workflow actions
+                          // For normal edits, we'll show a warning
+                          showNotification({
+                            type: 'warning',
+                            title: 'Status Change Restricted',
+                            message: 'Job status can only be changed through workflow actions or by supervisors. Use Previous/Next buttons for status transitions.'
+                          });
+                        }}
+                        disabled={true}
                       >
                         <SelectTrigger className={getFormClasses('select')}>
                           <SelectValue />
@@ -981,6 +1074,84 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
               </CardContent>
             </Card>
 
+            {/* Reporter Details */}
+            <Card className={getCardClasses('hover')}>
+              <CardHeader className={UI_CONSTANTS.card.header}>
+                <CardTitle className={`flex items-center ${UI_CONSTANTS.typography.title}`}>
+                  <User className={`${UI_CONSTANTS.spacing.icon} ${getIconClasses('md', 'primary')}`} />
+                  Reporter Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className={UI_CONSTANTS.card.content}>
+                <div className={`grid grid-cols-1 md:grid-cols-2 ${UI_CONSTANTS.spacing.card.grid}`}>
+                  <div className={UI_CONSTANTS.spacing.card.field}>
+                    <label className={UI_CONSTANTS.typography.subtitle}>Reporter Name</label>
+                    {isEditing ? (
+                      <Input 
+                        value={currentJob?.reporter.name || ''} 
+                        onChange={(e) => setEditedJob(prev => prev ? { 
+                          ...prev, 
+                          reporter: { ...prev.reporter, name: e.target.value }
+                        } : null)}
+                        className={getFormClasses('input')}
+                      />
+                    ) : (
+                      <div className={`flex items-center ${UI_CONSTANTS.spacing.element}`}>
+                        <User className={getIconClasses('sm', 'primary')} />
+                        <span className={UI_CONSTANTS.typography.body}>{job.reporter.name}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Phone</label>
+                    {isEditing ? (
+                      <Input 
+                        value={currentJob?.reporter.number || ''} 
+                        onChange={(e) => setEditedJob(prev => prev ? { 
+                          ...prev, 
+                          reporter: { ...prev.reporter, number: e.target.value }
+                        } : null)}
+                      />
+                    ) : (
+                      <p className="text-gray-900">{job.reporter.number}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Email</label>
+                    {isEditing ? (
+                      <Input 
+                        value={currentJob?.reporter.email || ''} 
+                        onChange={(e) => setEditedJob(prev => prev ? { 
+                          ...prev, 
+                          reporter: { ...prev.reporter, email: e.target.value }
+                        } : null)}
+                      />
+                    ) : (
+                      <p className="text-gray-900">{job.reporter.email}</p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-700">Relationship</label>
+                    {isEditing ? (
+                      <Input 
+                        value={currentJob?.reporter.relationship || ''} 
+                        onChange={(e) => setEditedJob(prev => prev ? { 
+                          ...prev, 
+                          reporter: { ...prev.reporter, relationship: e.target.value }
+                        } : null)}
+                      />
+                    ) : (
+                      <p className="text-gray-900">{job.reporter.relationship}</p>
+                    )}
+                  </div>
+                  <div className="col-span-2">
+                    <label className="text-sm font-medium text-gray-700">Report Time</label>
+                    <p className="text-gray-900">{job.dateLogged ? new Date(job.dateLogged).toLocaleString() : 'Not recorded'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Contact Information */}
             <Card className={getCardClasses('hover')}>
               <CardHeader className={UI_CONSTANTS.card.header}>
@@ -1056,9 +1227,63 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
             </Card>
           </div>
 
-          {/* Right Sidebar */}
-          <div className="lg:col-span-1 space-y-6">
+          {/* Audit Trail and Alerts - Right Column */}
+          <div className="space-y-6">
             {/* Alerts Container - Moved to top */}
+            {/* Recent Jobs from Same Site */}
+            <Card className="border-green-200 bg-green-50">
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center justify-between text-lg text-green-900">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-5 w-5 text-green-600" />
+                    Recent Jobs at {job.site}
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pt-0">
+                {(() => {
+                  // Get recent jobs from the same site, excluding current job
+                  const siteJobs = jobs
+                    .filter(j => j.site === job.site && j.id !== job.id)
+                    .sort((a, b) => new Date(b.dateLogged).getTime() - new Date(a.dateLogged).getTime())
+                    .slice(0, 5);
+                  
+                  if (siteJobs.length === 0) {
+                    return (
+                      <div className="text-center py-4">
+                        <p className="text-sm text-green-700">No other jobs found at this site.</p>
+                      </div>
+                    );
+                  }
+                  
+                  return (
+                    <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                      {siteJobs.map(j => (
+                        <div 
+                          key={j.id} 
+                          className="p-3 border border-green-200 rounded-lg bg-white hover:bg-green-50 cursor-pointer"
+                          onClick={() => navigate(`/job/${j.id}`)}
+                        >
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="font-medium text-green-900">{j.jobNumber}</span>
+                            <Badge className={`${getStatusColor(j.status)} px-2 py-0.5 text-xs`}>
+                              {j.status}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-2 line-clamp-2">{j.description}</p>
+                          <div className="flex items-center justify-between text-xs text-gray-500">
+                            <span>{new Date(j.dateLogged).toLocaleDateString()}</span>
+                            <Badge variant="outline" className="text-xs">{j.priority}</Badge>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Alerts Section */}
             <Card className="border-red-200 bg-red-50">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center justify-between text-lg text-red-900">
@@ -1125,43 +1350,44 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
               </CardContent>
             </Card>
 
-            {/* Communications Timeline & Job Status - Simplified */}
+            {/* Audit Trail - Renamed from Communications */}
             <Card className="border-blue-200 bg-blue-50">
               <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg text-blue-900">
-                  <Clock className="h-5 w-5 text-blue-600" />
-                  Communications & Status
+                <CardTitle className="flex items-center justify-between text-lg text-blue-900">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-blue-600" />
+                    Audit Trail
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddCommunication(true)}
+                      className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Communication
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddNote(true)}
+                      className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Note
+                    </Button>
+                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-4">
 
 
-                {/* Quick Actions */}
-                <div className="space-y-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAddCommunication(true)}
-                    className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Communication
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowAddNote(true)}
-                    className="w-full border-blue-300 text-blue-700 hover:bg-blue-100"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Note
-                  </Button>
-                </div>
-
                 {/* Recent Activity - Enhanced to show all job details, notes, dates, times */}
+                {/* Audit Trail Content */}
                 <div className="bg-white p-3 rounded-lg border border-blue-200">
-                  <h4 className="text-sm font-semibold text-blue-900 mb-3">Recent Activity</h4>
-                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                  <h4 className="text-sm font-semibold text-blue-900 mb-3">Audit Trail</h4>
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
                     {/* Job Creation/Update Events */}
                     {communications
                       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
@@ -1346,17 +1572,34 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                 />
               </div>
 
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="requiresFollowUp"
-                  checked={newCommunication.requiresFollowUp}
-                  onChange={(e) => setNewCommunication(prev => ({ ...prev, requiresFollowUp: e.target.checked }))}
-                  className="rounded border-gray-300"
-                />
-                <label htmlFor="requiresFollowUp" className="text-sm text-gray-700">
-                  Requires follow-up
-                </label>
+              <div className="flex flex-col space-y-3">
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="requiresFollowUp"
+                    checked={newCommunication.requiresFollowUp}
+                    onChange={(e) => setNewCommunication(prev => ({ ...prev, requiresFollowUp: e.target.checked }))}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor="requiresFollowUp" className="text-sm text-gray-700">
+                    Requires follow-up
+                  </label>
+                </div>
+                
+                {newCommunication.requiresFollowUp && (
+                  <div className="ml-6 space-y-3 bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <label className="text-sm font-medium text-blue-900">Follow-up Date/Time</label>
+                    <Input
+                      type="datetime-local"
+                      value={newCommunication.followUpDate ? new Date(newCommunication.followUpDate).toISOString().slice(0, 16) : ''}
+                      onChange={(e) => setNewCommunication(prev => ({ 
+                        ...prev, 
+                        followUpDate: e.target.value ? new Date(e.target.value) : undefined 
+                      }))}
+                      className="h-10 w-full border-blue-200 focus:border-blue-500"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 

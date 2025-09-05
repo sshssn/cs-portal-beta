@@ -39,7 +39,7 @@ export default function NavigationSidebar({
   selectedCustomer
 }: NavigationSidebarProps) {
   const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-  const [companyName, setCompanyName] = useState<string>('Customer Service Portal');
+  const [companyName, setCompanyName] = useState<string>('Out of Hours Portal');
   const { state } = useSidebar();
   const isOpen = state === 'expanded';
 
@@ -57,9 +57,21 @@ export default function NavigationSidebar({
       setCompanyLogo(newLogo);
       setCompanyName(newName);
     };
+    
+    // Listen for company settings changed event
+    const handleSettingsChange = () => {
+      const newLogo = getCompanyLogo();
+      const newName = getCompanyName();
+      setCompanyLogo(newLogo);
+      setCompanyName(newName);
+    };
 
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('company-settings-changed', handleSettingsChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('company-settings-changed', handleSettingsChange);
+    };
   }, []);
 
   const menuItems = [
@@ -117,8 +129,8 @@ export default function NavigationSidebar({
   ];
 
   return (
-    <Sidebar className="w-16 group-data-[state=expanded]:w-64 transition-all duration-300">
-      <SidebarHeader className="border-b border-sidebar-border h-40 flex items-center justify-center">
+    <Sidebar className="w-14 group-data-[state=expanded]:w-[13.6rem] transition-all duration-300" collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border h-20 flex items-center justify-center">
         <div
           className="flex items-center gap-3 px-3 py-4 cursor-pointer hover:bg-sidebar-accent rounded-md transition-colors w-full group"
           onClick={() => {
@@ -129,7 +141,7 @@ export default function NavigationSidebar({
           }}
           title="Click to return to homepage"
         >
-          <div className="flex h-20 w-20 items-center justify-center rounded-lg bg-primary text-primary-foreground overflow-hidden flex-shrink-0">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 text-white overflow-hidden flex-shrink-0 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
             {companyLogo ? (
               <img
                 src={companyLogo}
@@ -137,12 +149,12 @@ export default function NavigationSidebar({
                 className="w-full h-full object-contain"
               />
             ) : (
-              <LayoutDashboard className="h-8 w-8" />
+              <LayoutDashboard className="h-5 w-5 group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-5" />
             )}
           </div>
           <div className="flex flex-col min-w-0 opacity-0 group-data-[state=expanded]:opacity-100 transition-opacity duration-200">
-            <span className="text-sm font-semibold truncate">{companyName}</span>
-            <span className="text-xs text-muted-foreground">Portal</span>
+            <span className="text-sm font-semibold truncate leading-tight">{companyName}</span>
+            <span className="text-xs text-muted-foreground leading-tight">Out of Hours Portal</span>
           </div>
         </div>
       </SidebarHeader>

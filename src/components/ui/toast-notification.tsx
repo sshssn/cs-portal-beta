@@ -24,17 +24,23 @@ export default function ToastNotification({ notification, onRemove }: ToastNotif
     // Animate in
     const timer = setTimeout(() => setIsVisible(true), 100);
     
-    // Auto-remove after duration
+    // Auto-remove after duration - ALWAYS auto-remove unless explicitly set to 0
     if (notification.duration !== 0) {
+      const duration = notification.duration || 5000;
+      console.log(`Setting auto-dismiss for notification ${notification.id} after ${duration}ms`);
       const removeTimer = setTimeout(() => {
+        console.log(`Auto-dismissing notification ${notification.id}`);
         handleRemove();
-      }, notification.duration || 5000);
+      }, duration);
       
-      return () => clearTimeout(removeTimer);
+      return () => {
+        clearTimeout(removeTimer);
+        clearTimeout(timer);
+      };
     }
     
     return () => clearTimeout(timer);
-  }, [notification.duration]);
+  }, [notification.id, notification.duration]); // Include duration in dependencies
 
   const handleRemove = () => {
     setIsRemoving(true);

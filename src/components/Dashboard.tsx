@@ -94,7 +94,7 @@ export default function Dashboard({ jobs, onUpdateStatus }: DashboardProps) {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
           <Input
-            placeholder="Search jobs, customers, or sites..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"

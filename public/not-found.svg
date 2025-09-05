@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="517px" height="517px" viewBox="0 0 517 517" xmlns="http://www.w3.org/2000/svg">
+  <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+    <path d="M258.5,517 C401.303,517 517,401.303 517,258.5 C517,115.697 401.303,0 258.5,0 C115.697,0 0,115.697 0,258.5 C0,401.303 115.697,517 258.5,517 Z" fill="#000000" fill-opacity="0.03" fill-rule="nonzero"/>
+    <text font-family="Arial-BoldMT, Arial" font-size="200" font-weight="bold" fill="#000000" fill-opacity="0.1">
+      <tspan x="94" y="296">404</tspan>
+    </text>
+  </g>
+</svg>
+

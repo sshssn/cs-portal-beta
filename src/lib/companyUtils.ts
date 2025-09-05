@@ -21,6 +21,9 @@ export const getCompanySettings = (): CompanySettings | null => {
   }
 };
 
+// Import showNotification
+import { showNotification } from '@/components/ui/toast-notification';
+
 // Save company settings to localStorage
 export const saveCompanySettings = (settings: CompanySettings): void => {
   try {
@@ -30,6 +33,24 @@ export const saveCompanySettings = (settings: CompanySettings): void => {
     if (settings.logo) {
       localStorage.setItem('companyLogo', settings.logo);
     }
+    
+    // Dispatch an event to update UI components
+    window.dispatchEvent(new Event('company-settings-changed'));
+    
+    // Also dispatch a storage event to ensure cross-tab updates
+    window.dispatchEvent(new StorageEvent('storage', {
+      key: 'companySettings',
+      newValue: JSON.stringify(settings),
+      storageArea: localStorage
+    }));
+    
+    // Show notification about changes
+    showNotification({
+      type: 'success',
+      title: 'Company Settings Updated',
+      message: 'Please refresh the page to see all changes applied.',
+      duration: 10000
+    });
   } catch (error) {
     console.error('Error saving company settings:', error);
   }

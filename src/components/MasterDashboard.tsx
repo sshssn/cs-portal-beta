@@ -44,12 +44,65 @@ export default function MasterDashboard({
   onAlertsClick,
   onEngineerAlertsClick
 }: MasterDashboardProps) {
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
+  // Load search filters from localStorage or use defaults
+  const FILTERS_STORAGE_KEY = 'masterDashboardFilters';
+  
+  const [searchTerm, setSearchTerm] = useState(() => {
+    const savedFilters = localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (savedFilters) {
+      try {
+        const parsed = JSON.parse(savedFilters);
+        return parsed.searchTerm || '';
+      } catch (error) {
+        console.error('Error parsing saved filters:', error);
+      }
+    }
+    return '';
+  });
+  const [statusFilter, setStatusFilter] = useState<string>(() => {
+    const savedFilters = localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (savedFilters) {
+      try {
+        const parsed = JSON.parse(savedFilters);
+        return parsed.statusFilter || 'all';
+      } catch (error) {
+        console.error('Error parsing saved filters:', error);
+      }
+    }
+    return 'all';
+  });
+  const [priorityFilter, setPriorityFilter] = useState<string>(() => {
+    const savedFilters = localStorage.getItem(FILTERS_STORAGE_KEY);
+    if (savedFilters) {
+      try {
+        const parsed = JSON.parse(savedFilters);
+        return parsed.priorityFilter || 'all';
+      } catch (error) {
+        console.error('Error parsing saved filters:', error);
+      }
+    }
+    return 'all';
+  });
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [showAlertsDropdown, setShowAlertsDropdown] = useState(false);
   const alertsDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (alertsDropdownRef.current && !alertsDropdownRef.current.contains(event.target as Node)) {
+        setShowAlertsDropdown(false);
+      }
+    };
+
+    if (showAlertsDropdown) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showAlertsDropdown]);
   const [searchResults, setSearchResults] = useState<{
     jobs: Job[];
     customers: Customer[];
@@ -74,6 +127,15 @@ export default function MasterDashboard({
     };
   }, []);
 
+  // Save filters to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem(FILTERS_STORAGE_KEY, JSON.stringify({
+      searchTerm,
+      statusFilter,
+      priorityFilter
+    }));
+  }, [searchTerm, statusFilter, priorityFilter]);
+  
   // Check for draft job data
   useEffect(() => {
     const STORAGE_KEY = 'jobLogWizardData';
@@ -291,7 +353,7 @@ export default function MasterDashboard({
 
               {/* Alerts Dropdown */}
               {showAlertsDropdown && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50">
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-[9999] pointer-events-auto">
                   <div className="p-4 border-b border-gray-200">
                     <div className="flex items-center justify-between">
                       <h3 className="text-lg font-semibold text-gray-900">Recent Alerts</h3>
@@ -299,7 +361,7 @@ export default function MasterDashboard({
                         variant="ghost"
                         size="sm"
                         onClick={onAlertsClick}
-                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                        className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 pointer-events-auto"
                       >
                         View All
                       </Button>
@@ -309,7 +371,7 @@ export default function MasterDashboard({
                     </p>
                   </div>
                   
-                  <div className="max-h-96 overflow-y-auto">
+                  <div className="max-h-96 overflow-y-auto pointer-events-auto">
                     {latestAlerts.length === 0 ? (
                       <div className="p-4 text-center text-gray-500">
                         <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
@@ -321,8 +383,12 @@ export default function MasterDashboard({
                         {latestAlerts.map((job) => (
                           <div 
                             key={job.id}
-                            className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                            onClick={() => onJobClick(job)}
+                            className="p-4 hover:bg-gray-50 cursor-pointer transition-colors pointer-events-auto"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onJobClick(job);
+                              setShowAlertsDropdown(false);
+                            }}
                           >
                             <div className="flex items-start justify-between">
                               <div className="flex-1 min-w-0">
@@ -377,8 +443,11 @@ export default function MasterDashboard({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => setShowAlertsDropdown(false)}
-                      className="w-full text-gray-600 hover:text-gray-800"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowAlertsDropdown(false);
+                      }}
+                      className="w-full text-gray-600 hover:text-gray-800 pointer-events-auto"
                     >
                       Close
                     </Button>
@@ -580,7 +649,7 @@ export default function MasterDashboard({
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 z-10" />
           <Input
-            placeholder="Search by customer, site, description, or engineer..."
+            placeholder="Search..."
             value={searchTerm}
             onChange={(e) => handleSearchChange(e.target.value)}
             onFocus={() => searchTerm.length >= 2 && setShowSearchDropdown(true)}

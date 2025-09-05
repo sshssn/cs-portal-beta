@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Job, Customer, JobAlert } from '@/types/job';
 import { 
@@ -32,6 +32,7 @@ import { Button } from '@/components/ui/button';
 import { Users, Bell } from 'lucide-react';
 import EndOfShiftReport from '@/components/EndOfShiftReport';
 import NotificationManager from '@/components/NotificationManager';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import EngineerAlertsPage from '@/pages/EngineerAlertsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SettingsPage from '@/pages/SettingsPage';
@@ -202,12 +203,16 @@ export default function Index() {
       
       case 'alerts':
         return (
-          <GlobalAlertsPortal
-            onBack={() => setCurrentView('master')}
-            onJobUpdate={handleJobSave}
-            customers={customers}
-            jobs={jobs}
-          />
+          <ErrorBoundary>
+            <Suspense fallback={<div className="p-8 text-center">Loading alerts portal...</div>}>
+              <GlobalAlertsPortal
+                onBack={() => setCurrentView('master')}
+                onJobUpdate={handleJobSave}
+                customers={customers}
+                jobs={jobs}
+              />
+            </Suspense>
+          </ErrorBoundary>
         );
       
       case 'engineer-alerts':
@@ -221,11 +226,20 @@ export default function Index() {
       
       case 'wizard':
         return (
-          <JobLogWizard
-            customers={customers}
-            onJobCreate={handleJobCreate}
-            onCancel={() => setCurrentView('master')}
-          />
+          <ErrorBoundary
+            onReset={() => {
+              // Clear localStorage to prevent corrupt data from causing repeated crashes
+              localStorage.removeItem('jobLogWizardData');
+            }}
+          >
+            <Suspense fallback={<div className="p-8 text-center">Loading wizard...</div>}>
+              <JobLogWizard
+                customers={customers}
+                onJobCreate={handleJobCreate}
+                onCancel={() => setCurrentView('master')}
+              />
+            </Suspense>
+          </ErrorBoundary>
         );
       
       case 'reports':

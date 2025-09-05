@@ -34,6 +34,7 @@ import {
   Wrench,
   MapPinIcon,
   Globe,
+
   Settings
 } from 'lucide-react';
 import CreateAlertModal from './CreateAlertModal';
@@ -229,6 +230,14 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
   // Main tabs
   const [activeMainTab, setActiveMainTab] = useState('system-alerts');
 
+  // Regenerate alerts when jobs prop changes
+  useEffect(() => {
+    const newSystemAlerts = generateSystemAlerts();
+    const newEngineerAlerts = generateEngineerActionAlerts();
+    setSystemAlerts([...customAlerts, ...newSystemAlerts]);
+    setEngineerAlerts(newEngineerAlerts);
+  }, [jobs, customAlerts]);
+  
   // Generate system alerts from jobs
   const generateSystemAlerts = (): SystemAlert[] => {
     const alerts: SystemAlert[] = [];
@@ -435,8 +444,8 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
     setEngineerAlerts(newEngineerAlerts);
   }, [jobs]);
 
-  const [alerts, setAlerts] = useState<SystemAlert[]>(generateSystemAlerts());
-  const allAlerts = [...alerts, ...customAlerts];
+  const [systemAlerts, setSystemAlerts] = useState<SystemAlert[]>(generateSystemAlerts());
+  const allAlerts = [...systemAlerts, ...customAlerts];
 
   // Sites data
   const sitesInfo = getSitesInfo();
@@ -713,18 +722,94 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
           : alert
       ));
     } else {
-      setAlerts(prev => prev.map(alert => 
-        alert.id === alertId 
-          ? { 
-              ...alert, 
-              resolved: true, 
-              resolvedBy: 'Current User', 
-              resolvedAt: new Date(),
-              resolution 
+      // Find the alert
+      const systemAlert = systemAlerts.find(a => a.id === alertId);
+      const engineerAlert = engineerAlerts.find(a => a.id === alertId);
+      
+      // Update system alerts
+      if (systemAlert) {
+        setSystemAlerts(prev => 
+          prev.map(alert => 
+            alert.id === alertId 
+              ? { 
+                  ...alert, 
+                  resolved: true, 
+                  resolvedBy: 'Current User', 
+                  resolvedAt: new Date(),
+                  resolution 
+                }
+              : alert
+          )
+        );
+
+        // Update job if alert has a jobId
+        if (systemAlert.jobId) {
+          const job = jobs.find(j => j.id === systemAlert.jobId);
+          if (job) {
+            let updatedJob = { ...job };
+            
+            // Add resolution to the job's alerts
+            if (updatedJob.alerts) {
+              updatedJob.alerts = updatedJob.alerts.map(alert => 
+                alert.id === alertId 
+                  ? { ...alert, resolved: true, resolution, resolvedAt: new Date(), resolvedBy: 'Current User' }
+                  : alert
+              );
             }
-          : alert
-      ));
+            
+            onJobUpdate(updatedJob);
+            
+            // Force refresh of alerts after job update
+            setTimeout(() => {
+              const newSystemAlerts = generateSystemAlerts();
+              setSystemAlerts([...customAlerts, ...newSystemAlerts]);
+            }, 100);
+          }
+        }
+      } 
+      // Update engineer alerts
+      else if (engineerAlert) {
+        setEngineerAlerts(prev => 
+          prev.map(alert => 
+            alert.id === alertId 
+              ? { 
+                  ...alert, 
+                  resolved: true, 
+                  resolvedBy: 'Current User', 
+                  resolvedAt: new Date(),
+                  resolution 
+                }
+              : alert
+          )
+        );
+
+        // Update job
+        const job = jobs.find(j => j.id === engineerAlert.jobId);
+        if (job) {
+          let updatedJob = { ...job };
+          
+          if (engineerAlert.type === 'ENGINEER_ACCEPT') {
+            updatedJob.dateAccepted = new Date();
+            updatedJob.status = 'attended';
+          } else if (engineerAlert.type === 'ENGINEER_ONSITE') {
+            updatedJob.dateOnSite = new Date();
+            updatedJob.status = 'attended';
+          }
+          
+          onJobUpdate(updatedJob);
+          
+          // Force refresh of engineer alerts after job update
+          setTimeout(() => {
+            const newEngineerAlerts = generateEngineerActionAlerts();
+            setEngineerAlerts(newEngineerAlerts);
+          }, 100);
+        }
+      }
     }
+    
+    // Close all modals immediately
+    setSelectedAlertForResolution(null);
+    setShowResolutionModal(false);
   };
 
   const handleCreateAlert = (alertData: {
