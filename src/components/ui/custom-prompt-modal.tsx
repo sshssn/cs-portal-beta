@@ -56,7 +56,14 @@ export default function CustomPromptModal({
       return;
     }
 
+    // Clear any existing errors
+    setError('');
+    
+    
+    // Submit the value
     onSubmit(value.trim());
+    
+    // Close the modal
     onClose();
   };
 

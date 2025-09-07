@@ -48,16 +48,30 @@ export default function Index() {
   const [jobs, setJobs] = useState<Job[]>([]);
   
   const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
-  const [currentView, setCurrentView] = useState<View>('master');
+  const [currentView, setCurrentView] = useState<View>(() => {
+    // Try to restore the last view from localStorage
+    const savedView = localStorage.getItem('currentView') as View;
+    return savedView || 'master';
+  });
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Load jobs on component mount
   useEffect(() => {
-    // Force use mock jobs for now to ensure they work
-    setJobs(mockJobs);
+    // Load jobs from localStorage, fallback to mock jobs if none exist
+    const savedJobs = loadJobsFromStorage();
+    if (savedJobs && savedJobs.length > 0) {
+      setJobs(savedJobs);
+    } else {
+      setJobs(mockJobs);
+    }
   }, []);
+
+  // Save currentView to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('currentView', currentView);
+  }, [currentView]);
 
   // Save jobs to localStorage whenever jobs state changes
   useEffect(() => {

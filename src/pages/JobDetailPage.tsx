@@ -696,8 +696,9 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
               Back to Dashboard
             </Button>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">{job.jobNumber}</h1>
-              <p className="text-muted-foreground">{job.description}</p>
+              <h2 className="text-2xl font-bold text-gray-900">{job.customer} - {job.site}</h2>
+              <h4 className="text-lg font-semibold text-gray-700 mt-2">Job Number: {job.jobNumber}</h4>
+              <p className="text-muted-foreground mt-2">{job.description}</p>
             </div>
           </div>
           <div className="flex items-center space-x-2">
@@ -836,9 +837,9 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                            job.status === 'completed' ? 'Completed' : 
                            job.status === 'costed' ? 'Costed' : 
                            job.status === 'reqs_invoice' ? 'Requires Invoice' : 
-                           job.status === 'green' ? 'On Track' : 
-                           job.status === 'amber' ? 'Attention Required' : 
-                           job.status === 'red' ? 'Critical Issue' : 
+                           job.status === 'completed' ? 'On Track' : 
+                           job.status === 'attended' ? 'Attention Required' : 
+                           job.priority === 'Critical' ? 'Critical Issue' : 
                            String(job.status).charAt(0).toUpperCase() + String(job.status).slice(1).replace(/_/g, ' ')}
                         </Badge>
                       </div>
@@ -936,11 +937,11 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                     {isEditing ? (
                       <Input 
                         type="date"
-                        value={currentJob?.startDate ? currentJob.startDate.toISOString().split('T')[0] : ''} 
+                        value={currentJob?.startDate ? (currentJob.startDate instanceof Date ? currentJob.startDate.toISOString().split('T')[0] : new Date(currentJob.startDate).toISOString().split('T')[0]) : ''} 
                         onChange={(e) => setEditedJob(prev => prev ? { ...prev, startDate: e.target.value ? new Date(e.target.value) : null } : null)}
                       />
                     ) : (
-                      <p className="text-gray-900">{job.startDate ? job.startDate.toLocaleDateString() : 'Not set'}</p>
+                      <p className="text-gray-900">{job.startDate ? (job.startDate instanceof Date ? job.startDate.toLocaleDateString() : new Date(job.startDate).toLocaleDateString()) : 'Not set'}</p>
                     )}
                   </div>
                   <div>
@@ -948,11 +949,11 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                     {isEditing ? (
                       <Input 
                         type="date"
-                        value={currentJob?.endDate ? currentJob.endDate.toISOString().split('T')[0] : ''} 
+                        value={currentJob?.endDate ? (currentJob.endDate instanceof Date ? currentJob.endDate.toISOString().split('T')[0] : new Date(currentJob.endDate).toISOString().split('T')[0]) : ''} 
                         onChange={(e) => setEditedJob(prev => prev ? { ...prev, endDate: e.target.value ? new Date(e.target.value) : null } : null)}
                       />
                     ) : (
-                      <p className="text-gray-900">{job.endDate ? job.endDate.toLocaleDateString() : 'Not set'}</p>
+                      <p className="text-gray-900">{job.endDate ? (job.endDate instanceof Date ? job.endDate.toLocaleDateString() : new Date(job.endDate).toLocaleDateString()) : 'Not set'}</p>
                     )}
                   </div>
                   <div>
@@ -1000,11 +1001,11 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                     {isEditing ? (
                       <Input 
                         type="date"
-                        value={currentJob?.targetAttendanceDate ? currentJob.targetAttendanceDate.toISOString().split('T')[0] : ''} 
+                        value={currentJob?.targetAttendanceDate ? (currentJob.targetAttendanceDate instanceof Date ? currentJob.targetAttendanceDate.toISOString().split('T')[0] : new Date(currentJob.targetAttendanceDate).toISOString().split('T')[0]) : ''} 
                         onChange={(e) => setEditedJob(prev => prev ? { ...prev, targetAttendanceDate: e.target.value ? new Date(e.target.value) : null } : null)}
                       />
                     ) : (
-                      <p className="text-gray-900">{job.targetAttendanceDate ? job.targetAttendanceDate.toLocaleDateString() : 'Not set'}</p>
+                      <p className="text-gray-900">{job.targetAttendanceDate ? (job.targetAttendanceDate instanceof Date ? job.targetAttendanceDate.toLocaleDateString() : new Date(job.targetAttendanceDate).toLocaleDateString()) : 'Not set'}</p>
                     )}
                   </div>
                   <div>
@@ -1026,11 +1027,11 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                     {isEditing ? (
                       <Input 
                         type="date"
-                        value={currentJob?.allocatedVisitDate ? currentJob.allocatedVisitDate.toISOString().split('T')[0] : ''} 
+                        value={currentJob?.allocatedVisitDate ? (currentJob.allocatedVisitDate instanceof Date ? currentJob.allocatedVisitDate.toISOString().split('T')[0] : new Date(currentJob.allocatedVisitDate).toISOString().split('T')[0]) : ''} 
                         onChange={(e) => setEditedJob(prev => prev ? { ...prev, allocatedVisitDate: e.target.value ? new Date(e.target.value) : null } : null)}
                       />
                     ) : (
-                      <p className="text-gray-900">{job.allocatedVisitDate ? job.allocatedVisitDate.toLocaleDateString() : 'Not set'}</p>
+                      <p className="text-gray-900">{job.allocatedVisitDate ? (job.allocatedVisitDate instanceof Date ? job.allocatedVisitDate.toLocaleDateString() : new Date(job.allocatedVisitDate).toLocaleDateString()) : 'Not set'}</p>
                     )}
                   </div>
                   <div>
@@ -1272,7 +1273,7 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                           </div>
                           <p className="text-sm text-gray-600 mb-2 line-clamp-2">{j.description}</p>
                           <div className="flex items-center justify-between text-xs text-gray-500">
-                            <span>{new Date(j.dateLogged).toLocaleDateString()}</span>
+                            <span>{j.dateLogged instanceof Date ? j.dateLogged.toLocaleDateString() : new Date(j.dateLogged).toLocaleDateString()}</span>
                             <Badge variant="outline" className="text-xs">{j.priority}</Badge>
                           </div>
                         </div>
@@ -1351,28 +1352,19 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
             </Card>
 
             {/* Audit Trail - Renamed from Communications */}
-            <Card className="border-blue-200 bg-blue-50">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center justify-between text-lg text-blue-900">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-blue-600" />
+            <Card className="border-blue-200 bg-blue-50 min-h-[600px]">
+              <CardHeader className="pb-4">
+                <CardTitle className="flex items-center justify-between text-xl text-blue-900">
+                  <div className="flex items-center gap-3">
+                    <Clock className="h-6 w-6 text-blue-600" />
                     Audit Trail
                   </div>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowAddCommunication(true)}
-                      className="border-blue-300 text-blue-700 hover:bg-blue-100"
-                    >
-                      <Plus className="h-4 w-4 mr-1" />
-                      Add Communication
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
                       onClick={() => setShowAddNote(true)}
-                      className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                      className="border-blue-300 text-blue-700 hover:bg-blue-100 text-sm"
                     >
                       <Plus className="h-4 w-4 mr-1" />
                       Add Note
@@ -1380,20 +1372,20 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                   </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-0 space-y-4">
+              <CardContent className="pt-0 space-y-4 flex-1">
 
 
                 {/* Recent Activity - Enhanced to show all job details, notes, dates, times */}
                 {/* Audit Trail Content */}
-                <div className="bg-white p-3 rounded-lg border border-blue-200">
-                  <h4 className="text-sm font-semibold text-blue-900 mb-3">Audit Trail</h4>
-                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                <div className="bg-white p-4 rounded-lg border border-blue-200 flex-1 min-h-[500px]">
+                  <h4 className="text-base font-semibold text-blue-900 mb-4">Audit Trail</h4>
+                  <div className="space-y-4 max-h-[450px] overflow-y-auto">
                     {/* Job Creation/Update Events */}
                     {communications
                       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                       .map((item) => (
-                        <div key={item.id} className="flex items-start gap-3 p-2 bg-gray-50 rounded text-xs">
-                          <div className={`w-2 h-2 rounded-full mt-1.5 ${
+                        <div key={item.id} className="flex items-start gap-4 p-3 bg-gray-50 rounded-lg text-sm">
+                          <div className={`w-3 h-3 rounded-full mt-1.5 ${
                             item.type === 'escalation' ? 'bg-red-500' :
                             item.type === 'resolution' ? 'bg-green-500' :
                             item.type === 'note' ? 'bg-blue-500' :
@@ -1401,26 +1393,26 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                             'bg-gray-500'
                           }`}></div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-gray-900 capitalize">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-semibold text-gray-900 capitalize text-base">
                                 {item.type.replace('_', ' ')}
                               </span>
                               {item.tags.includes('auto') && (
-                                <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">Auto</span>
+                                <span className="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded">Auto</span>
                               )}
                             </div>
-                            <p className="text-gray-700 mb-1">{item.content}</p>
-                            <div className="flex items-center gap-3 text-xs text-gray-500">
+                            <p className="text-gray-700 mb-2 text-sm leading-relaxed">{item.content}</p>
+                            <div className="flex items-center gap-4 text-sm text-gray-500">
                               <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(item.timestamp).toLocaleDateString()}
+                                <Calendar className="h-4 w-4" />
+                                {item.timestamp instanceof Date ? item.timestamp.toLocaleDateString() : new Date(item.timestamp).toLocaleDateString()}
                               </span>
                               <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {new Date(item.timestamp).toLocaleTimeString()}
+                                <Clock className="h-4 w-4" />
+                                {item.timestamp instanceof Date ? item.timestamp.toLocaleTimeString() : new Date(item.timestamp).toLocaleTimeString()}
                               </span>
                               <span className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
+                                <User className="h-4 w-4" />
                                 {item.from}
                               </span>
                             </div>
@@ -1432,27 +1424,27 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                     {notes
                       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                       .map((note) => (
-                        <div key={note.id} className="flex items-start gap-3 p-2 bg-blue-50 rounded text-xs border border-blue-200">
-                          <div className="w-2 h-2 rounded-full mt-1.5 bg-blue-500"></div>
+                        <div key={note.id} className="flex items-start gap-4 p-3 bg-blue-50 rounded-lg text-sm border border-blue-200">
+                          <div className="w-3 h-3 rounded-full mt-1.5 bg-blue-500"></div>
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="font-medium text-blue-900">Job Note</span>
-                              <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded capitalize">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="font-semibold text-blue-900 text-base">Job Note</span>
+                              <span className="px-2 py-1 bg-blue-100 text-blue-700 text-sm rounded capitalize">
                                 {note.visibility}
                               </span>
                             </div>
-                            <p className="text-blue-800 mb-1">{note.content}</p>
-                            <div className="flex items-center gap-3 text-xs text-blue-600">
+                            <p className="text-blue-800 mb-2 text-sm leading-relaxed">{note.content}</p>
+                            <div className="flex items-center gap-4 text-sm text-blue-600">
                               <span className="flex items-center gap-1">
-                                <Calendar className="h-3 w-3" />
-                                {new Date(note.timestamp).toLocaleDateString()}
+                                <Calendar className="h-4 w-4" />
+                                {note.timestamp instanceof Date ? note.timestamp.toLocaleDateString() : new Date(note.timestamp).toLocaleDateString()}
                               </span>
                               <span className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {new Date(note.timestamp).toLocaleTimeString()}
+                                <Clock className="h-4 w-4" />
+                                {note.timestamp instanceof Date ? note.timestamp.toLocaleTimeString() : new Date(note.timestamp).toLocaleTimeString()}
                               </span>
                               <span className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
+                                <User className="h-4 w-4" />
                                 {note.author}
                               </span>
                             </div>
@@ -1461,10 +1453,10 @@ export default function JobDetailPage({ jobs, onJobUpdate }: JobDetailPageProps)
                       ))}
                     
                     {communications.length === 0 && notes.length === 0 && (
-                      <div className="text-center py-6 text-gray-500">
-                        <MessageSquare className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                        <p className="text-sm">No recent activity</p>
-                        <p className="text-xs">Activity will appear here as jobs are updated</p>
+                      <div className="text-center py-8 text-gray-500">
+                        <MessageSquare className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                        <p className="text-base">No recent activity</p>
+                        <p className="text-sm">Activity will appear here as jobs are updated</p>
                       </div>
                     )}
                   </div>

@@ -91,13 +91,12 @@ export default function Dashboard({ jobs, onUpdateStatus }: DashboardProps) {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-lg border">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={16} />
+        <div className="flex-1 flex items-center gap-3">
+          <Search className="text-muted-foreground" size={16} />
           <Input
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
           />
         </div>
         

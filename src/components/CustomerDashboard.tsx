@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -35,10 +35,35 @@ interface CustomerDashboardProps {
 }
 
 export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, onJobCreate }: CustomerDashboardProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [priorityFilter, setPriorityFilter] = useState<string>('all');
-  const [siteFilter, setSiteFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState(() => 
+    localStorage.getItem('customerDashboard_searchQuery') || ''
+  );
+  const [statusFilter, setStatusFilter] = useState<string>(() => 
+    localStorage.getItem('customerDashboard_statusFilter') || 'all'
+  );
+  const [priorityFilter, setPriorityFilter] = useState<string>(() => 
+    localStorage.getItem('customerDashboard_priorityFilter') || 'all'
+  );
+  const [siteFilter, setSiteFilter] = useState<string>(() => 
+    localStorage.getItem('customerDashboard_siteFilter') || 'all'
+  );
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('customerDashboard_searchQuery', searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    localStorage.setItem('customerDashboard_statusFilter', statusFilter);
+  }, [statusFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('customerDashboard_priorityFilter', priorityFilter);
+  }, [priorityFilter]);
+
+  useEffect(() => {
+    localStorage.setItem('customerDashboard_siteFilter', siteFilter);
+  }, [siteFilter]);
 
   // Filter jobs for this customer
   const customerJobs = jobs.filter(job => job.customer === customer.name);
@@ -200,18 +225,14 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Search Bar */}
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search jobs..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
+            <div className="flex items-center gap-3">
+              <Search className="h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Search jobs..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="flex-1"
+              />
             </div>
             
             {/* Filters */}

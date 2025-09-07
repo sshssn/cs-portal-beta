@@ -118,7 +118,7 @@ export function ToastManager() {
     // Listen for new notifications
     const handleNewNotification = (event: CustomEvent) => {
       const newNotification: ToastNotification = {
-        id: Date.now().toString(),
+        id: `toast-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         type: event.detail.type || 'info',
         title: event.detail.title || 'Notification',
         message: event.detail.message || '',
@@ -146,7 +146,7 @@ export function ToastManager() {
   };
 
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-3">
+    <div className="fixed top-4 right-4 z-[9999] space-y-3">
       {notifications.map((notification) => (
         <ToastNotification
           key={notification.id}
@@ -158,13 +158,40 @@ export function ToastManager() {
   );
 }
 
-// Global function to show notifications
+// Global function to show notifications using Sonner
 export const showNotification = (options: {
   type: 'success' | 'error' | 'info' | 'warning';
   title: string;
   message: string;
   duration?: number;
 }) => {
-  const event = new CustomEvent('showNotification', { detail: options });
-  window.dispatchEvent(event);
+  // Import toast dynamically to avoid circular dependencies
+  import('sonner').then(({ toast }) => {
+    switch (options.type) {
+      case 'success':
+        toast.success(options.title, {
+          description: options.message,
+          duration: options.duration || 5000
+        });
+        break;
+      case 'error':
+        toast.error(options.title, {
+          description: options.message,
+          duration: options.duration || 5000
+        });
+        break;
+      case 'warning':
+        toast.warning(options.title, {
+          description: options.message,
+          duration: options.duration || 5000
+        });
+        break;
+      default:
+        toast.info(options.title, {
+          description: options.message,
+          duration: options.duration || 5000
+        });
+        break;
+    }
+  });
 };

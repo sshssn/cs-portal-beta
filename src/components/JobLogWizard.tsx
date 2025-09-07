@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -117,7 +117,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
 
   const isStepValid = (step: WizardStep): boolean => {
     switch (step) {
-      case 1:
+      case 1: {
         // Only require customer, site, and reporter name
         // Phone and email are now optional
         const isValid = !!(formData.customer && formData.site && formData.reporterName);
@@ -135,6 +135,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
         }
         
         return isValid;
+      }
       case 2:
         return !!(formData.jobTitle && formData.description && formData.jobNature);
       case 3:
@@ -224,10 +225,8 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
   });
 
   const updateFormData = (updates: Partial<JobFormData>) => {
-    console.log('Updating form data with:', updates);
     setFormData(prev => {
       const newData = { ...prev, ...updates };
-      console.log('New form data:', newData);
       // Save to local storage including current step and timestamp
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         ...newData,
@@ -254,6 +253,87 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
       }
     }
   }, [currentStep]);
+
+  // Memoize site relevance calculation to prevent flickering
+  const siteRelevanceMap = useMemo(() => {
+    const relevanceMap = new Map<string, { frequency: number; label: string; color: string }>();
+    
+    // Pre-calculate all site relevances
+    customers.forEach(customer => {
+      customer.sites.forEach(site => {
+        if (!relevanceMap.has(site)) {
+          const siteJobs = mockJobs.filter(job => job.site === site).length;
+          
+          if (siteJobs >= 10) {
+            relevanceMap.set(site, { frequency: siteJobs, label: 'Very Frequent', color: 'bg-slate-100 text-slate-800' });
+          } else if (siteJobs >= 5) {
+            relevanceMap.set(site, { frequency: siteJobs, label: 'Frequent', color: 'bg-blue-100 text-blue-800' });
+          } else if (siteJobs >= 2) {
+            relevanceMap.set(site, { frequency: siteJobs, label: 'Occasional', color: 'bg-slate-100 text-slate-800' });
+          } else if (siteJobs === 1) {
+            relevanceMap.set(site, { frequency: siteJobs, label: 'First Visit', color: 'bg-slate-100 text-slate-800' });
+          } else {
+            relevanceMap.set(site, { frequency: siteJobs, label: 'New Site', color: 'bg-slate-100 text-slate-800' });
+          }
+        }
+      });
+    });
+    
+    return relevanceMap;
+  }, [customers, mockJobs]);
+
+  // Memoize site options to prevent unnecessary re-renders
+  const siteOptions = useMemo(() => {
+    if (!customers.length) return [];
+    
+    if (formData.customer) {
+      // If customer is selected, show only their sites
+      const customer = customers.find(c => c.name === formData.customer);
+      return customer?.sites?.map(site => ({
+        value: site,
+        label: site,
+        relevance: siteRelevanceMap.get(site) || { frequency: 0, label: 'New Site', color: 'bg-slate-100 text-slate-800' }
+      })) || [];
+    } else {
+      // If no customer selected, show ALL sites with their customer name
+      return customers.flatMap(customer => 
+        customer.sites.map(site => ({
+          value: site,
+          label: site,
+          customer: customer.name,
+          relevance: siteRelevanceMap.get(site) || { frequency: 0, label: 'New Site', color: 'bg-slate-100 text-slate-800' }
+        }))
+      );
+    }
+  }, [customers, formData.customer, siteRelevanceMap]);
+
+  // Memoize customer options to prevent unnecessary re-renders
+  const customerOptions = useMemo(() => {
+    if (!customers.length) return [];
+    
+    return customers.map(customer => {
+      const customerJobs = mockJobs.filter(job => job.customer === customer.name).length;
+      let relevance;
+      
+      if (customerJobs >= 20) {
+        relevance = { frequency: customerJobs, label: 'High Volume', color: 'bg-slate-100 text-slate-800' };
+      } else if (customerJobs >= 10) {
+        relevance = { frequency: customerJobs, label: 'Regular', color: 'bg-blue-100 text-blue-800' };
+      } else if (customerJobs >= 5) {
+        relevance = { frequency: customerJobs, label: 'Occasional', color: 'bg-slate-100 text-slate-800' };
+      } else if (customerJobs >= 1) {
+        relevance = { frequency: customerJobs, label: 'Returning', color: 'bg-slate-100 text-slate-800' };
+      } else {
+        relevance = { frequency: customerJobs, label: 'New Customer', color: 'bg-slate-100 text-slate-800' };
+      }
+      
+      return {
+        id: customer.id,
+        name: customer.name,
+        relevance
+      };
+    });
+  }, [customers, mockJobs]);
 
   // Get site-specific engineers
   const getSiteEngineers = (site: string): Engineer[] => {
@@ -284,28 +364,6 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
     });
   };
 
-  // Calculate site relevance/frequency
-  const getSiteRelevance = (site: string): { frequency: number; label: string; color: string } => {
-    const siteJobs = mockJobs.filter(job => job.site === site).length;
-    const customerJobs = mockJobs.filter(job => job.customer === formData.customer).length;
-
-    if (siteJobs >= 10) return { frequency: siteJobs, label: 'Very Frequent', color: 'bg-slate-100 text-slate-800' };
-    if (siteJobs >= 5) return { frequency: siteJobs, label: 'Frequent', color: 'bg-blue-100 text-blue-800' };
-    if (siteJobs >= 2) return { frequency: siteJobs, label: 'Occasional', color: 'bg-slate-100 text-slate-800' };
-    if (siteJobs === 1) return { frequency: siteJobs, label: 'First Visit', color: 'bg-slate-100 text-slate-800' };
-    return { frequency: siteJobs, label: 'New Site', color: 'bg-slate-100 text-slate-800' };
-  };
-
-  // Calculate customer relevance/frequency
-  const getCustomerRelevance = (customer: string): { frequency: number; label: string; color: string } => {
-    const customerJobs = mockJobs.filter(job => job.customer === customer).length;
-
-    if (customerJobs >= 20) return { frequency: customerJobs, label: 'High Volume', color: 'bg-slate-100 text-slate-800' };
-    if (customerJobs >= 10) return { frequency: customerJobs, label: 'Regular', color: 'bg-blue-100 text-blue-800' };
-    if (customerJobs >= 5) return { frequency: customerJobs, label: 'Occasional', color: 'bg-slate-100 text-slate-800' };
-    if (customerJobs >= 1) return { frequency: customerJobs, label: 'Returning', color: 'bg-slate-100 text-slate-800' };
-    return { frequency: customerJobs, label: 'New Customer', color: 'bg-slate-100 text-slate-800' };
-  };
 
   const addSiteNote = () => {
     if (newSiteNote.trim()) {
@@ -636,48 +694,26 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-3 block">Customer *</label>
                       <Select
-                        key={`customer-${formData.customer}`}
+                        key="customer-select"
                         value={formData.customer}
                         onValueChange={(value) => {
                           updateFormData({ customer: value, site: '' });
-                          // Show customer relevance information
-                          const relevance = getCustomerRelevance(value);
-                          showNotification({
-                            type: 'info',
-                            title: 'Customer Information',
-                            message: `${value} - ${relevance.label} (${relevance.frequency} previous jobs)`,
-                            duration: 2000
-                          });
-                          
-                          // Prompt user to select a site
-                          const customerSites = customers.find(c => c.name === value)?.sites || [];
-                          if (customerSites.length > 0) {
-                            showNotification({
-                              type: 'info',
-                              title: 'Site Selection',
-                              message: `Please select a site for ${value}. ${customerSites.length} sites available.`,
-                              duration: 2000
-                            });
-                          }
                         }}
                       >
                         <SelectTrigger className="h-14 w-full text-base border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500">
                           <SelectValue placeholder="Select customer" />
                         </SelectTrigger>
-                        <SelectContent>
-                          {customers && customers.length > 0 ? customers.map(customer => {
-                            const relevance = getCustomerRelevance(customer.name);
-                            return (
-                              <SelectItem key={customer.id} value={customer.name}>
-                                <div className="flex items-center justify-between w-full">
-                                  <span>{customer.name}</span>
-                                  <Badge className={`ml-2 text-xs ${relevance.color}`}>
-                                    {relevance.label}
-                                  </Badge>
-                                </div>
-                              </SelectItem>
-                            );
-                          }) : (
+                        <SelectContent className="max-h-60">
+                          {customerOptions.length > 0 ? customerOptions.map(customer => (
+                            <SelectItem key={customer.id} value={customer.name}>
+                              <div className="flex items-center justify-between w-full">
+                                <span>{customer.name}</span>
+                                <Badge className={`ml-2 text-xs ${customer.relevance.color}`}>
+                                  {customer.relevance.label}
+                                </Badge>
+                              </div>
+                            </SelectItem>
+                          )) : (
                             <SelectItem value="no-customers" disabled>No customers available</SelectItem>
                           )}
                         </SelectContent>
@@ -685,7 +721,8 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                       {formData.customer && (
                         <div className="mt-2">
                           {(() => {
-                            const relevance = getCustomerRelevance(formData.customer);
+                            const customer = customerOptions.find(c => c.name === formData.customer);
+                            const relevance = customer?.relevance || { frequency: 0, label: 'New Customer', color: 'bg-slate-100 text-slate-800' };
                             return (
                               <Badge className={`text-xs ${relevance.color}`}>
                                 {relevance.label} ({relevance.frequency} previous jobs)
@@ -699,119 +736,54 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                     <div>
                       <label className="text-sm font-medium text-gray-700 mb-3 block">Site *</label>
                       <Select
-                        key={`site-${formData.site}`}
+                        key={`site-select-${formData.customer}`}
                         value={formData.site}
                         onValueChange={(value) => {
-                          console.log('Site selected:', value);
-                          console.log('Available customers:', customers.map(c => ({ name: c.name, sites: c.sites })));
-                          
                           // Find customer for this site and update both site and customer
-                          // Check all customers to find which one has this site
                           let foundCustomer = null;
-                          console.log('=== SITE SELECTION DEBUG ===');
-                          console.log('Selected site:', value);
-                          console.log('Available customers:', customers);
                           
                           for (const customer of customers) {
-                            console.log(`Checking customer ${customer.name} with sites:`, customer.sites);
                             if (customer.sites.includes(value)) {
                               foundCustomer = customer;
-                              console.log(`✅ Found customer ${customer.name} for site ${value}`);
                               break;
                             }
                           }
                           
-                          if (!foundCustomer) {
-                            console.log(`❌ No customer found for site ${value}`);
-                            console.log('Available sites across all customers:', customers.flatMap(c => c.sites));
-                          }
-                          
                           if (foundCustomer) {
-                            console.log(`Site ${value} belongs to customer ${foundCustomer.name}`);
                             // Update both site and customer
                             updateFormData({ 
                               site: value,
                               customer: foundCustomer.name 
                             });
-                            
-                            // Show notification about customer change
-                            showNotification({
-                              type: 'info',
-                              title: 'Customer Updated',
-                              message: `Customer automatically set to ${foundCustomer.name} for site ${value}`,
-                              duration: 2000
-                            });
                           } else {
-                            console.log(`No customer found for site ${value}`);
                             updateFormData({ site: value });
-                          }
-                          
-                          // Show available engineers for this site (only once, with shorter duration)
-                          if (value) {
-                            const siteEngineers = getSiteEngineers(value);
-                            const relevance = getSiteRelevance(value);
-                            if (siteEngineers.length > 0) {
-                              showNotification({
-                                type: 'info',
-                                title: 'Site Information',
-                                message: `${siteEngineers.length} engineer(s) available for ${value}. ${relevance.label} (${relevance.frequency} previous jobs)`,
-                                duration: 2000
-                              });
-                            } else {
-                              showNotification({
-                                type: 'warning',
-                                title: 'Site Information',
-                                message: `No specific engineers for ${value}. ${relevance.label} (${relevance.frequency} previous jobs)`,
-                                duration: 2000
-                              });
-                            }
                           }
                         }}
                       >
                         <SelectTrigger className="h-14 w-full text-base border-2 border-gray-200 hover:border-blue-300 focus:border-blue-500">
                           <SelectValue placeholder="Select site" />
                         </SelectTrigger>
-                        <SelectContent>
-                          {customers.length > 0 ? (
-                            formData.customer ? (
-                              // If customer is selected, show only their sites
-                              customers
-                                .find(c => c.name === formData.customer)?.sites?.map(site => {
-                                  const relevance = getSiteRelevance(site);
-                                  return (
-                                    <SelectItem key={site} value={site}>
-                                      <div className="flex items-center justify-between w-full">
-                                        <span>{site}</span>
-                                        <Badge className={`ml-2 text-xs ${relevance.color}`}>
-                                          {relevance.label}
-                                        </Badge>
-                                      </div>
-                                    </SelectItem>
-                                  );
-                                }) || <SelectItem value="no-sites" disabled>No sites available for this customer</SelectItem>
-                            ) : (
-                              // If no customer selected, show ALL sites with their customer name
-                              customers.flatMap(customer => 
-                                customer.sites.map(site => {
-                                  const relevance = getSiteRelevance(site);
-                                  return (
-                                    <SelectItem key={`${customer.name}-${site}`} value={site}>
-                                      <div className="flex items-center justify-between w-full">
-                                        <div className="flex flex-col">
-                                          <span>{site}</span>
-                                          <span className="text-xs text-gray-500">{customer.name}</span>
-                                        </div>
-                                        <Badge className={`ml-2 text-xs ${relevance.color}`}>
-                                          {relevance.label}
-                                        </Badge>
-                                      </div>
-                                    </SelectItem>
-                                  );
-                                })
-                              )
-                            )
+                        <SelectContent className="max-h-60">
+                          {siteOptions.length > 0 ? (
+                            siteOptions.map(option => (
+                              <SelectItem key={option.value} value={option.value}>
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex flex-col">
+                                    <span>{option.label}</span>
+                                    {option.customer && (
+                                      <span className="text-xs text-gray-500">{option.customer}</span>
+                                    )}
+                                  </div>
+                                  <Badge className={`ml-2 text-xs ${option.relevance.color}`}>
+                                    {option.relevance.label}
+                                  </Badge>
+                                </div>
+                              </SelectItem>
+                            ))
                           ) : (
-                            <SelectItem value="no-sites" disabled>No sites available</SelectItem>
+                            <SelectItem value="no-sites" disabled>
+                              {formData.customer ? 'No sites available for this customer' : 'No sites available'}
+                            </SelectItem>
                           )}
                         </SelectContent>
                       </Select>
@@ -819,7 +791,7 @@ export default function JobLogWizard({ customers, onJobCreate, onCancel }: JobLo
                         <>
                           <div className="mt-2">
                             {(() => {
-                              const relevance = getSiteRelevance(formData.site);
+                              const relevance = siteRelevanceMap.get(formData.site) || { frequency: 0, label: 'New Site', color: 'bg-slate-100 text-slate-800' };
                               return (
                                 <Badge className={`text-xs ${relevance.color}`}>
                                   {relevance.label} ({relevance.frequency} previous jobs)

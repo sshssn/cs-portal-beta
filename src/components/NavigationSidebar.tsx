@@ -130,9 +130,9 @@ export default function NavigationSidebar({
 
   return (
     <Sidebar className="w-14 group-data-[state=expanded]:w-[13.6rem] transition-all duration-300" collapsible="icon">
-      <SidebarHeader className="border-b border-sidebar-border h-20 flex items-center justify-center">
+      <SidebarHeader className="border-b border-sidebar-border h-24 flex items-center justify-center">
         <div
-          className="flex items-center gap-3 px-3 py-4 cursor-pointer hover:bg-sidebar-accent rounded-md transition-colors w-full group"
+          className="flex flex-col items-center gap-2 px-3 py-4 cursor-pointer hover:bg-sidebar-accent rounded-md transition-colors w-full group"
           onClick={() => {
             onViewChange('master');
             if (onHomepageClick) {
@@ -141,7 +141,8 @@ export default function NavigationSidebar({
           }}
           title="Click to return to homepage"
         >
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 text-white overflow-hidden flex-shrink-0 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8">
+          {/* Logo */}
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-800 text-white overflow-hidden flex-shrink-0 group-data-[collapsible=icon]:h-8 group-data-[collapsible=icon]:w-8 transition-all duration-200">
             {companyLogo ? (
               <img
                 src={companyLogo}
@@ -149,12 +150,15 @@ export default function NavigationSidebar({
                 className="w-full h-full object-contain"
               />
             ) : (
-              <LayoutDashboard className="h-5 w-5 group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-5" />
+              <LayoutDashboard className="h-6 w-6 group-data-[collapsible=icon]:h-5 group-data-[collapsible=icon]:w-5" />
             )}
           </div>
-          <div className="flex flex-col min-w-0 opacity-0 group-data-[state=expanded]:opacity-100 transition-opacity duration-200">
-            <span className="text-sm font-semibold truncate leading-tight">{companyName}</span>
-            <span className="text-xs text-muted-foreground leading-tight">Out of Hours Portal</span>
+          
+          {/* Company Name - Only visible when expanded */}
+          <div className="flex flex-col items-center min-w-0 opacity-0 group-data-[state=expanded]:opacity-100 transition-opacity duration-200">
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent mb-2"></div>
+            <span className="text-sm font-bold text-center truncate leading-tight text-sidebar-foreground">{companyName}</span>
+            <span className="text-xs text-muted-foreground text-center leading-tight">Out of Hours Portal</span>
           </div>
         </div>
       </SidebarHeader>

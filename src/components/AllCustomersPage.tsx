@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Customer } from '@/types/job';
-import { mockCustomers } from '@/lib/jobUtils';
+import { mockCustomers, generateCustomerNumber } from '@/lib/jobUtils';
 import { 
   Search, 
   ArrowLeft, 
@@ -61,6 +61,7 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
   const handleAddCustomer = () => {
     if (newCustomer.name && newCustomer.email && newCustomer.phone && newCustomer.sites[0]) {
       const customerData = {
+        customerNumber: generateCustomerNumber(),
         name: newCustomer.name,
         email: newCustomer.email,
         phone: newCustomer.phone,
@@ -129,52 +130,66 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">Total Customers</CardTitle>
-            <Users className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{totalCustomers}</div>
-            <p className="text-xs text-blue-700">Active accounts</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">Active Jobs</CardTitle>
-            <Briefcase className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-900">{activeJobs}</div>
-            <p className="text-xs text-green-700">Across all customers</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-800">Total Sites</CardTitle>
-            <MapPin className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-900">
-              {Array.from(new Set(mockCustomers.flatMap(customer => customer.sites))).length}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:border-blue-300"
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-700 font-medium">Total Customers</p>
+                <p className="text-2xl font-bold text-blue-900">{totalCustomers}</p>
+                <p className="text-xs text-blue-700">Active accounts</p>
+              </div>
+              <Users className="h-8 w-8 text-blue-600" />
             </div>
-            <p className="text-xs text-purple-700">Managed locations</p>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 hover:border-amber-300"
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-amber-700 font-medium">Active Jobs</p>
+                <p className="text-2xl font-bold text-amber-900">{activeJobs}</p>
+                <p className="text-xs text-amber-700">Across all customers</p>
+              </div>
+              <Briefcase className="h-8 w-8 text-amber-600" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:border-green-300"
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-green-700 font-medium">Total Sites</p>
+                <p className="text-2xl font-bold text-green-900">
+                  {Array.from(new Set(mockCustomers.flatMap(customer => customer.sites))).length}
+                </p>
+                <p className="text-xs text-green-700">Managed locations</p>
+              </div>
+              <MapPin className="h-8 w-8 text-green-600" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search Bar */}
-      <div className="relative max-w-2xl">
-        <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-        <Input
-          placeholder="Search customers..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-12 h-12 text-base border-2 border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 rounded-xl shadow-sm"
-        />
+      {/* Search and Filters */}
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex items-center gap-3 flex-1">
+          <Search className="text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search customers..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="min-w-0 h-12 text-base"
+          />
+        </div>
       </div>
 
       {/* Divider */}
@@ -199,7 +214,7 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
           return (
             <Card 
               key={customer.id} 
-              className="hover:shadow-lg transition-shadow cursor-pointer"
+              className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
               onClick={() => onCustomerSelect(customer)}
             >
               <CardHeader className="pb-3">

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import JobLogWizard from '@/components/JobLogWizard';
 import { Customer, Job } from '@/types/job';
-import { mockCustomers } from '@/lib/jobUtils';
+import { mockCustomers, loadJobsFromStorage, saveJobsToStorage } from '@/lib/jobUtils';
 
 export default function WizardPage() {
   const navigate = useNavigate();
@@ -14,8 +14,22 @@ export default function WizardPage() {
   }, []);
 
   const handleJobCreate = (job: Omit<Job, 'id'>) => {
-    // Handle job creation - you can add your logic here
-    console.log('Job created:', job);
+    // Load existing jobs from localStorage
+    const existingJobs = loadJobsFromStorage();
+    
+    // Create new job with ID
+    const newJob: Job = {
+      ...job,
+      id: `job-${Date.now()}`
+    };
+    
+    // Add new job to existing jobs
+    const updatedJobs = [newJob, ...existingJobs];
+    
+    // Save updated jobs to localStorage
+    saveJobsToStorage(updatedJobs);
+    
+    console.log('Job created and saved:', newJob);
     
     // Navigate back to the main dashboard or show success message
     navigate('/', { 

@@ -47,7 +47,7 @@ export interface Job {
   engineer: string;
   contact: JobContact;
   reporter: Reporter;
-  status: 'new' | 'allocated' | 'attended' | 'awaiting_parts' | 'parts_to_fit' | 'completed' | 'costed' | 'reqs_invoice';
+  status: 'new' | 'allocated' | 'attended' | 'awaiting_parts' | 'parts_to_fit' | 'completed' | 'costed' | 'reqs_invoice' | 'amber' | 'red';
   priority: 'Low' | 'Medium' | 'High' | 'Critical';
   dateLogged: Date;
   dateAccepted: Date | null;
@@ -119,6 +119,7 @@ export interface JobFormData {
 
 export interface Customer {
   id: number;
+  customerNumber?: string;
   name: string;
   email: string;
   phone: string;

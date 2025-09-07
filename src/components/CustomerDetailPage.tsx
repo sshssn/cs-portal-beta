@@ -286,12 +286,15 @@ export default function CustomerDetailPage({
                 >
                   <div className="flex items-center gap-4">
                     <div>
-                      <h3 className="font-semibold">{job.jobNumber}</h3>
+                      <h3 className="font-semibold">{job.customer} - {job.site}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {job.site} • {job.engineer}
+                        Job Number: {job.jobNumber}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {job.description}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Engineer: {job.engineer}
                       </p>
                     </div>
                   </div>

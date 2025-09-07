@@ -355,145 +355,154 @@ export default function SitesPage({ onBack, onSiteSelect, onJobClick, onJobCreat
 
       {/* Overall Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">Total Sites</CardTitle>
-            <MapPin className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{totalStats.sites}</div>
-            <p className="text-xs text-blue-700">Active locations</p>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:border-blue-300"
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-700 font-medium">Total Sites</p>
+                <p className="text-2xl font-bold text-blue-900">{totalStats.sites}</p>
+                <p className="text-xs text-blue-700">Active locations</p>
+              </div>
+              <MapPin className="h-8 w-8 text-blue-600" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-indigo-800">Total Jobs</CardTitle>
-            <Briefcase className="h-4 w-4 text-indigo-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-indigo-900">{totalStats.totalJobs}</div>
-            <p className="text-xs text-indigo-700">Across all sites</p>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-indigo-50 to-indigo-100 border-indigo-200 hover:border-indigo-300"
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-indigo-700 font-medium">Total Jobs</p>
+                <p className="text-2xl font-bold text-indigo-900">{totalStats.totalJobs}</p>
+                <p className="text-xs text-indigo-700">Across all sites</p>
+              </div>
+              <Briefcase className="h-8 w-8 text-indigo-600" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-amber-800">Active Jobs</CardTitle>
-            <Clock className="h-4 w-4 text-amber-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-900">{totalStats.activeJobs}</div>
-            <p className="text-xs text-amber-700">In progress</p>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 hover:border-amber-300"
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-amber-700 font-medium">Active Jobs</p>
+                <p className="text-2xl font-bold text-amber-900">{totalStats.activeJobs}</p>
+                <p className="text-xs text-amber-700">In progress</p>
+              </div>
+              <Clock className="h-8 w-8 text-amber-600" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-900">{totalStats.completedJobs}</div>
-            <p className="text-xs text-green-700">Finished jobs</p>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:border-green-300"
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-green-700 font-medium">Completed</p>
+                <p className="text-2xl font-bold text-green-900">{totalStats.completedJobs}</p>
+                <p className="text-xs text-green-700">Finished jobs</p>
+              </div>
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-red-50 to-red-100 border-red-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-800">Critical</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-900">{totalStats.criticalJobs}</div>
-            <p className="text-xs text-red-700">High priority</p>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-red-50 to-red-100 border-red-200 hover:border-red-300"
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-red-700 font-medium">Critical</p>
+                <p className="text-2xl font-bold text-red-900">{totalStats.criticalJobs}</p>
+                <p className="text-xs text-red-700">High priority</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-purple-800">Urgent</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-purple-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-900">{totalStats.urgentJobs}</div>
-            <p className="text-xs text-purple-700">Red status</p>
+        <Card 
+          className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200 hover:border-orange-300"
+        >
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-orange-700 font-medium">Urgent</p>
+                <p className="text-2xl font-bold text-orange-900">{totalStats.urgentJobs}</p>
+                <p className="text-xs text-orange-700">Red status</p>
+              </div>
+              <AlertTriangle className="h-8 w-8 text-orange-600" />
+            </div>
           </CardContent>
         </Card>
       </div>
 
       {/* Search and Filters */}
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {/* Search Bar */}
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="Search sites..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Filters */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-gray-500" />
-                <span className="text-sm font-medium text-gray-700">Filters:</span>
-              </div>
-              
-              <Select value={customerFilter} onValueChange={setCustomerFilter}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="All Customers" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Customers</SelectItem>
-                  {allCustomers.map(customer => (
-                    <SelectItem key={customer} value={customer}>
-                      {customer}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="All Statuses" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="active">Has Active Jobs</SelectItem>
-                  <SelectItem value="completed">Has Completed Jobs</SelectItem>
-                  <SelectItem value="urgent">Has Urgent Jobs</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="All Priorities" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priorities</SelectItem>
-                  <SelectItem value="critical">Has Critical Jobs</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+        <div className="flex items-center gap-3 flex-1">
+          <Search className="text-gray-400 h-4 w-4" />
+          <Input
+            placeholder="Search sites..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="min-w-0 h-12 text-base"
+          />
+        </div>
+        
+        <div className="flex gap-2">
+          <Select value={customerFilter} onValueChange={setCustomerFilter}>
+            <SelectTrigger className="w-48">
+              <SelectValue placeholder="All Customers" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Customers</SelectItem>
+              {allCustomers.map(customer => (
+                <SelectItem key={customer} value={customer}>
+                  {customer}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="active">Has Active Jobs</SelectItem>
+              <SelectItem value="completed">Has Completed Jobs</SelectItem>
+              <SelectItem value="urgent">Has Urgent Jobs</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="All Priorities" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Priorities</SelectItem>
+              <SelectItem value="critical">Has Critical Jobs</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
 
       {/* Sites Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredSites.map((site) => (
           <Card 
             key={`${site.customer}-${site.name}`} 
-            className="hover:shadow-lg transition-shadow cursor-pointer"
+            className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
             onClick={() => handleSiteClick(site)}
           >
             <CardHeader className="pb-3">

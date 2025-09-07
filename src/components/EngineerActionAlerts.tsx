@@ -6,6 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Job, Engineer } from '@/types/job';
 import { mockEngineers } from '@/lib/jobUtils';
+import { toast } from '@/components/ui/sonner';
 import CustomPromptModal from '@/components/ui/custom-prompt-modal';
 import { 
   User, 
@@ -48,15 +49,71 @@ interface EngineerActionAlertsProps {
 export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActionAlertsProps) {
   const [selectedAlert, setSelectedAlert] = useState<EngineerActionAlert | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('active');
+  const [activeTab, setActiveTab] = useState(() => 
+    localStorage.getItem('engineerAlerts_activeTab') || 'active'
+  );
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [alerts, setAlerts] = useState<EngineerActionAlert[]>([]);
   const [showResolutionModal, setShowResolutionModal] = useState(false);
   
+  // Save activeTab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('engineerAlerts_activeTab', activeTab);
+  }, [activeTab]);
+  
   // Generate alerts when jobs change
   useEffect(() => {
     const newAlerts = generateEngineerActionAlerts();
-    setAlerts(newAlerts);
+    
+    // Preserve resolved alerts and auto-resolve accepted jobs
+    setAlerts(prevAlerts => {
+      const resolvedAlerts = prevAlerts.filter(alert => alert.resolved);
+      
+      // Auto-resolve alerts for jobs that have been accepted or are onsite
+      const autoResolvedAlerts = newAlerts.map(alert => {
+        const job = jobs.find(j => j.id === alert.jobId);
+        if (!job) return alert;
+        
+        // Auto-resolve accept alerts if job is accepted
+        if (alert.type === 'ENGINEER_ACCEPT' && job.dateAccepted) {
+          return {
+            ...alert,
+            resolved: true,
+            resolvedBy: 'System',
+            resolvedAt: job.dateAccepted,
+            resolution: 'Job automatically accepted by engineer'
+          };
+        }
+        
+        // Auto-resolve onsite alerts if engineer is onsite
+        if (alert.type === 'ENGINEER_ONSITE' && job.dateOnSite) {
+          return {
+            ...alert,
+            resolved: true,
+            resolvedBy: 'System',
+            resolvedAt: job.dateOnSite,
+            resolution: 'Engineer automatically arrived on site'
+          };
+        }
+        
+        return alert;
+      });
+      
+      // Filter out alerts that are now resolved
+      const activeAlerts = autoResolvedAlerts.filter(alert => !alert.resolved);
+      
+      // Combine with existing resolved alerts, avoiding duplicates
+      const allResolvedAlerts = [...resolvedAlerts];
+      autoResolvedAlerts.forEach(alert => {
+        if (alert.resolved && !allResolvedAlerts.some(existing => 
+          existing.jobId === alert.jobId && existing.type === alert.type
+        )) {
+          allResolvedAlerts.push(alert);
+        }
+      });
+      
+      return [...allResolvedAlerts, ...activeAlerts];
+    });
   }, [jobs]);
 
   // Handle clicking outside notifications dropdown
@@ -79,7 +136,8 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
     
     jobs.forEach(job => {
       // Engineer Accept Alert - when job is allocated but not accepted
-      if (job.status === 'allocated' && !job.dateAccepted) {
+      // Also check if job is not already in attended status to prevent repeated acceptions
+      if (job.status === 'allocated' && !job.dateAccepted && job.status !== 'attended') {
         alerts.push({
           id: `engineer-accept-${job.id}`,
           type: 'ENGINEER_ACCEPT',
@@ -97,6 +155,7 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
       }
 
       // Engineer Onsite Alert - when job is accepted but engineer not on site
+      // Only show if job is not already completed
       if (job.dateAccepted && !job.dateOnSite && job.status !== 'completed') {
         alerts.push({
           id: `engineer-onsite-${job.id}`,
@@ -182,7 +241,7 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
     if (alert) {
       const job = jobs.find(j => j.id === alert.jobId);
       if (job) {
-        let updatedJob = { ...job };
+        const updatedJob = { ...job };
         
         if (alert.type === 'ENGINEER_ACCEPT') {
           updatedJob.dateAccepted = new Date();
@@ -209,16 +268,42 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
         
         // Update the job
         onJobUpdate(updatedJob);
+        
+        // Job update will trigger useEffect to regenerate alerts while preserving resolved ones
+        
+        // Show success toast notification to engineer
+        toast.success('Job Status Updated', {
+          description: `Job ${job.jobNumber} has been ${alert.type === 'ENGINEER_ACCEPT' ? 'accepted' : 'marked as onsite'} successfully.`,
+          duration: 5000
+        });
+        
+        // Show global notification to relevant teams
+        toast.info('Engineer Action Completed', {
+          description: `${alert.engineer} has ${alert.type === 'ENGINEER_ACCEPT' ? 'accepted' : 'arrived onsite for'} job ${job.jobNumber} at ${job.site}.`,
+          duration: 7000
+        });
+        
+        // Auto-dismiss container and close modals ONLY after successful resolution
+        setTimeout(() => {
+          setIsDetailModalOpen(false);
+          setSelectedAlert(null);
+          setShowResolutionModal(false);
+          setShowNotificationsDropdown(false);
+        }, 1000); // Small delay to show the success notification
+      } else {
+        // Job not found - show error
+        toast.error('Error', {
+          description: 'Job not found. Please try again.',
+          duration: 5000
+        });
       }
+    } else {
+      // Alert not found - show error
+      toast.error('Error', {
+        description: 'Alert not found. Please try again.',
+        duration: 5000
+      });
     }
-    
-    // Close both modals immediately
-    setIsDetailModalOpen(false);
-    setSelectedAlert(null);
-    setShowResolutionModal(false);
-    
-    // Also auto-dismiss notifications dropdown after resolving
-    setShowNotificationsDropdown(false);
   };
 
   const getEngineerDetails = (engineerName: string): Engineer | null => {
@@ -462,8 +547,11 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
                                   </span>
                                 </div>
                                 <h4 className="text-sm font-medium text-gray-900 mb-1">
-                                  {alert.jobNumber} - {alert.customer}
+                                  {alert.customer} - {alert.site}
                                 </h4>
+                                <p className="text-xs text-gray-600 mb-1">
+                                  Job Number: {alert.jobNumber}
+                                </p>
                                 <p className="text-xs text-gray-600 mb-2 line-clamp-2">
                                   {getAlertDescription(alert.type, alert.jobNumber)}
                                 </p>

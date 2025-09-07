@@ -1,7 +1,7 @@
 import { Job, Customer, Engineer } from '@/types/job';
 
 // Utility functions for styling
-export const getStatusColor = (status: Job['status']): string => {
+export const getStatusColor = (status: Job['status'] | 'green' | 'amber' | 'red'): string => {
   switch (status) {
     case 'new':
       return 'bg-blue-500 text-white border-blue-600 shadow-sm';
@@ -44,12 +44,56 @@ export const getPriorityColor = (priority: Job['priority']): string => {
   }
 };
 
-// Generate job number
+// Professional numbering system
+const getCurrentYear = () => new Date().getFullYear().toString();
+const getCurrentDate = () => {
+  const now = new Date();
+  const month = (now.getMonth() + 1).toString().padStart(2, '0');
+  const day = now.getDate().toString().padStart(2, '0');
+  return `${month}${day}`;
+};
+
+// Generate professional job number: JOB-YYYY-MMDD-001
 export const generateJobNumber = (): string => {
-  const prefix = 'JOB';
-  const timestamp = Date.now().toString().slice(-6);
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  return `${prefix}-${timestamp}-${random}`;
+  const year = getCurrentYear();
+  const date = getCurrentDate();
+  
+  // Get existing jobs to determine next sequence number
+  const existingJobs = loadJobsFromStorage();
+  const todayJobs = existingJobs.filter(job => 
+    job.jobNumber.startsWith(`JOB-${year}-${date}`)
+  );
+  
+  const nextSequence = (todayJobs.length + 1).toString().padStart(3, '0');
+  return `JOB-${year}-${date}-${nextSequence}`;
+};
+
+// Generate professional customer number: CUST-YYYY-001
+export const generateCustomerNumber = (): string => {
+  const year = getCurrentYear();
+  
+  // Get existing customers to determine next sequence number
+  const existingCustomers = loadFromStorage('customers', []);
+  const yearCustomers = existingCustomers.filter((customer: any) => 
+    customer.customerNumber && customer.customerNumber.startsWith(`CUST-${year}`)
+  );
+  
+  const nextSequence = (yearCustomers.length + 1).toString().padStart(3, '0');
+  return `CUST-${year}-${nextSequence}`;
+};
+
+// Generate professional site number: SITE-YYYY-001
+export const generateSiteNumber = (): string => {
+  const year = getCurrentYear();
+  
+  // Get existing sites to determine next sequence number
+  const existingSites = loadFromStorage('sites', []);
+  const yearSites = existingSites.filter((site: any) => 
+    site.siteNumber && site.siteNumber.startsWith(`SITE-${year}`)
+  );
+  
+  const nextSequence = (yearSites.length + 1).toString().padStart(3, '0');
+  return `SITE-${year}-${nextSequence}`;
 };
 
 // Mock data
@@ -171,6 +215,7 @@ export const mockEngineers: Engineer[] = [
 export const mockCustomers: Customer[] = [
   {
     id: 1,
+    customerNumber: 'CUST-2025-001',
     name: 'Demo Corporation',
     email: 'info@democorp.com',
     phone: '+44 20 7123 4567',
@@ -179,6 +224,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 2,
+    customerNumber: 'CUST-2025-002',
     name: 'Tech Solutions Ltd',
     email: 'contact@techsolutions.com',
     phone: '+44 20 7234 5678',
@@ -187,6 +233,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 3,
+    customerNumber: 'CUST-2025-003',
     name: 'Industrial Manufacturing',
     email: 'operations@indmanufacturing.com',
     phone: '+44 20 7345 6789',
@@ -195,6 +242,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 4,
+    customerNumber: 'CUST-2025-004',
     name: 'Healthcare Systems',
     email: 'support@healthcaresystems.com',
     phone: '+44 20 7456 7890',
@@ -203,6 +251,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 5,
+    customerNumber: 'CUST-2025-005',
     name: 'Retail Chain',
     email: 'facilities@retailchain.com',
     phone: '+44 20 7567 8901',
@@ -211,6 +260,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 6,
+    customerNumber: 'CUST-2025-006',
     name: 'Educational Institute',
     email: 'maintenance@eduinst.com',
     phone: '+44 20 7678 9012',
@@ -219,6 +269,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 7,
+    customerNumber: 'CUST-2025-007',
     name: 'Financial Services',
     email: 'facilities@financialservices.com',
     phone: '+44 20 7789 0123',
@@ -227,6 +278,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 8,
+    customerNumber: 'CUST-2025-008',
     name: 'Transport & Logistics',
     email: 'maintenance@transportlog.com',
     phone: '+44 20 7890 1234',
@@ -238,12 +290,12 @@ export const mockCustomers: Customer[] = [
 export const mockJobs: Job[] = [
   {
     id: '1',
-    jobNumber: 'JOB-2024-001',
+    jobNumber: 'JOB-2025-0907-001',
     customer: 'Demo Corporation',
     site: 'London HQ',
     description: 'HVAC system malfunction - Air conditioning unit not cooling effectively in server room',
     engineer: 'John Smith',
-    status: 'red',
+    status: 'allocated',
     priority: 'High',
     category: 'HVAC',
     jobType: 'Repair',
@@ -290,12 +342,12 @@ export const mockJobs: Job[] = [
   },
   {
     id: '2',
-    jobNumber: 'JOB-2024-002',
+    jobNumber: 'JOB-2025-0907-002',
     customer: 'Tech Solutions Ltd',
     site: 'Manchester Office',
     description: 'Leaky faucet in breakroom - Constant drip from the breakroom sink faucet',
     engineer: 'Sarah Johnson',
-    status: 'amber',
+    status: 'attended',
     priority: 'Medium',
     category: 'Plumbing',
     jobType: 'Maintenance',
@@ -342,12 +394,12 @@ export const mockJobs: Job[] = [
   },
   {
     id: '3',
-    jobNumber: 'JOB-2024-003',
+    jobNumber: 'JOB-2025-0907-003',
     customer: 'Industrial Manufacturing',
     site: 'Birmingham Factory',
     description: 'Electrical outlet repair - Several power outlets in production area are not working',
     engineer: 'Mike Davis',
-    status: 'green',
+    status: 'completed',
     priority: 'High',
     category: 'Electrical',
     jobType: 'Repair',
@@ -396,12 +448,12 @@ export const mockJobs: Job[] = [
   },
   {
     id: '4',
-    jobNumber: 'JOB-2024-004',
+    jobNumber: 'JOB-2025-0907-004',
     customer: 'Demo Corporation',
     site: 'London HQ',
     description: 'Routine HVAC maintenance - Annual check-up and filter replacement for all HVAC units',
     engineer: 'John Smith',
-    status: 'amber',
+    status: 'attended',
     priority: 'Low',
     category: 'HVAC',
     jobType: 'Maintenance',
@@ -448,12 +500,12 @@ export const mockJobs: Job[] = [
   },
   {
     id: '5',
-    jobNumber: 'JOB-2024-005',
+    jobNumber: 'JOB-2025-0907-005',
     customer: 'Tech Solutions Ltd',
     site: 'Manchester Office',
     description: 'Emergency pipe burst - Major water leak from a burst pipe in the basement',
     engineer: 'Sarah Johnson',
-    status: 'red',
+    status: 'allocated',
     priority: 'Critical',
     category: 'Plumbing',
     jobType: 'Emergency',
@@ -500,7 +552,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '6',
-    jobNumber: 'JOB-2024-006',
+    jobNumber: 'JOB-2025-0907-006',
     customer: 'Demo Corporation',
     site: 'Manchester Office',
     description: 'Security system upgrade - Install new CCTV cameras and update access control system',
@@ -556,7 +608,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '7',
-    jobNumber: 'JOB-2024-007',
+    jobNumber: 'JOB-2025-0907-007',
     customer: 'Tech Solutions Ltd',
     site: 'Manchester Office',
     description: 'Fire alarm system maintenance - Annual testing and inspection of fire detection system',
@@ -612,7 +664,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '8',
-    jobNumber: 'JOB-2024-008',
+    jobNumber: 'JOB-2025-0907-008',
     customer: 'Industrial Manufacturing',
     site: 'Birmingham Factory',
     description: 'Production line electrical fault - Intermittent power loss affecting production efficiency',
@@ -668,7 +720,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '9',
-    jobNumber: 'JOB-2024-009',
+    jobNumber: 'JOB-2025-0907-009',
     customer: 'Demo Corporation',
     site: 'London HQ',
     description: 'Office painting and decoration - Refresh office spaces with new color scheme',
@@ -724,7 +776,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '10',
-    jobNumber: 'JOB-2024-010',
+    jobNumber: 'JOB-2025-0907-010',
     customer: 'Tech Solutions Ltd',
     site: 'Manchester Office',
     description: 'Flooring replacement - Replace worn carpet tiles in meeting rooms and corridors',
@@ -780,7 +832,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '8',
-    jobNumber: 'JOB-2024-008',
+    jobNumber: 'JOB-2025-0907-008',
     customer: 'Retail Chain',
     site: 'Oxford Street Store',
     description: 'HVAC maintenance - Regular service and filter replacement for air conditioning units',
@@ -832,7 +884,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '9',
-    jobNumber: 'JOB-2024-009',
+    jobNumber: 'JOB-2025-0907-009',
     customer: 'Healthcare Center',
     site: 'Manchester Clinic',
     description: 'Plumbing emergency - Burst pipe in the main corridor causing water damage',
@@ -884,7 +936,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '10',
-    jobNumber: 'JOB-2024-010',
+    jobNumber: 'JOB-2025-0907-010',
     customer: 'Office Complex',
     site: 'Canary Wharf Tower',
     description: 'Security system upgrade - Install new access control system for main entrance',
@@ -936,7 +988,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '11',
-    jobNumber: 'JOB-2024-011',
+    jobNumber: 'JOB-2025-0907-011',
     customer: 'Data Center',
     site: 'Manchester Hub',
     description: 'Emergency power backup system failure - UPS system not functioning properly',
@@ -988,7 +1040,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '12',
-    jobNumber: 'JOB-2024-012',
+    jobNumber: 'JOB-2025-0907-012',
     customer: 'Shopping Mall',
     site: 'Birmingham Central',
     description: 'Escalator maintenance - Annual service and safety inspection required',
@@ -1040,7 +1092,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '13',
-    jobNumber: 'JOB-2024-013',
+    jobNumber: 'JOB-2025-0907-013',
     customer: 'Hotel Chain',
     site: 'Liverpool Waterfront',
     description: 'HVAC system repair - Air conditioning not working in conference rooms',
@@ -1092,7 +1144,7 @@ export const mockJobs: Job[] = [
   },
   {
     id: '14',
-    jobNumber: 'JOB-2024-014',
+    jobNumber: 'JOB-2025-0907-014',
     customer: 'University Campus',
     site: 'Leeds Main Building',
     description: 'Fire alarm system testing - Monthly fire safety system inspection and testing',
@@ -1199,6 +1251,8 @@ export const loadJobsFromStorage = (): Job[] => {
       preferredAppointmentDate: job.preferredAppointmentDate ? new Date(job.preferredAppointmentDate) : null,
       startDate: job.startDate ? new Date(job.startDate) : null,
       endDate: job.endDate ? new Date(job.endDate) : null,
+      targetAttendanceDate: job.targetAttendanceDate ? new Date(job.targetAttendanceDate) : null,
+      allocatedVisitDate: job.allocatedVisitDate ? new Date(job.allocatedVisitDate) : null,
     }));
   }
   return mockJobs;

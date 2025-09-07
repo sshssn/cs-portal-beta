@@ -6,7 +6,6 @@ import { SidebarProvider } from '@/components/ui/sidebar';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import Index from './pages/Index';
 import WizardPage from './pages/WizardPage';
-import { ToastManager } from './components/ui/toast-notification';
 
 const queryClient = new QueryClient();
 
@@ -26,7 +25,6 @@ const App = () => {
                 <Route path="/wizard" element={<WizardPage />} />
               </Routes>
             </BrowserRouter>
-            <ToastManager />
           </TooltipProvider>
         </SidebarProvider>
       </ThemeProvider>

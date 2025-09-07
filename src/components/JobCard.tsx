@@ -106,10 +106,13 @@ export default function JobCard({ job, onUpdateStatus }: JobCardProps) {
             <div className={`w-4 h-4 rounded-full ${getStatusColor(job.status)}`} />
             <div>
               <CardTitle className="text-lg font-semibold text-gray-900">
-                {job.jobNumber}
+                {job.customer} - {job.site}
               </CardTitle>
               <p className="text-sm text-muted-foreground mt-1">
-                {job.customer} • {job.site}
+                Job Number: {job.jobNumber}
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {job.description}
               </p>
             </div>
           </div>

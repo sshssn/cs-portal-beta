@@ -48,7 +48,7 @@ export const saveCompanySettings = (settings: CompanySettings): void => {
     showNotification({
       type: 'success',
       title: 'Company Settings Updated',
-      message: 'Please refresh the page to see all changes applied.',
+      message: 'You may need to refresh the page to see all changes applied.',
       duration: 10000
     });
   } catch (error) {
