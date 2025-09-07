@@ -320,42 +320,41 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
     const newEngineerAlerts = generateEngineerActionAlerts();
     setSystemAlerts([...customAlerts, ...newSystemAlerts]);
     
-    // Process engineer alerts - auto-resolve accepted jobs immediately
+    // Process engineer alerts - add resolution details for resolved alerts
     setEngineerAlerts(prevAlerts => {
       // Keep all previously resolved alerts
       const existingResolvedAlerts = prevAlerts.filter(alert => alert.resolved);
       
-      // Process new alerts and auto-resolve accepted jobs
+      // Process new alerts and add resolution details for resolved ones
       const processedAlerts = newEngineerAlerts.map(alert => {
         const job = jobs.find(j => j.id === alert.jobId);
         if (!job) return alert;
         
-        // Auto-resolve accept alerts if job is accepted, attended, or completed
-        if (alert.type === 'ENGINEER_ACCEPT' && (job.dateAccepted || job.status === 'attended' || ['completed', 'costed', 'reqs_invoice'].includes(job.status))) {
-          return {
-            ...alert,
-            resolved: true,
-            resolvedBy: 'System',
-            resolvedAt: job.dateAccepted || new Date(),
-            resolution: 'Job automatically accepted by engineer'
-          };
-        }
-        
-        // Auto-resolve onsite alerts if engineer is onsite, attended, or completed
-        if (alert.type === 'ENGINEER_ONSITE' && (job.dateOnSite || job.status === 'attended' || ['completed', 'costed', 'reqs_invoice'].includes(job.status))) {
-          return {
-            ...alert,
-            resolved: true,
-            resolvedBy: 'System',
-            resolvedAt: job.dateOnSite || new Date(),
-            resolution: 'Engineer automatically arrived on site'
-          };
+        // If alert is already resolved, add resolution details
+        if (alert.resolved) {
+          if (alert.type === 'ENGINEER_ACCEPT' && job.dateAccepted) {
+            return {
+              ...alert,
+              resolvedBy: 'System',
+              resolvedAt: job.dateAccepted,
+              resolution: 'Job automatically accepted by engineer'
+            };
+          }
+          
+          if (alert.type === 'ENGINEER_ONSITE' && job.dateOnSite) {
+            return {
+              ...alert,
+              resolvedBy: 'System',
+              resolvedAt: job.dateOnSite,
+              resolution: 'Engineer automatically arrived on site'
+            };
+          }
         }
         
         return alert;
       });
       
-      // Separate active and newly resolved alerts
+      // Separate active and resolved alerts
       const activeAlerts = processedAlerts.filter(alert => !alert.resolved);
       const newlyResolvedAlerts = processedAlerts.filter(alert => alert.resolved);
       
@@ -370,7 +369,9 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
       });
       
       // Return all resolved alerts first, then active alerts
-      return [...allResolvedAlerts, ...activeAlerts];
+      const finalAlerts = [...allResolvedAlerts, ...activeAlerts];
+      console.log('Final alerts state:', finalAlerts.length, 'resolved:', allResolvedAlerts.length, 'active:', activeAlerts.length);
+      return finalAlerts;
     });
   }, [jobs, customAlerts]);
   
@@ -470,7 +471,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
     const alerts: EngineerActionAlert[] = [];
 
     jobs.forEach(job => {
-      // Engineer Accept Alert - for jobs that are allocated
+      // Engineer Accept Alert - for jobs that are allocated (regardless of acceptance status)
       if (job.status === 'allocated') {
         alerts.push({
           id: `engineer-accept-${job.id}`,
@@ -484,11 +485,11 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
           status: job.status,
           timestamp: job.dateLogged,
           acknowledged: false,
-          resolved: false
+          resolved: job.dateAccepted ? true : false // Mark as resolved if already accepted
         });
       }
 
-      // Engineer Onsite Alert - for jobs that are accepted
+      // Engineer Onsite Alert - for jobs that are accepted (regardless of onsite status)
       if (job.dateAccepted) {
         alerts.push({
           id: `engineer-onsite-${job.id}`,
@@ -502,7 +503,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
           status: job.status,
           timestamp: job.dateAccepted,
           acknowledged: false,
-          resolved: false
+          resolved: job.dateOnSite ? true : false // Mark as resolved if already on site
         });
       }
     });
@@ -597,6 +598,12 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
   // Engineer alerts data - reactive to current state
   const activeEngineerAlerts = engineerAlerts.filter(alert => !alert.resolved);
   const resolvedEngineerAlerts = engineerAlerts.filter(alert => alert.resolved);
+  
+  // Debug logging
+  console.log('Total engineer alerts:', engineerAlerts.length);
+  console.log('Active alerts:', activeEngineerAlerts.length);
+  console.log('Resolved alerts:', resolvedEngineerAlerts.length);
+  console.log('Resolved alerts data:', resolvedEngineerAlerts);
 
   // Filter sites based on search and filters
   const filteredSites = sitesInfo.filter(site => {
@@ -1863,10 +1870,12 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
                           {/* Resolution Info */}
                           <div className="space-y-1">
                             <div className="text-xs text-gray-500">
-                              <span className="font-medium">Resolved by:</span> {alert.resolvedBy || 'Unknown'}
+                              <span className="font-medium">Resolved by:</span> {alert.resolvedBy || 'System'}
                               </div>
                             <div className="text-xs text-gray-500">
-                              <span className="font-medium">Resolved at:</span> {alert.resolvedAt?.toLocaleDateString() || 'Unknown'}
+                              <span className="font-medium">Resolved at:</span> {alert.resolvedAt ? 
+                                `${alert.resolvedAt.toLocaleDateString()} at ${alert.resolvedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
+                                : 'Not recorded'}
                               </div>
                             </div>
                             

@@ -4,6 +4,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/sonner';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { ThemeProvider } from '@/contexts/ThemeContext';
+import ScrollToTop from '@/components/ScrollToTop';
 import Index from './pages/Index';
 import WizardPage from './pages/WizardPage';
 
@@ -19,6 +20,7 @@ const App = () => {
           <TooltipProvider>
             <Toaster />
             <BrowserRouter>
+              <ScrollToTop />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/job/:jobId" element={<Index />} />

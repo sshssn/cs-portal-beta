@@ -58,21 +58,42 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
     return jobs;
   };
 
+  // Helper function to categorize job status into filter categories
+  const getJobStatusCategory = (status: Job['status']): 'green' | 'amber' | 'red' => {
+    switch (status) {
+      case 'completed':
+      case 'costed':
+      case 'reqs_invoice':
+        return 'green';
+      case 'new':
+      case 'allocated':
+      case 'attended':
+      case 'awaiting_parts':
+      case 'parts_to_fit':
+        return 'amber';
+      case 'amber':
+      case 'red':
+        return 'red';
+      default:
+        return 'amber';
+    }
+  };
+
   // Get filtered jobs based on active filter
   const getFilteredJobs = () => {
     if (activeFilter === 'all') {
       return getAllJobs();
     }
-    return getAllJobs().filter(job => job.status === activeFilter);
+    return getAllJobs().filter(job => getJobStatusCategory(job.status) === activeFilter);
   };
 
   // Calculate statistics using all jobs
   const allJobs = getAllJobs();
   const stats = {
     totalJobs: allJobs.length,
-    completed: allJobs.filter(job => job.status === 'green' || job.status === 'completed' || job.status === 'costed' || job.status === 'reqs_invoice').length,
-    inProgress: allJobs.filter(job => job.status === 'amber' || job.status === 'new' || job.status === 'allocated' || job.status === 'attended' || job.status === 'awaiting_parts').length,
-    issues: allJobs.filter(job => job.status === 'red').length,
+    completed: allJobs.filter(job => getJobStatusCategory(job.status) === 'green').length,
+    inProgress: allJobs.filter(job => getJobStatusCategory(job.status) === 'amber').length,
+    issues: allJobs.filter(job => getJobStatusCategory(job.status) === 'red').length,
   };
 
   // Calculate completion rate
@@ -402,16 +423,10 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
                 <div key={job.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-3">
                     <h3 className="font-semibold text-gray-900 text-sm">{job.jobNumber}</h3>
-                    <Badge variant={job.status === 'green' ? 'default' : job.status === 'amber' ? 'secondary' : 'destructive'} className="text-xs">
-                      {job.status === 'green' ? 'Completed' : 
-                       job.status === 'amber' ? 'In Process' : 
-                       job.status === 'red' ? 'Issue' : 
-                       job.status === 'OOH' ? 'Out of Hours' :
-                       job.status === 'On call' ? 'On Call' :
-                       job.status === 'travel' ? 'Traveling' :
-                       job.status === 'require_revisit' ? 'Requires Revisit' :
-                       job.status === 'sick' ? 'Sick Leave' :
-                       job.status === 'training' ? 'Training' :
+                    <Badge variant={getJobStatusCategory(job.status) === 'green' ? 'default' : getJobStatusCategory(job.status) === 'amber' ? 'secondary' : 'destructive'} className="text-xs">
+                      {getJobStatusCategory(job.status) === 'green' ? 'Completed' : 
+                       getJobStatusCategory(job.status) === 'amber' ? 'In Process' : 
+                       getJobStatusCategory(job.status) === 'red' ? 'Issue' : 
                        String(job.status).toUpperCase()}
                     </Badge>
                   </div>

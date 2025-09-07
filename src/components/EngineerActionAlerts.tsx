@@ -18,8 +18,10 @@ import {
   AlertTriangle,
   X,
   Check,
-  Calendar,
   Briefcase,
+  UserCheck,
+  FileText,
+  Calendar,
   Bell
 } from 'lucide-react';
 
@@ -55,6 +57,8 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
   const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   const [alerts, setAlerts] = useState<EngineerActionAlert[]>([]);
   const [showResolutionModal, setShowResolutionModal] = useState(false);
+  const [selectedResolvedAlert, setSelectedResolvedAlert] = useState<EngineerActionAlert | null>(null);
+  const [showResolvedModal, setShowResolvedModal] = useState(false);
   
   // Save activeTab to localStorage whenever it changes
   useEffect(() => {
@@ -130,14 +134,30 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
     };
   }, [showNotificationsDropdown]);
 
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (showResolvedModal) {
+          setShowResolvedModal(false);
+          setSelectedResolvedAlert(null);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showResolvedModal]);
+
   // Generate Engineer Action Alerts from jobs
   const generateEngineerActionAlerts = (): EngineerActionAlert[] => {
     const alerts: EngineerActionAlert[] = [];
     
     jobs.forEach(job => {
       // Engineer Accept Alert - when job is allocated but not accepted
-      // Also check if job is not already in attended status to prevent repeated acceptions
-      if (job.status === 'allocated' && !job.dateAccepted && job.status !== 'attended') {
+      if (job.status === 'allocated' && !job.dateAccepted) {
         alerts.push({
           id: `engineer-accept-${job.id}`,
           type: 'ENGINEER_ACCEPT',
@@ -177,8 +197,41 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
     return alerts.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   };
 
+  // Utility function to format timestamps in a user-friendly way
+  const formatTimestamp = (date: Date): string => {
+    const now = new Date();
+    const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
+    
+    if (diffInMinutes < 1) return 'Just now';
+    if (diffInMinutes < 60) return `${diffInMinutes} minute${diffInMinutes > 1 ? 's' : ''} ago`;
+    
+    const diffInHours = Math.floor(diffInMinutes / 60);
+    if (diffInHours < 24) return `${diffInHours} hour${diffInHours > 1 ? 's' : ''} ago`;
+    
+    const diffInDays = Math.floor(diffInHours / 24);
+    if (diffInDays < 7) return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
+    
+    // For older dates, show the actual date and time
+    return `${date.toLocaleDateString()} at ${date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
+  // Utility function to ensure resolved alerts have proper resolution data
+  const ensureResolutionData = (alert: EngineerActionAlert): EngineerActionAlert => {
+    if (!alert.resolved) return alert;
+    
+    // Use a more appropriate fallback timestamp - use the alert's original timestamp if no resolution time
+    const fallbackTimestamp = alert.resolvedAt || alert.timestamp || new Date();
+    
+    return {
+      ...alert,
+      resolvedBy: alert.resolvedBy || 'System',
+      resolvedAt: fallbackTimestamp,
+      resolution: alert.resolution || 'Alert resolved automatically'
+    };
+  };
+
   const activeAlerts = alerts.filter(alert => !alert.resolved);
-  const resolvedAlerts = alerts.filter(alert => alert.resolved);
+  const resolvedAlerts = alerts.filter(alert => alert.resolved).map(ensureResolutionData);
 
   const getAlertIcon = (type: EngineerActionAlert['type']) => {
     switch (type) {
@@ -234,6 +287,11 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
     if (engineer) {
       window.open(`tel:${engineer.phone}`, '_self');
     }
+  };
+
+  const handleResolvedCardClick = (alert: EngineerActionAlert) => {
+    setSelectedResolvedAlert(alert);
+    setShowResolvedModal(true);
   };
 
   const handleResolveAlert = (alertId: string, resolution: string) => {
@@ -671,61 +729,107 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
         </TabsContent>
 
         <TabsContent value="resolved" className="space-y-4">
-                     {resolvedAlerts.length === 0 ? (
-             <Card className="bg-gray-50 border-2 border-gray-200">
-               <CardContent className="p-8 text-center">
-                 <CheckCircle className="mx-auto h-16 w-16 text-gray-600 mb-4" />
-                 <h3 className="text-xl font-semibold text-gray-800 mb-2">No Resolved Alerts</h3>
-                 <p className="text-gray-700 text-lg">Resolved alerts will appear here once you start resolving them.</p>
-               </CardContent>
-             </Card>
-           ) : (
+          {resolvedAlerts.length === 0 ? (
+            <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 shadow-sm">
+              <CardContent className="p-8 text-center">
+                <CheckCircle className="mx-auto h-16 w-16 text-green-600 mb-4" />
+                <h3 className="text-xl font-semibold text-green-800 mb-2">No Resolved Alerts</h3>
+                <p className="text-green-700 text-lg">Resolved alerts will appear here once you start resolving them.</p>
+              </CardContent>
+            </Card>
+          ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {resolvedAlerts.map(alert => (
-                <Card key={alert.id} className="bg-gray-50 border-2 border-gray-200 opacity-75">
-                  <CardContent className="p-6">
+                <Card 
+                  key={alert.id} 
+                  className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 shadow-sm hover:shadow-lg hover:border-green-300 transition-all duration-200 cursor-pointer transform hover:scale-[1.02]"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleResolvedCardClick(alert);
+                  }}
+                >
+                  <CardContent 
+                    className="p-6"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleResolvedCardClick(alert);
+                    }}
+                  >
                     <div className="flex items-start gap-4">
                       <div className="flex-shrink-0 mt-1">
-                        {getAlertIcon(alert.type)}
+                        <div className="p-2 bg-green-100 rounded-full">
+                          {getAlertIcon(alert.type)}
+                        </div>
                       </div>
                       
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-3">
-                          <h3 className="font-semibold text-lg text-gray-700">
-                            {getAlertTitle(alert.type)}
-                          </h3>
-                          <Badge className="bg-green-600 text-white text-xs font-medium">
-                            Resolved
-                          </Badge>
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <h3 className="font-semibold text-lg text-green-800">
+                              {getAlertTitle(alert.type)}
+                            </h3>
+                            <Badge className="bg-green-600 text-white text-xs font-medium px-2 py-1">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Resolved
+                            </Badge>
+                          </div>
+                          <div className="text-green-500 opacity-60 hover:opacity-100 transition-opacity">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                          </div>
                         </div>
                         
-                        <p className="text-gray-600 mb-4 text-base">
+                        <p className="text-green-700 mb-4 text-base leading-relaxed">
                           {getAlertDescription(alert.type, alert.jobNumber)}
                         </p>
                         
-                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-500 mb-3">
-                          <div>
-                            <span className="font-medium">Job:</span>
-                            <p className="font-mono">{alert.jobNumber}</p>
+                        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                          <div className="bg-white/60 p-3 rounded-lg border border-green-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Briefcase className="h-4 w-4 text-green-600" />
+                              <span className="font-medium text-green-800">Job Number</span>
+                            </div>
+                            <p className="font-mono text-green-700 font-semibold">{alert.jobNumber}</p>
                           </div>
-                          <div>
-                            <span className="font-medium">Engineer:</span>
-                            <p>{alert.engineer}</p>
+                          <div className="bg-white/60 p-3 rounded-lg border border-green-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <User className="h-4 w-4 text-green-600" />
+                              <span className="font-medium text-green-800">Engineer</span>
+                            </div>
+                            <p className="text-green-700 font-medium">{alert.engineer}</p>
                           </div>
-                          <div>
-                            <span className="font-medium">Resolved by:</span>
-                            <p>{alert.resolvedBy || 'Unknown'}</p>
+                          <div className="bg-white/60 p-3 rounded-lg border border-green-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <UserCheck className="h-4 w-4 text-green-600" />
+                              <span className="font-medium text-green-800">Resolved By</span>
+                            </div>
+                            <p className="text-green-700 font-medium">{alert.resolvedBy}</p>
                           </div>
-                          <div>
-                            <span className="font-medium">Resolved at:</span>
-                            <p>{alert.resolvedAt?.toLocaleString() || 'Unknown'}</p>
+                          <div className="bg-white/60 p-3 rounded-lg border border-green-200">
+                            <div className="flex items-center gap-2 mb-1">
+                              <Clock className="h-4 w-4 text-green-600" />
+                              <span className="font-medium text-green-800">Resolved At</span>
+                            </div>
+                            <p className="text-green-700 font-medium">
+                              <span className="block">{formatTimestamp(alert.resolvedAt!)}</span>
+                              <span className="text-xs text-green-600 mt-1 block">
+                                {alert.resolvedAt!.toLocaleDateString()} at {alert.resolvedAt!.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </p>
                           </div>
                         </div>
                         
                         {alert.resolution && (
-                          <div className="bg-white p-3 rounded border">
-                            <span className="font-medium text-gray-700">Resolution:</span>
-                            <p className="text-gray-600 mt-1">{alert.resolution}</p>
+                          <div className="bg-white/80 p-4 rounded-lg border border-green-200 shadow-sm">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className="h-4 w-4 text-green-600" />
+                              <span className="font-medium text-green-800">Resolution Notes</span>
+                            </div>
+                            <p className="text-green-700 leading-relaxed">{alert.resolution}</p>
                           </div>
                         )}
                       </div>
@@ -1014,6 +1118,189 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
         required={true}
         maxLength={500}
       />
+
+      {/* Resolved Alert Detail Modal */}
+      <Dialog open={showResolvedModal} onOpenChange={setShowResolvedModal}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3 text-xl">
+              {selectedResolvedAlert && (
+                <>
+                  <div className="p-2 bg-green-100 rounded-full">
+                    {getAlertIcon(selectedResolvedAlert.type)}
+                  </div>
+                  <div>
+                    <span className="text-green-800">{getAlertTitle(selectedResolvedAlert.type)}</span>
+                    <Badge className="ml-3 bg-green-600 text-white text-xs font-medium px-2 py-1">
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Resolved
+                    </Badge>
+                  </div>
+                </>
+              )}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedResolvedAlert && (
+            <div className="space-y-6">
+              {/* Alert Overview */}
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200">
+                <CardHeader>
+                  <CardTitle className="text-lg text-green-800 flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    Alert Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-green-700 text-base leading-relaxed mb-4">
+                    {getAlertDescription(selectedResolvedAlert.type, selectedResolvedAlert.jobNumber)}
+                  </p>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-white/60 p-3 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Briefcase className="h-4 w-4 text-green-600" />
+                        <span className="font-medium text-green-800">Job Number</span>
+                      </div>
+                      <p className="font-mono text-green-700 font-semibold">{selectedResolvedAlert.jobNumber}</p>
+                    </div>
+                    <div className="bg-white/60 p-3 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2 mb-1">
+                        <User className="h-4 w-4 text-green-600" />
+                        <span className="font-medium text-green-800">Engineer</span>
+                      </div>
+                      <p className="text-green-700 font-medium">{selectedResolvedAlert.engineer}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Job Details */}
+              <Card className="bg-gray-50 border-2 border-gray-200">
+                <CardHeader>
+                  <CardTitle className="text-lg text-gray-900 flex items-center gap-2">
+                    <Briefcase className="h-5 w-5" />
+                    Job Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {(() => {
+                    const job = jobs.find(j => j.id === selectedResolvedAlert.jobId);
+                    return job ? (
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium text-gray-700">Customer:</span>
+                          <p className="text-gray-900 font-medium">{job.customer}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Site:</span>
+                          <p className="text-gray-900 font-medium">{job.site}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Priority:</span>
+                          <Badge className={`${getPriorityColor(job.priority)} ml-2`}>
+                            {job.priority}
+                          </Badge>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Status:</span>
+                          <Badge className="bg-green-600 text-white ml-2">
+                            {job.status}
+                          </Badge>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Date Logged:</span>
+                          <p className="text-gray-900">{job.dateLogged.toLocaleDateString()}</p>
+                        </div>
+                        <div>
+                          <span className="font-medium text-gray-700">Job Type:</span>
+                          <p className="text-gray-900">{job.jobType}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-gray-500 italic">Job details not available</p>
+                    );
+                  })()}
+                </CardContent>
+              </Card>
+
+              {/* Resolution Details */}
+              <Card className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200">
+                <CardHeader>
+                  <CardTitle className="text-lg text-green-800 flex items-center gap-2">
+                    <CheckCircle className="h-5 w-5" />
+                    Resolution Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="bg-white/60 p-3 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2 mb-1">
+                        <UserCheck className="h-4 w-4 text-green-600" />
+                        <span className="font-medium text-green-800">Resolved By</span>
+                      </div>
+                      <p className="text-green-700 font-medium">{selectedResolvedAlert.resolvedBy}</p>
+                    </div>
+                    <div className="bg-white/60 p-3 rounded-lg border border-green-200">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="h-4 w-4 text-green-600" />
+                        <span className="font-medium text-green-800">Resolved At</span>
+                      </div>
+                      <p className="text-green-700 font-medium">
+                        <span className="block">{formatTimestamp(selectedResolvedAlert.resolvedAt!)}</span>
+                        <span className="text-xs text-green-600 mt-1 block">
+                          {selectedResolvedAlert.resolvedAt!.toLocaleDateString()} at {selectedResolvedAlert.resolvedAt!.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                  
+                  {selectedResolvedAlert.resolution && (
+                    <div className="bg-white/80 p-4 rounded-lg border border-green-200 shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <FileText className="h-4 w-4 text-green-600" />
+                        <span className="font-medium text-green-800">Resolution Notes</span>
+                      </div>
+                      <p className="text-green-700 leading-relaxed">{selectedResolvedAlert.resolution}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Engineer Contact */}
+              {(() => {
+                const engineer = mockEngineers.find(e => e.name === selectedResolvedAlert.engineer);
+                return engineer ? (
+                  <Card className="bg-blue-50 border-2 border-blue-200">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-blue-800 flex items-center gap-2">
+                        <User className="h-5 w-5" />
+                        Engineer Contact
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <p className="font-medium text-blue-900">{engineer.name}</p>
+                          <p className="text-blue-700 text-sm">{engineer.email}</p>
+                          <p className="text-blue-700 text-sm">{engineer.phone}</p>
+                        </div>
+                        <Button 
+                          onClick={() => handleCallEngineer(engineer.name)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          <Phone className="h-4 w-4 mr-2" />
+                          Call Engineer
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : null;
+              })()}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

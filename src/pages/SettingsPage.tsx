@@ -27,6 +27,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { showNotification } from '@/components/ui/toast-notification';
+import FaviconChanger from '@/components/FaviconChanger';
 import { CompanySettings, BusinessHours, DaySchedule, NotificationSettings, AppearanceSettings, SecuritySettings } from '@/types/company';
 import { saveCompanySettings } from '@/lib/companyUtils';
 
@@ -568,42 +569,48 @@ export default function SettingsPage() {
   );
 
   const renderAppearance = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Palette className="h-5 w-5" />
-          Appearance Settings
-        </CardTitle>
-        <CardDescription>
-          Customize the look and feel of your application
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="space-y-4">
-                     <div className="flex items-center justify-between">
-             <div>
-               <Label className="font-medium">Theme</Label>
-               <p className="text-sm text-gray-600">Light mode is currently enabled</p>
-             </div>
-             <Badge variant="secondary">Light Mode</Badge>
-           </div>
-
-          <div className="flex items-center justify-between">
-            <div>
-              <Label className="font-medium">Compact Mode</Label>
-              <p className="text-sm text-gray-600">Reduce spacing for more content</p>
+    <div className="space-y-6">
+      {/* Favicon Changer */}
+      <FaviconChanger isEditing={isEditing} />
+      
+      {/* Theme and Layout Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Theme & Layout Settings
+          </CardTitle>
+          <CardDescription>
+            Customize the look and feel of your application
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-medium">Theme</Label>
+                <p className="text-sm text-gray-600">Light mode is currently enabled</p>
+              </div>
+              <Badge variant="secondary">Light Mode</Badge>
             </div>
-            <Switch
-              checked={editForm.appearance.compactMode}
-              onCheckedChange={(checked) => 
-                handleNestedChange('appearance', 'compactMode', checked)
-              }
-              disabled={!isEditing}
-            />
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="font-medium">Compact Mode</Label>
+                <p className="text-sm text-gray-600">Reduce spacing for more content</p>
+              </div>
+              <Switch
+                checked={editForm.appearance.compactMode}
+                onCheckedChange={(checked) => 
+                  handleNestedChange('appearance', 'compactMode', checked)
+                }
+                disabled={!isEditing}
+              />
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </div>
   );
 
   const renderSecurity = () => (
