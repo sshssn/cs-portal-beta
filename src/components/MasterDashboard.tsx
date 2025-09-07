@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Job, Customer } from '@/types/job';
 import { getStatusColor, getPriorityColor } from '@/lib/jobUtils';
 import { showNotification } from '@/components/ui/toast-notification';
+import FaviconChanger from './FaviconChanger';
 import { 
   Search, 
   Filter, 
@@ -312,6 +313,9 @@ export default function MasterDashboard({
           <p className="text-muted-foreground">Out of Hours Support Management</p>
         </div>
         <div className="flex items-center gap-3">
+            {/* Favicon Changer */}
+            <FaviconChanger />
+            
             {/* Enhanced Alerts Indicator */}
             <div className="relative" ref={alertsDropdownRef}>
               <Button 
