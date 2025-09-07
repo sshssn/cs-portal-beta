@@ -2,7 +2,7 @@
 
 A modern, responsive Customer Service Portal built with React, TypeScript, and Tailwind CSS. This application provides comprehensive job management, alert systems, and customer service tools for field service operations.
 
-![CS Portal Screenshot](https://pikwy.com/web/68b99e77e1a7ba5469357618)
+![CS Portal Main Screen](https://p37am1ix0e.ufs.sh/f/lBuQYLoY3PsQ5vncdp0OnrALxdUCskt6iN7GYODJlRzKgTwe)
 
 ## 🌟 Live Demo
 
@@ -11,228 +11,140 @@ A modern, responsive Customer Service Portal built with React, TypeScript, and T
 ## 📋 Latest Updates (v1.1.0)
 
 ### ✨ Enhanced Audit Trail System
-- **Bigger & Better**: Audit Trail section is now significantly larger with improved readability
-- **Larger Fonts**: Increased font sizes throughout for better visibility
-- **Balanced Layout**: Height now matches Contact Information container for perfect alignment
+- **UI Enhancement**: Made Audit Trail section significantly bigger and taller with larger fonts
+- **Improved Readability**: Increased font sizes throughout the Audit Trail for better visibility
+- **Better Layout**: Made Audit Trail height parallel to Contact Information container for balanced design
+- **Enhanced Spacing**: Improved padding and margins for better visual hierarchy
 
 ### 🔧 Engineer Alerts Resolution Fix
-- **Fixed Bug**: Resolved critical issue where accepted jobs weren't moving to "Resolved" section
-- **Auto-Resolution**: Improved alert state management for proper resolution tracking
-- **Better UX**: Resolved alerts now properly appear in the "Resolved" tab
+- **Bug Fix**: Fixed critical issue where accepted jobs weren't moving to "Resolved" section in Global Alerts Portal
+- **Auto-Resolution**: Improved alert state management to properly preserve resolved alerts
+- **Better UX**: Resolved alerts now properly appear in the "Resolved" section when jobs are accepted
 
-### 🧹 Navigation Cleanup
-- **Streamlined**: Removed redundant Engineer Alerts button from Master Dashboard
-- **Cleaner UI**: Simplified navigation for better user experience
+### 🎨 UI/UX Improvements
+- **Navigation Cleanup**: Removed redundant Engineer Alerts button from Master Dashboard navigation
+- **Streamlined Interface**: Cleaner, more focused navigation experience
+- **Better Visual Hierarchy**: Improved spacing and typography throughout the application
 
-## ✨ Features
+## 🚀 Features
 
-### 🎯 Core Functionality
+### 📊 Master Dashboard
+- **Real-time Job Monitoring**: Track all active jobs with live status updates
+- **Customer Management**: Comprehensive customer information and contact details
+- **Alert System**: Intelligent alert management with auto-resolution capabilities
+- **Quick Actions**: Fast access to job creation and management tools
 
-* **📋 Job Management**: Create, view, edit, and track service jobs
-* **🧙‍♂️ 5-Step Job Logging Wizard**: Streamlined job creation process
-* **🚨 Real-time Alerts**: Inline alert system with toast notifications
-* **👥 Customer Dashboard**: Customer-specific job views and management
-* **👨‍🔧 Engineer Management**: Track engineer availability and assignments
-* **⏱️ SLA Monitoring**: Automated status tracking (Green/Amber/Red)
-* **🔔 Global Alerts Portal**: Unified portal for all system alerts including engineer alerts
-* **📊 End of Shift Reports**: Comprehensive end-of-day reporting
+### 🔔 Global Alerts Portal
+- **System Alerts**: Monitor system-wide issues and notifications
+- **Engineer Action Alerts**: Track engineer responses and job acceptance
+- **Auto-Resolution**: Smart alert resolution when jobs are accepted or completed
+- **Alert History**: Complete audit trail of all alert activities
 
-### 🎨 User Experience
+### 📋 Job Management
+- **Job Creation**: Streamlined job logging with wizard interface
+- **Status Tracking**: Real-time job status updates and progress monitoring
+- **Customer Integration**: Seamless customer information integration
+- **Audit Trail**: Comprehensive activity logging and communication history
 
-* **📱 Responsive Design**: Works on desktop, tablet, and mobile devices
-* **🎨 Modern UI**: Built with Shadcn/UI components and Tailwind CSS
-* **🔍 Advanced Filtering**: Search and filter jobs by multiple criteria
-* **📊 Dashboard Analytics**: Real-time job statistics and insights
-* **🔄 Real-time Updates**: Live status updates and notifications
+### 👥 Customer Portal
+- **Customer Dashboard**: Dedicated customer view with job status
+- **Alert Management**: Customer-specific alert notifications
+- **Contact Information**: Complete customer contact and site details
+- **Job History**: Full job history and communication records
 
-### 🚨 Enhanced Alert System (Latest Update)
+## 🛠️ Technology Stack
 
-* **🔄 Unified Alerts**: Integrated Engineer Alerts into Global Alerts Portal
-* **🎨 Modern Card UI**: Sleek, color-coded alert cards with priority indicators
-* **🏢 Customer Alerts**: Dedicated section for customer-specific alerts
-* **👷‍♂️ Engineer Alerts**: Monitor engineer job acceptance and on-site status
-* **🏗️ Site Alerts**: Track site-specific issues and maintenance
-* **🔔 Alert Categories**: Organized by customer, job, and site for better management
-* **📊 Dynamic Metrics**: KPIs that update based on selected alert view
+- **Frontend**: React 18 with TypeScript
+- **Styling**: Tailwind CSS with custom components
+- **UI Components**: Radix UI primitives with custom styling
+- **Icons**: Lucide React icon library
+- **Build Tool**: Vite for fast development and building
+- **Package Manager**: pnpm for efficient dependency management
 
-## 🛠️ Tech Stack
-
-* **Frontend**: React 19, TypeScript, Vite
-* **UI Components**: Shadcn/UI, Radix UI
-* **Styling**: Tailwind CSS
-* **Routing**: React Router DOM
-* **State Management**: React Hooks
-* **Notifications**: Sonner
-* **Icons**: Lucide React
-* **Build Tool**: Vite
-* **Package Manager**: pnpm
-
-## 🚀 Quick Start
+## 🚀 Getting Started
 
 ### Prerequisites
-
-* Node.js 18+
-* pnpm (recommended) or npm
+- Node.js 18+ 
+- pnpm package manager
 
 ### Installation
-
-1. **Clone the repository**  
 ```bash
-git clone https://github.com/flophero/cs-portal-beta.git
+# Clone the repository
+git clone https://github.com/sshssn/cs-portal-beta.git
+
+# Navigate to project directory
 cd cs-portal-beta
-```
-2. **Install dependencies**  
-```bash
+
+# Install dependencies
 pnpm install
-# or
-npm install
+
+# Start development server
+pnpm dev
 ```
 
-3. **Start development server**  
+### Building for Production
 ```bash
-pnpm run dev
-# or
-npm run dev
+# Build the application
+pnpm build
+
+# Preview the build
+pnpm preview
 ```
 
-4. **Open your browser**: Navigate to `http://localhost:5173`
-
-## 📦 Available Scripts
-
-| Script           | Description              |
-| ---------------- | ------------------------ |
-| pnpm run dev     | Start development server |
-| pnpm run build   | Build for production     |
-| pnpm run preview | Preview production build |
-| pnpm run lint    | Run ESLint               |
-| pnpm run deploy  | Deploy to GitHub Pages   |
-
-## 🏗️ Project Structure
+## 📁 Project Structure
 
 ```
-src/
-├── components/          # Reusable UI components
-│   ├── ui/             # Shadcn/UI components
-│   ├── MasterDashboard.tsx
-│   ├── CustomerDashboard.tsx
-│   ├── JobLogWizard.tsx
-│   ├── GlobalAlertsPortal.tsx
-│   └── ...
-├── pages/              # Main application pages
-│   ├── Index.tsx       # Main dashboard
-│   └── JobDetailPage.tsx
-├── types/              # TypeScript type definitions
-│   └── job.ts
-├── lib/                # Utility functions
-│   ├── jobUtils.ts
-│   └── utils.ts
-├── hooks/              # Custom React hooks
-└── App.tsx             # Main application component
+cs-portal-beta/
+├── src/
+│   ├── components/          # Reusable UI components
+│   │   ├── ui/             # Base UI components (buttons, cards, etc.)
+│   │   ├── Dashboard.tsx   # Main dashboard component
+│   │   ├── JobLogForm.tsx  # Job logging form
+│   │   └── ...
+│   ├── pages/              # Page components
+│   ├── hooks/              # Custom React hooks
+│   ├── lib/                # Utility functions and constants
+│   ├── types/              # TypeScript type definitions
+│   └── contexts/           # React contexts
+├── public/                 # Static assets
+├── dist/                   # Build output
+└── docs/                   # Documentation
 ```
 
-## 🎯 Usage Guide
+## 🎯 Key Features
 
-### Job Management
+### 🔄 Real-time Updates
+- Live job status updates
+- Instant alert notifications
+- Real-time customer information sync
 
-1. **Create Jobs**: Click "Log New Job" to start the 5-step wizard
-2. **View Jobs**: Browse all jobs on the master dashboard
-3. **Filter & Search**: Use the search bar and filters to find specific jobs
-4. **Edit Jobs**: Click on any job card to view and edit details
+### 📱 Responsive Design
+- Mobile-first approach
+- Tablet and desktop optimized
+- Touch-friendly interface
 
-### Global Alerts Portal (Latest Feature)
+### 🎨 Modern UI/UX
+- Clean, professional design
+- Consistent color scheme
+- Intuitive navigation
 
-1. **Unified Alerts**: Access all alerts from a single portal
-2. **Tabbed Interface**: Switch between System Alerts and Engineer Alerts
-3. **Categorized View**: View alerts organized by customer, job, and site
-4. **Modern UI**: Experience the sleek, color-coded card design with priority indicators
-5. **Quick Resolution**: Easily resolve alerts with a single click
-6. **Dynamic KPIs**: See metrics update based on the selected view
-
-### Customer Portal
-
-1. **Select Customer**: Choose a customer from the master dashboard
-2. **View Customer Jobs**: See all jobs for the selected customer
-3. **Manage Alerts**: Access customer-specific alert management
-
-## 🔧 Configuration
-
-### Adding New Job Categories
-
-Edit `src/types/job.ts` to add new categories:
-
-```typescript
-category: 'Electrical' | 'Mechanical' | 'Plumbing' | 'HVAC' | 'General' | 'YourNewCategory';
-```
-
-### Modifying SLA Times
-
-Update the `CustomAlerts` interface in `src/types/job.ts`:
-
-```typescript
-export interface CustomAlerts {
-  acceptSLA: number; // minutes
-  onsiteSLA: number; // minutes
-  completedSLA: number; // minutes
-}
-```
-
-### Customizing Alert Types
-
-Add new alert types in `src/components/GlobalAlertsPortal.tsx`:
-
-```typescript
-// Add to the getSystemAlertIcon function
-case 'YOUR_NEW_ALERT_TYPE':
-  return <YourIcon className="h-4 w-4" />;
-```
-
-## 🚀 Deployment
-
-### Vercel (Current)
-
-The application is currently deployed on Vercel:
-
-* **Live URL**: [https://cs-portal-beta.vercel.app/](https://cs-portal-beta.vercel.app/)
-* **Repository**: [https://github.com/flophero/mock-portal](https://github.com/flophero/mock-portal)
-
-### GitHub Repository
-
-The source code is available on GitHub:
-
-* **Repository**: [https://github.com/flophero/mock-portal](https://github.com/flophero/mock-portal)
-
-## 📋 Latest Updates
-
-See the [CHANGELOG.md](./CHANGELOG.md) for a complete version history and detailed list of changes.
-
-### Latest Version (v1.0.0-beta)
-- **Major Feature**: Integrated Engineer Alerts into Global Alerts Portal
-- **UI Enhancement**: Redesigned alert cards with modern, horizontal layout
-- **New Content**: Added customer alerts system with two example alerts
-- **Navigation Update**: Removed redundant Engineer Alerts link from sidebar
+### 🔒 Type Safety
+- Full TypeScript implementation
+- Type-safe API interactions
+- Compile-time error checking
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
 ## 📄 License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 Acknowledgments
+## 📞 Support
 
-* Shadcn/UI for the beautiful component library
-* Tailwind CSS for the utility-first CSS framework
-* Vite for the fast build tool
-* React for the amazing frontend library
-* Lucide React for the beautiful icons
+For support and questions, please open an issue in the [GitHub repository](https://github.com/sshssn/cs-portal-beta/issues).
 
 ---
 
-**Built with ❤️ for better customer service management**
-
-_Last updated: September 2025_
+**Built with ❤️ for efficient customer service management**
