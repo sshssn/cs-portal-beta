@@ -1,12 +1,28 @@
-# 🚀 Customer Service Portal
+# 🚀 CS Portal Beta
 
 A modern, responsive Customer Service Portal built with React, TypeScript, and Tailwind CSS. This application provides comprehensive job management, alert systems, and customer service tools for field service operations.
 
-![Customer Service Portal Screenshot](https://pikwy.com/web/68b99e77e1a7ba5469357618)
+![CS Portal Screenshot](https://pikwy.com/web/68b99e77e1a7ba5469357618)
 
 ## 🌟 Live Demo
 
-**🔗 [View Live Application](https://cs-portal-beta.vercel.app/)**
+**🔗 [View Live Application](https://sshssn.github.io/cs-portal-beta/)**
+
+## 📋 Latest Updates (v1.1.0)
+
+### ✨ Enhanced Audit Trail System
+- **Bigger & Better**: Audit Trail section is now significantly larger with improved readability
+- **Larger Fonts**: Increased font sizes throughout for better visibility
+- **Balanced Layout**: Height now matches Contact Information container for perfect alignment
+
+### 🔧 Engineer Alerts Resolution Fix
+- **Fixed Bug**: Resolved critical issue where accepted jobs weren't moving to "Resolved" section
+- **Auto-Resolution**: Improved alert state management for proper resolution tracking
+- **Better UX**: Resolved alerts now properly appear in the "Resolved" tab
+
+### 🧹 Navigation Cleanup
+- **Streamlined**: Removed redundant Engineer Alerts button from Master Dashboard
+- **Cleaner UI**: Simplified navigation for better user experience
 
 ## ✨ Features
 

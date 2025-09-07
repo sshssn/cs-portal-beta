@@ -1,8 +1,9 @@
 {
-  "name": "customer-service-portal",
+  "name": "cs-portal-beta",
+  "version": "1.1.0",
   "type": "module",
   "packageManager": "pnpm@8.10.0",
-  "homepage": "https://flophero.github.io/customer-service-portal",
+  "homepage": "https://sshssn.github.io/cs-portal-beta",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

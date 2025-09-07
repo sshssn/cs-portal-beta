@@ -1,6 +1,38 @@
-Mock Portal Changelog
+CS Portal Changelog
 Version History
-v1.0.0-beta (Current Release) - September 4, 2025
+v1.1.0 (Current Release) - January 2025
+
+## 🎯 Major Improvements
+
+### Enhanced Audit Trail System
+- **UI Enhancement**: Made Audit Trail section significantly bigger and taller with larger fonts
+- **Improved Readability**: Increased font sizes throughout the Audit Trail for better visibility
+- **Better Layout**: Made Audit Trail height parallel to Contact Information container for balanced design
+- **Enhanced Spacing**: Improved padding and margins for better visual hierarchy
+
+### Engineer Alerts Resolution Fix
+- **Bug Fix**: Fixed critical issue where accepted jobs weren't moving to "Resolved" section in Global Alerts Portal
+- **Auto-Resolution**: Improved alert state management to properly preserve resolved alerts
+- **Better UX**: Resolved alerts now properly appear in the "Resolved" tab instead of showing empty state
+
+### Navigation Improvements
+- **Cleanup**: Removed redundant Engineer Alerts button from Master Dashboard top navigation
+- **Streamlined UI**: Simplified navigation for better user experience
+
+### Technical Improvements
+- **State Management**: Enhanced alert state management logic in GlobalAlertsPortal component
+- **Performance**: Optimized alert processing and resolution tracking
+- **Code Quality**: Improved variable naming and code organization
+
+## 🔧 Technical Details
+- Fixed engineer alerts auto-resolution logic in GlobalAlertsPortal.tsx
+- Enhanced Audit Trail styling in JobDetailPage.tsx
+- Removed unnecessary navigation elements from MasterDashboard.tsx
+- Improved alert state persistence and management
+
+---
+
+v1.0.0-beta - September 4, 2025
 
 Major Feature: Integrated Engineer Alerts into the Global Alerts Portal
 
