@@ -3,7 +3,6 @@
 A modern, responsive Customer Service Portal built with React, TypeScript, and Tailwind CSS. This application provides comprehensive job management, alert systems, and customer service tools for field service operations.
 
 ![CS Portal Main Screen](https://p37am1ix0e.ufs.sh/f/lBuQYLoY3PsQ5vncdp0OnrALxdUCskt6iN7GYODJlRzKgTwe)
-
 ## 🌟 Live Demo
 
 **🔗 [View Live Application](https://sshssn.github.io/cs-portal-beta/)**
