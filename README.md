@@ -52,12 +52,3 @@ pnpm build
 
 The output will be available in the `dist` directory.
 
-## Maintenance and Contributions
-
-Maintenance and core contributions are managed exclusively by the authorized administrator.
-
-- **Primary Maintainer**: sshssn@yahoo.com
-
-## Licensing
-
-This project is licensed under the MIT License.
