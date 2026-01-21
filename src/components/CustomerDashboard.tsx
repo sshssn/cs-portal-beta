@@ -1,17 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Job, Customer } from '@/types/job';
 import { getStatusColor, getPriorityColor } from '@/lib/jobUtils';
-import { 
-  Search, 
-  ArrowLeft, 
-  Building2, 
-  Phone, 
-  Mail, 
+import {
+  Search,
+  ArrowLeft,
+  Building2,
+  Phone,
+  Mail,
   MapPin,
   Users,
   Briefcase,
@@ -35,16 +36,16 @@ interface CustomerDashboardProps {
 }
 
 export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, onJobCreate }: CustomerDashboardProps) {
-  const [searchQuery, setSearchQuery] = useState(() => 
+  const [searchQuery, setSearchQuery] = useState(() =>
     localStorage.getItem('customerDashboard_searchQuery') || ''
   );
-  const [statusFilter, setStatusFilter] = useState<string>(() => 
+  const [statusFilter, setStatusFilter] = useState<string>(() =>
     localStorage.getItem('customerDashboard_statusFilter') || 'all'
   );
-  const [priorityFilter, setPriorityFilter] = useState<string>(() => 
+  const [priorityFilter, setPriorityFilter] = useState<string>(() =>
     localStorage.getItem('customerDashboard_priorityFilter') || 'all'
   );
-  const [siteFilter, setSiteFilter] = useState<string>(() => 
+  const [siteFilter, setSiteFilter] = useState<string>(() =>
     localStorage.getItem('customerDashboard_siteFilter') || 'all'
   );
 
@@ -67,22 +68,22 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
 
   // Filter jobs for this customer
   const customerJobs = jobs.filter(job => job.customer === customer.name);
-  
+
   // Get all unique sites from customer jobs
   const allSites = Array.from(new Set(customerJobs.map(job => job.site))).sort();
-  
+
   // Filter jobs based on search and filters
   const filteredJobs = customerJobs.filter(job => {
-    const matchesSearch = searchQuery === '' || 
+    const matchesSearch = searchQuery === '' ||
       job.jobNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.engineer.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.site.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || job.priority === priorityFilter;
     const matchesSite = siteFilter === 'all' || job.site === siteFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPriority && matchesSite;
   });
 
@@ -128,7 +129,7 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
                 <p className="text-lg font-semibold text-blue-900">{customer.name}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
                 <Mail className="h-5 w-5 text-green-600" />
@@ -138,7 +139,7 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
                 <p className="text-sm font-medium text-green-900">{customer.email}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-100 rounded-lg">
                 <Phone className="h-5 w-5 text-purple-600" />
@@ -148,7 +149,7 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
                 <p className="text-sm font-medium text-purple-900">{customer.phone}</p>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               <div className="p-2 bg-orange-100 rounded-lg">
                 <MapPin className="h-5 w-5 text-orange-600" />
@@ -225,23 +226,21 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
         <CardContent className="p-6">
           <div className="space-y-4">
             {/* Search Bar */}
-            <div className="flex items-center gap-3">
-              <Search className="h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Search jobs..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="flex-1"
-              />
-            </div>
-            
+            <SearchInput
+              placeholder="Search jobs..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onClear={() => setSearchQuery('')}
+              containerClassName='flex-1'
+            />
+
             {/* Filters */}
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-gray-500" />
                 <span className="text-sm font-medium text-gray-700">Filters:</span>
               </div>
-              
+
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="All Statuses" />
@@ -258,7 +257,7 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
                   <SelectItem value="reqs_invoice">Reqs. Invoice</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="All Priorities" />
@@ -271,7 +270,7 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
                   <SelectItem value="Critical">Critical</SelectItem>
                 </SelectContent>
               </Select>
-              
+
               <Select value={siteFilter} onValueChange={setSiteFilter}>
                 <SelectTrigger className="w-40">
                   <SelectValue placeholder="All Sites" />
@@ -293,8 +292,8 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
       {/* Jobs Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredJobs.map((job) => (
-          <Card 
-            key={job.id} 
+          <Card
+            key={job.id}
             className="hover:shadow-lg transition-shadow cursor-pointer"
             onClick={() => onJobClick(job)}
           >
@@ -310,14 +309,14 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
                   </div>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <Badge 
-                    variant={getStatusColor(job.status) as any} 
+                  <Badge
+                    variant={getStatusColor(job.status) as any}
                     className="text-xs"
                   >
                     {job.status}
                   </Badge>
-                  <Badge 
-                    variant={getPriorityColor(job.priority) as any} 
+                  <Badge
+                    variant={getPriorityColor(job.priority) as any}
                     className="text-xs"
                   >
                     {job.priority}
@@ -325,12 +324,12 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
                 </div>
               </div>
             </CardHeader>
-            
+
             <CardContent className="space-y-4">
               <p className="text-sm text-gray-700 line-clamp-2">
                 {job.description}
               </p>
-              
+
               <div className="flex items-center justify-between text-sm">
                 <div className="flex items-center gap-1">
                   <User className="h-4 w-4 text-muted-foreground" />
@@ -354,8 +353,8 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
           <Briefcase className="mx-auto h-12 w-12 text-muted-foreground" />
           <h3 className="mt-2 text-sm font-semibold text-gray-900">No jobs found</h3>
           <p className="mt-1 text-sm text-muted-foreground">
-            {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all' || siteFilter !== 'all' 
-              ? 'Try adjusting your search criteria.' 
+            {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all' || siteFilter !== 'all'
+              ? 'Try adjusting your search criteria.'
               : 'No jobs available for this customer.'}
           </p>
         </div>

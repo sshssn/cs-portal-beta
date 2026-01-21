@@ -6,19 +6,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Customer, Job, JobAlert } from '@/types/job';
 import { getStatusColor, getPriorityColor } from '@/lib/jobUtils';
-import { 
-  ArrowLeft, 
-  Bell, 
-  Search, 
-  Filter, 
-  CheckCircle, 
-  Clock, 
-  AlertTriangle, 
+import {
+  ArrowLeft,
+  Bell,
+  Search,
+  Filter,
+  CheckCircle,
+  Clock,
+  AlertTriangle,
   XCircle,
-  User, 
+  User,
   Building2,
   Briefcase,
   MapPin,
@@ -35,9 +36,9 @@ interface CustomerAlertsPortalProps {
   onJobUpdate: (job: Job) => void;
 }
 
-export default function CustomerAlertsPortal({ 
-  customer, 
-  jobs, 
+export default function CustomerAlertsPortal({
+  customer,
+  jobs,
   onBack,
   onJobUpdate
 }: CustomerAlertsPortalProps) {
@@ -52,11 +53,11 @@ export default function CustomerAlertsPortal({
 
   // Filter jobs for this customer
   const customerJobs = jobs.filter(job => job.customer === customer.name);
-  
+
   // Generate alerts for customer jobs
   const generateAlerts = (jobs: Job[]): JobAlert[] => {
     const alerts: JobAlert[] = [];
-    
+
     jobs.forEach(job => {
       // SLA-based alerts
       if (job.status === 'red') {
@@ -71,7 +72,7 @@ export default function CustomerAlertsPortal({
           resolved: false
         });
       }
-      
+
       // Priority-based alerts
       if (job.priority === 'Critical') {
         alerts.push({
@@ -85,7 +86,7 @@ export default function CustomerAlertsPortal({
           resolved: false
         });
       }
-      
+
       // Status-based alerts
       if (job.status === 'amber' && job.priority === 'High') {
         alerts.push({
@@ -94,41 +95,41 @@ export default function CustomerAlertsPortal({
           type: 'High Priority In Progress',
           message: `High priority job ${job.jobNumber} is in progress`,
           severity: 'medium',
-      timestamp: new Date(),
+          timestamp: new Date(),
           acknowledged: false,
           resolved: false
         });
       }
     });
-    
+
     return alerts;
   };
 
   const systemAlerts = generateAlerts(customerJobs);
   const allAlerts = [...systemAlerts, ...customAlerts];
-  
+
   // Filter alerts based on search and filters
   const filteredAlerts = allAlerts.filter(alert => {
     const job = customerJobs.find(j => j.id === alert.jobId);
     if (!job) return false;
-    
-    const matchesSearch = searchTerm === '' || 
+
+    const matchesSearch = searchTerm === '' ||
       alert.message.toLowerCase().includes(searchTerm.toLowerCase()) ||
       alert.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.jobNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       job.site.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || 
+
+    const matchesStatus = statusFilter === 'all' ||
       (statusFilter === 'unresolved' && !alert.resolved) ||
       (statusFilter === 'resolved' && alert.resolved);
-    
-    const matchesPriority = priorityFilter === 'all' || 
+
+    const matchesPriority = priorityFilter === 'all' ||
       (priorityFilter === 'high' && alert.severity === 'high') ||
       (priorityFilter === 'medium' && alert.severity === 'medium') ||
       (priorityFilter === 'low' && alert.severity === 'low');
-    
+
     const matchesAlertType = alertTypeFilter === 'all' || alert.type === alertTypeFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPriority && matchesAlertType;
   });
 
@@ -147,9 +148,9 @@ export default function CustomerAlertsPortal({
   const handleResolveAlert = (alertId: string, resolution: string) => {
     // Check if it's a custom alert
     if (alertId.startsWith('custom-')) {
-      setCustomAlerts(prev => prev.map(alert => 
-        alert.id === alertId ? { 
-          ...alert, 
+      setCustomAlerts(prev => prev.map(alert =>
+        alert.id === alertId ? {
+          ...alert,
           resolved: true,
           resolution: resolution,
           resolvedAt: new Date(),
@@ -183,10 +184,10 @@ export default function CustomerAlertsPortal({
   };
 
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
+    return date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
       minute: '2-digit',
-      hour12: true 
+      hour12: true
     });
   };
 
@@ -219,8 +220,8 @@ export default function CustomerAlertsPortal({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button 
-            onClick={() => setIsCreateModalOpen(true)} 
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
@@ -279,14 +280,12 @@ export default function CustomerAlertsPortal({
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="flex items-center gap-3">
-              <Search className="text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Search alerts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-                  </div>
+            <SearchInput
+              placeholder="Search alerts..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onClear={() => setSearchTerm('')}
+            />
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
@@ -312,35 +311,35 @@ export default function CustomerAlertsPortal({
             </Select>
 
             <Select value={alertTypeFilter} onValueChange={setAlertTypeFilter}>
-                                  <SelectTrigger>
+              <SelectTrigger>
                 <SelectValue placeholder="Alert Type" />
-                                  </SelectTrigger>
-                                  <SelectContent>
+              </SelectTrigger>
+              <SelectContent>
                 <SelectItem value="all">All Types</SelectItem>
                 <SelectItem value="SLA Breach">SLA Breach</SelectItem>
                 <SelectItem value="Critical Priority">Critical Priority</SelectItem>
                 <SelectItem value="High Priority In Progress">High Priority In Progress</SelectItem>
-                                  </SelectContent>
-                                </Select>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
       {/* Alerts List */}
-        <Card>
-          <CardHeader>
+      <Card>
+        <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Bell className="h-5 w-5" />
             Customer Alerts ({filteredAlerts.length})
           </CardTitle>
-          </CardHeader>
-          <CardContent>
+        </CardHeader>
+        <CardContent>
           <div className="space-y-4">
             {filteredAlerts.length > 0 ? (
               filteredAlerts.map(alert => {
                 const job = customerJobs.find(j => j.id === alert.jobId);
                 const SeverityIcon = getSeverityIcon(alert.severity);
-                
+
                 return (
                   <div key={alert.id} className={`p-4 border rounded-lg ${getSeverityColor(alert.severity)}`}>
                     <div className="flex items-start justify-between">
@@ -385,8 +384,8 @@ export default function CustomerAlertsPortal({
                       </div>
                       <div className="flex items-center gap-2">
                         {!alert.resolved && (
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="default"
                             onClick={() => {
                               setSelectedAlertForResolution(alert);
@@ -406,16 +405,16 @@ export default function CustomerAlertsPortal({
                 <Bell className="mx-auto h-12 w-12 text-muted-foreground" />
                 <h3 className="mt-2 text-sm font-semibold text-gray-900">No alerts found</h3>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {allAlerts.length === 0 
+                  {allAlerts.length === 0
                     ? `No alerts for ${customer.name} at this time.`
                     : 'No alerts match your current filters.'
                   }
                 </p>
               </div>
             )}
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Create Alert Modal */}
       <CreateAlertModal

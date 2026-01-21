@@ -1,91 +1,84 @@
 import { useState, useEffect, Suspense } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Job, Customer, JobAlert } from '@/types/job';
-import { 
-  mockJobs, 
-  mockCustomers, 
-  mockEngineers, 
-  loadJobsFromStorage, 
-  saveJobsToStorage, 
+import {
+  mockJobs,
+  mockCustomers,
+  mockEngineers,
+  loadJobsFromStorage,
+  saveJobsToStorage,
   loadCustomersFromStorage,
   saveCustomersToStorage,
   loadEngineersFromStorage,
   saveEngineersToStorage
 } from '@/lib/jobUtils';
 import { showNotification } from '@/components/ui/toast-notification';
+import { useJobs } from '@/context/JobContext';
 
 // Debug mock jobs
 console.log('Index.tsx - mockJobs imported:', mockJobs);
 import MasterDashboard from '@/components/MasterDashboard';
-import CustomerDashboard from '@/components/CustomerDashboard';
-import CustomerDetailPage from '@/components/CustomerDetailPage';
-import CustomerAlertsPortal from '@/components/CustomerAlertsPortal';
-import AllCustomersPage from '@/components/AllCustomersPage';
 import JobLogWizard from '@/components/JobLogWizard';
 import JobDetailPage from '@/pages/JobDetailPage';
 import JobEditModal from '@/components/JobEditModal';
-import GlobalAlertsPortal from '@/components/GlobalAlertsPortal';
-import SitesPage from '@/components/SitesPage';
+import EndOfShiftReport from '@/components/EndOfShiftReport';
 import NavigationSidebar from '@/components/NavigationSidebar';
 import { SidebarInset, SidebarTrigger, SidebarProvider } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Users, Bell } from 'lucide-react';
-import EndOfShiftReport from '@/components/EndOfShiftReport';
+import { Bell, User } from 'lucide-react';
 import NotificationManager from '@/components/NotificationManager';
 import ErrorBoundary from '@/components/ErrorBoundary';
-import EngineerAlertsPage from '@/pages/EngineerAlertsPage';
 import ProfilePage from '@/pages/ProfilePage';
 import SettingsPage from '@/pages/SettingsPage';
+import AllJobsPage from '@/pages/AllJobsPage';
+import CallHandlingPage from '@/pages/CallHandlingPage';
+import HistoryPage from '@/pages/HistoryPage';
+import MyRemindersPage from '@/pages/MyRemindersPage';
+import NotificationPopover from '@/components/NotificationPopover';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
-type View = 'master' | 'customer' | 'customer-dashboard' | 'customer-detail' | 'customer-alerts' | 'alerts' | 'engineer-alerts' | 'wizard' | 'reports' | 'job-detail' | 'sites' | 'profile' | 'settings';
+// Updated view types matching Joblogic Helpdesk
+type View = 'dashboard' | 'create-job' | 'all-jobs' | 'reports' | 'call-handling' | 'history' | 'reminders' | 'profile' | 'settings' | 'job-detail';
 
 export default function Index() {
   const { jobId } = useParams<{ jobId: string }>();
   console.log('Index.tsx - useParams jobId:', jobId);
   const navigate = useNavigate();
-  
-  // Load jobs from localStorage on component mount
-  const [jobs, setJobs] = useState<Job[]>([]);
-  
+
+  const { jobs, addJob, updateJob } = useJobs();
+
   const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
   const [currentView, setCurrentView] = useState<View>(() => {
     // Try to restore the last view from localStorage
-    const savedView = localStorage.getItem('currentView') as View;
-    return savedView || 'master';
+    const savedView = localStorage.getItem('currentView');
+    // Map old view names to new ones for backward compatibility
+    if (savedView === 'master') return 'dashboard';
+    if (savedView === 'wizard') return 'create-job';
+    return (savedView as View) || 'dashboard';
   });
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-
-  // Load jobs on component mount
-  useEffect(() => {
-    // Load jobs from localStorage, fallback to mock jobs if none exist
-    const savedJobs = loadJobsFromStorage();
-    if (savedJobs && savedJobs.length > 0) {
-      setJobs(savedJobs);
-    } else {
-      setJobs(mockJobs);
-    }
-  }, []);
 
   // Save currentView to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('currentView', currentView);
   }, [currentView]);
 
-  // Save jobs to localStorage whenever jobs state changes
-  useEffect(() => {
-    saveJobsToStorage(jobs);
-  }, [jobs]);
-
   const handleJobCreate = (newJob: Omit<Job, 'id'>) => {
     const jobWithId: Job = {
       ...newJob,
       id: `job-${Date.now()}`
     };
-    setJobs(prev => [jobWithId, ...prev]);
-    setCurrentView('master');
-    
+    addJob(jobWithId);
+    setCurrentView('dashboard');
+
     // Show success notification
     showNotification({
       type: 'success',
@@ -94,24 +87,14 @@ export default function Index() {
     });
   };
 
-  const handleCustomerCreate = (newCustomer: Omit<Customer, 'id'>) => {
-    const customerWithId: Customer = {
-      ...newCustomer,
-      id: Date.now()
-    };
-    setCustomers(prev => [customerWithId, ...prev]);
-  };
-
   const handleJobClick = (job: Job) => {
     navigate(`/job/${job.id}`);
   };
 
   const handleJobSave = (updatedJob: Job) => {
-    setJobs(prev => prev.map(job => 
-      job.id === updatedJob.id ? updatedJob : job
-    ));
+    updateJob(updatedJob);
     setSelectedJob(null);
-    
+
     // Show success notification
     showNotification({
       type: 'success',
@@ -120,12 +103,14 @@ export default function Index() {
     });
   };
 
-  const handleCustomerSelect = (customer: Customer) => {
-    setSelectedCustomer(customer);
-    setCurrentView('customer-dashboard');
-  };
+  const [jobsFilter, setJobsFilter] = useState<any>(null); // State for filters passed from dashboard
 
-  const handleViewChange = (view: View) => {
+  const handleViewChange = (view: View, filter: any = null) => {
+    if (filter) {
+      setJobsFilter(filter);
+    } else {
+      setJobsFilter(null);
+    }
     setCurrentView(view);
     // If we're on a job detail page and trying to navigate away, clear the URL
     if (jobId && view !== 'job-detail') {
@@ -134,8 +119,24 @@ export default function Index() {
   };
 
   const handleHomepageClick = () => {
-    setCurrentView('master');
-    setSelectedCustomer(null);
+    setCurrentView('dashboard');
+  };
+
+  // Get page title based on current view
+  const getPageTitle = () => {
+    switch (currentView) {
+      case 'dashboard': return 'Dashboard';
+      case 'create-job': return 'Create New Job';
+      case 'all-jobs': return 'All Jobs';
+      case 'reports': return 'Night shift Reports';
+      case 'call-handling': return 'Call Handling';
+      case 'history': return 'History';
+      case 'reminders': return 'My Reminders';
+      case 'profile': return 'Profile';
+      case 'settings': return 'Settings';
+      case 'job-detail': return 'Job Details';
+      default: return 'Dashboard';
+    }
   };
 
   // If we're on a job detail page, show the JobDetailPage
@@ -143,7 +144,7 @@ export default function Index() {
     console.log('Index.tsx - Rendering job detail page, jobId:', jobId, 'jobs:', jobs);
     return (
       <>
-        <NavigationSidebar 
+        <NavigationSidebar
           currentView="job-detail"
           onViewChange={(view) => {
             // Always allow navigation, but clear URL if needed
@@ -156,20 +157,10 @@ export default function Index() {
             navigate('/');
             handleHomepageClick();
           }}
-          selectedCustomer={selectedCustomer?.name}
         />
         <SidebarInset>
-          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-            <SidebarTrigger className="-ml-1" />
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold">Job Details</h1>
-            </div>
-          </header>
-          <div className="flex flex-1 flex-col gap-4 p-4">
-            <JobDetailPage 
-              jobs={jobs} 
-              onJobUpdate={handleJobSave}
-            />
+          <div className="flex flex-1 flex-col gap-4 p-4 bg-white">
+            <JobDetailPage />
           </div>
         </SidebarInset>
       </>
@@ -178,67 +169,28 @@ export default function Index() {
 
   const renderCurrentView = () => {
     switch (currentView) {
-      case 'master':
+      case 'dashboard':
         return (
           <MasterDashboard
             jobs={jobs}
             customers={customers}
-            onJobCreate={() => setCurrentView('wizard')}
+            onJobCreate={() => setCurrentView('create-job')}
             onJobClick={handleJobClick}
-            onAlertsClick={() => setCurrentView('alerts')}
-            onEngineerAlertsClick={() => setCurrentView('engineer-alerts')}
+            onAlertsClick={(type: string, value?: any) => {
+              let filter = {};
+              if (type === 'unassigned') filter = { type: 'unassigned', value: true };
+              else if (type === 'attendance_breached') filter = { type: 'sla', value: 'breached' };
+              else if (type === 'completion_breached') filter = { type: 'sla', value: 'completion_breached' };
+              else if (type === 'approaching') filter = { type: 'sla', value: 'approaching' };
+              else if (type === 'status') filter = { type: 'status', value: value }; // New handler for chart clicks
+
+              handleViewChange('all-jobs', filter);
+            }}
+            onEngineerAlertsClick={() => setCurrentView('reminders')}
           />
         );
-      
-      case 'customer':
-        return (
-          <AllCustomersPage
-            onBack={() => setCurrentView('master')}
-            onCustomerSelect={handleCustomerSelect}
-            onCustomerCreate={handleCustomerCreate}
-          />
-        );
-      
-      case 'customer-dashboard':
-        return selectedCustomer ? (
-          <CustomerDashboard
-            customer={selectedCustomer}
-            jobs={jobs}
-            onBack={() => setCurrentView('customer')}
-            onJobClick={handleJobClick}
-            onJobCreate={() => setCurrentView('wizard')}
-          />
-        ) : (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No customer selected</h3>
-            <p className="text-muted-foreground">Please select a customer to view dashboard.</p>
-          </div>
-        );
-      
-      case 'alerts':
-        return (
-          <ErrorBoundary>
-            <Suspense fallback={<div className="p-8 text-center">Loading alerts portal...</div>}>
-              <GlobalAlertsPortal
-                onBack={() => setCurrentView('master')}
-                onJobUpdate={handleJobSave}
-                customers={customers}
-                jobs={jobs}
-              />
-            </Suspense>
-          </ErrorBoundary>
-        );
-      
-      case 'engineer-alerts':
-        return (
-          <EngineerAlertsPage
-            onBack={() => setCurrentView('master')}
-            jobs={jobs}
-            onJobUpdate={handleJobSave}
-          />
-        );
-      
-      case 'wizard':
+
+      case 'create-job':
         return (
           <ErrorBoundary
             onReset={() => {
@@ -250,85 +202,61 @@ export default function Index() {
               <JobLogWizard
                 customers={customers}
                 onJobCreate={handleJobCreate}
-                onCancel={() => setCurrentView('master')}
+                onCancel={() => setCurrentView('dashboard')}
               />
             </Suspense>
           </ErrorBoundary>
         );
-      
+
+      case 'all-jobs':
+        return (
+          <AllJobsPage
+            onJobClick={handleJobClick}
+            initialFilter={jobsFilter}
+          />
+        );
+
       case 'reports':
         return (
           <EndOfShiftReport
-            onBack={() => setCurrentView('master')}
+            onBack={() => setCurrentView('dashboard')}
             jobs={jobs}
             customers={customers}
             onJobCreate={handleJobCreate}
           />
         );
-      
-      case 'sites':
+
+      case 'call-handling':
         return (
-          <SitesPage
-            onBack={() => setCurrentView('master')}
-            onSiteSelect={(site, customer) => {
-              const selectedCustomer = customers.find(c => c.name === customer);
-              if (selectedCustomer) {
-                setSelectedCustomer(selectedCustomer);
-                setCurrentView('customer');
-              }
-            }}
-            onJobClick={handleJobClick}
-            onJobCreate={() => setCurrentView('wizard')}
-            jobs={jobs}
+          <CallHandlingPage
             customers={customers}
+            onJobCreate={handleJobCreate}
           />
         );
-      
+
+      case 'history':
+        return (
+          <HistoryPage
+            jobs={jobs}
+          />
+        );
+
+      case 'reminders':
+        return (
+          <MyRemindersPage />
+        );
+
       case 'job-detail':
         return (
-          <JobDetailPage
-            jobs={jobs}
-            onJobUpdate={handleJobSave}
-          />
+          <JobDetailPage />
         );
-      
-      case 'customer-detail':
-        return selectedCustomer ? (
-          <CustomerDetailPage
-            customer={selectedCustomer}
-            jobs={jobs}
-            onBack={() => setCurrentView('customer')}
-            onJobClick={handleJobClick}
-            onAlertsClick={() => setCurrentView('customer-alerts')}
-          />
-        ) : (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No customer selected</h3>
-            <p className="text-muted-foreground">Please select a customer to view details.</p>
-          </div>
-        );
-      
-      case 'customer-alerts':
-        return selectedCustomer ? (
-          <CustomerAlertsPortal
-            customer={selectedCustomer}
-            jobs={jobs}
-            onBack={() => setCurrentView('customer-detail')}
-            onJobUpdate={handleJobSave}
-          />
-        ) : (
-          <div className="text-center py-12">
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No customer selected</h3>
-            <p className="text-muted-foreground">Please select a customer to view alerts.</p>
-          </div>
-        );
-      
+
       case 'profile':
         return <ProfilePage />;
-      
+
       case 'settings':
         return <SettingsPage />;
-      
+
       default:
         return null;
     }
@@ -340,29 +268,38 @@ export default function Index() {
         currentView={currentView}
         onViewChange={handleViewChange}
         onHomepageClick={handleHomepageClick}
-        selectedCustomer={selectedCustomer?.name}
       />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-          <SidebarTrigger className="-ml-1" />
+      <SidebarInset className="flex flex-col w-full">
+        <header className="flex h-14 items-center justify-between gap-2 border-b border-gray-200 px-6 bg-white sticky top-0 z-30">
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-semibold">
-              {currentView === 'master' && 'Master Dashboard'}
-              {currentView === 'customer' && 'All Customers'}
-              {currentView === 'sites' && 'All Sites'}
-              {currentView === 'customer-dashboard' && selectedCustomer && `${selectedCustomer.name} Dashboard`}
-              {currentView === 'customer-detail' && selectedCustomer && `${selectedCustomer.name} Details`}
-              {currentView === 'customer-alerts' && selectedCustomer && `${selectedCustomer.name} Alerts`}
-              {currentView === 'alerts' && 'Global Alerts Portal'}
-              {currentView === 'engineer-alerts' && 'Engineer Action Alerts'}
-              {currentView === 'wizard' && 'New Job Wizard'}
-              {currentView === 'reports' && 'End of Shift Report'}
-              {currentView === 'profile' && 'Profile'}
-              {currentView === 'settings' && 'Settings'}
+            <SidebarTrigger className="-ml-1" />
+            <h1 className="text-lg font-semibold text-gray-900">
+              {getPageTitle()}
             </h1>
           </div>
+          <div className="flex items-center gap-3">
+            <NotificationPopover />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Avatar className="h-8 w-8 cursor-pointer">
+                  <AvatarImage src="" />
+                  <AvatarFallback className="bg-gray-900 text-white text-sm">S</AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem onClick={() => handleViewChange('profile')}>
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleViewChange('settings')}>
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Log out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </header>
-        <div className="flex flex-1 flex-col gap-4 p-4">
+        <div className="flex-1 p-6 bg-white">
           {renderCurrentView()}
         </div>
       </SidebarInset>

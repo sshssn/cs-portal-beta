@@ -1,17 +1,18 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Customer } from '@/types/job';
 import { mockCustomers, generateCustomerNumber } from '@/lib/jobUtils';
-import { 
-  Search, 
-  ArrowLeft, 
-  Building2, 
-  Phone, 
-  Mail, 
+import {
+  Search,
+  ArrowLeft,
+  Building2,
+  Phone,
+  Mail,
   MapPin,
   Users,
   Briefcase,
@@ -35,18 +36,18 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
     sites: [''],
     notes: ''
   });
-  
+
   // Filter customers based on search query only
   const filteredCustomers = mockCustomers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         customer.sites.some(site => site.toLowerCase().includes(searchQuery.toLowerCase()));
-    
+      customer.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.sites.some(site => site.toLowerCase().includes(searchQuery.toLowerCase()));
+
     return matchesSearch;
   });
 
   const totalCustomers = mockCustomers.length;
-  const activeJobs = mockCustomers.reduce((total, customer) => 
+  const activeJobs = mockCustomers.reduce((total, customer) =>
     total + (customer.jobs?.filter(job => job.status !== 'green').length || 0), 0
   );
 
@@ -68,11 +69,11 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
         sites: newCustomer.sites.filter(site => site.trim() !== ''),
         notes: newCustomer.notes
       };
-      
+
       if (onCustomerCreate) {
         onCustomerCreate(customerData);
       }
-      
+
       // Reset form
       setNewCustomer({
         name: '',
@@ -115,8 +116,8 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
           <p className="text-muted-foreground mt-2">Manage and view all customer accounts and their job history</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button 
-            onClick={() => setShowAddCustomer(true)} 
+          <Button
+            onClick={() => setShowAddCustomer(true)}
             className="bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -131,7 +132,7 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
 
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:border-blue-300"
         >
           <CardContent className="p-4">
@@ -146,7 +147,7 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 hover:border-amber-300"
         >
           <CardContent className="p-4">
@@ -161,7 +162,7 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:border-green-300"
         >
           <CardContent className="p-4">
@@ -181,15 +182,14 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
 
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
-        <div className="flex items-center gap-3 flex-1">
-          <Search className="text-gray-400 h-4 w-4" />
-          <Input
-            placeholder="Search customers..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="min-w-0 h-12 text-base"
-          />
-        </div>
+        <SearchInput
+          placeholder="Search customers..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          onClear={() => setSearchQuery('')}
+          className="min-w-0 h-12 text-base"
+          containerClassName="flex-1"
+        />
       </div>
 
       {/* Divider */}
@@ -210,10 +210,10 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
           const urgentJobs = getUrgentJobsCount(customer);
           const activeJobs = getActiveJobsCount(customer);
           const totalJobs = customer.jobs?.length || 0;
-          
+
           return (
-            <Card 
-              key={customer.id} 
+            <Card
+              key={customer.id}
               className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105"
               onClick={() => onCustomerSelect(customer)}
             >
@@ -234,7 +234,7 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
                   )}
                 </div>
               </CardHeader>
-              
+
               <CardContent className="space-y-4">
                 {/* Contact Information */}
                 <div className="space-y-2">
@@ -299,7 +299,7 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -310,7 +310,7 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
                     placeholder="Enter customer name"
                   />
                 </div>
-                
+
                 <div>
                   <label className="text-sm font-medium text-gray-700">Email *</label>
                   <Input
@@ -384,8 +384,8 @@ export default function AllCustomersPage({ onBack, onCustomerSelect, onCustomerC
               <Button variant="outline" onClick={() => setShowAddCustomer(false)}>
                 Cancel
               </Button>
-              <Button 
-                onClick={handleAddCustomer} 
+              <Button
+                onClick={handleAddCustomer}
                 disabled={!newCustomer.name || !newCustomer.email || !newCustomer.phone || !newCustomer.sites[0]}
               >
                 <Plus className="h-4 w-4 mr-2" />

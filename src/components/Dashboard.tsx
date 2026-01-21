@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Job } from '@/types/job';
 import JobCard from './JobCard';
@@ -17,23 +18,23 @@ export default function Dashboard({ jobs, onUpdateStatus }: DashboardProps) {
   const [priorityFilter, setPriorityFilter] = useState<string>('all');
 
   const filteredJobs = jobs.filter(job => {
-    const matchesSearch = 
+    const matchesSearch =
       job.jobNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.customer.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.site.toLowerCase().includes(searchQuery.toLowerCase()) ||
       job.contact.name.toLowerCase().includes(searchQuery.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || job.priority === priorityFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
   const stats = {
     total: jobs.length,
-    green: jobs.filter(j => j.status === 'green').length,
-    amber: jobs.filter(j => j.status === 'amber').length,
-    red: jobs.filter(j => j.status === 'red').length,
+    completed: jobs.filter(j => j.status === 'completed').length,
+    inProgress: jobs.filter(j => j.status === 'allocated' || j.status === 'attended').length,
+    issues: jobs.filter(j => j.alerts?.some(a => a.type === 'OVERDUE')).length,
   };
 
   return (
@@ -64,7 +65,7 @@ export default function Dashboard({ jobs, onUpdateStatus }: DashboardProps) {
             <CheckCircle className="h-4 w-4 text-green-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-900">{stats.green}</div>
+            <div className="text-2xl font-bold text-green-900">{stats.completed}</div>
           </CardContent>
         </Card>
 
@@ -74,7 +75,7 @@ export default function Dashboard({ jobs, onUpdateStatus }: DashboardProps) {
             <Clock className="h-4 w-4 text-amber-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-amber-900">{stats.amber}</div>
+            <div className="text-2xl font-bold text-amber-900">{stats.inProgress}</div>
           </CardContent>
         </Card>
 
@@ -84,7 +85,7 @@ export default function Dashboard({ jobs, onUpdateStatus }: DashboardProps) {
             <AlertTriangle className="h-4 w-4 text-red-600" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-900">{stats.red}</div>
+            <div className="text-2xl font-bold text-red-900">{stats.issues}</div>
           </CardContent>
         </Card>
       </div>
@@ -92,14 +93,15 @@ export default function Dashboard({ jobs, onUpdateStatus }: DashboardProps) {
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 bg-white p-4 rounded-lg border">
         <div className="flex-1 flex items-center gap-3">
-          <Search className="text-muted-foreground" size={16} />
-          <Input
+          <SearchInput
             placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
+            onClear={() => setSearchQuery('')}
+            className="bg-white"
           />
         </div>
-        
+
         <Select value={statusFilter} onValueChange={setStatusFilter}>
           <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Status" />
@@ -111,7 +113,7 @@ export default function Dashboard({ jobs, onUpdateStatus }: DashboardProps) {
             <SelectItem value="red">Issues</SelectItem>
           </SelectContent>
         </Select>
-        
+
         <Select value={priorityFilter} onValueChange={setPriorityFilter}>
           <SelectTrigger className="w-full sm:w-40">
             <SelectValue placeholder="Priority" />

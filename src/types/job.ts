@@ -43,6 +43,7 @@ export interface Job {
   id: string;
   jobNumber: string;
   customer: string;
+  tenant: string;
   site: string;
   engineer: string;
   contact: JobContact;

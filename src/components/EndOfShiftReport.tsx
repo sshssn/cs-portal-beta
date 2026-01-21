@@ -1,29 +1,38 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Job, Customer } from '@/types/job';
-import { generateJobNumber, mockJobTrades, mockTags } from '@/lib/jobUtils';
-import { 
-  FileText, 
-  ArrowLeft, 
-  Download, 
-  Mail, 
+import {
   Calendar,
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  User,
-  Building2,
-  Briefcase,
-  MapPin,
-  Mic,
-  Sparkles,
-  StickyNote,
-  Plus
+  Download,
+  Mail,
+  ChevronDown,
+  Plus,
+  Edit,
+  Trash2
 } from 'lucide-react';
 
 interface EndOfShiftReportProps {
@@ -33,682 +42,380 @@ interface EndOfShiftReportProps {
   onJobCreate: (job: Omit<Job, 'id'>) => void;
 }
 
+interface NightshiftNote {
+  id: string;
+  date: string;
+  time: string;
+  content: string;
+}
+
 export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate }: EndOfShiftReportProps) {
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
-  const [shiftNotes, setShiftNotes] = useState('');
-  const [isRecording, setIsRecording] = useState(false);
-  const [showSummarizeOptions, setShowSummarizeOptions] = useState(false);
-  const [summaryType, setSummaryType] = useState<'concise' | 'pro' | 'detailed'>('concise');
-  const [showFollowUpOptions, setShowFollowUpOptions] = useState(false);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'green' | 'amber' | 'red'>('all');
-  const [showCreateJobModal, setShowCreateJobModal] = useState(false);
-  const [newJobData, setNewJobData] = useState({
-    customer: '',
-    site: '',
-    description: '',
-    engineer: '',
-    priority: 'Medium' as Job['priority'],
-    category: 'General' as Job['category'],
-    jobType: 'Maintenance' as Job['jobType']
-  });
+  const [tenantFilter, setTenantFilter] = useState('FM4U Ltd');
+  const [customerFilter, setCustomerFilter] = useState('all');
+  const [siteFilter, setSiteFilter] = useState('all');
+  const [dateRange, setDateRange] = useState('last-night');
+  const [newNote, setNewNote] = useState('');
 
-  // Get all jobs for display - now using props instead of mockJobs
-  const getAllJobs = () => {
-    return jobs;
-  };
-
-  // Helper function to categorize job status into filter categories
-  const getJobStatusCategory = (status: Job['status']): 'green' | 'amber' | 'red' => {
-    switch (status) {
-      case 'completed':
-      case 'costed':
-      case 'reqs_invoice':
-        return 'green';
-      case 'new':
-      case 'allocated':
-      case 'attended':
-      case 'awaiting_parts':
-      case 'parts_to_fit':
-        return 'amber';
-      case 'amber':
-      case 'red':
-        return 'red';
-      default:
-        return 'amber';
+  // Mock nightshift notes
+  const [notes, setNotes] = useState<NightshiftNote[]>([
+    {
+      id: '1',
+      date: 'Jan 19, 2026',
+      time: '02:04',
+      content: 'Job Ref C0000347 - Please can someone reach this chap Monday 13th January 2026, he has had issues with the BMS M3 portal and the alarms were enabled on Wednesday and is fully operational now.'
+    },
+    {
+      id: '2',
+      date: 'Jan 5, 2026',
+      time: '17:10',
+      content: 'Rozena requested an engineer to booked for first thing in the morning for job ref C0000341 please'
+    },
+    {
+      id: '3',
+      date: 'Jan 4, 2026',
+      time: '19:10',
+      content: 'URGENT: Tel No go for site at the following for Grainger Group Services Limited 0191 2315757 - mentioned to Dawn for all on site info needed as as site engineer at site area.'
+    },
+    {
+      id: '4',
+      date: 'Jan 21, 2026',
+      time: '12:45',
+      content: 'C021076 - Had front calling, requiring engineer to be allocated this morning. Contacted site contact in booked, to reach another Voltage and he advised that it was okay for any slip time allowed to him. I contacted the scheduler at the number but also spoken to Reyanna post earlier, Carl, there are other works ongoing in the 1st floor cooling in tower, slotted 4 to be possible.'
+    },
+    {
+      id: '5',
+      date: 'Dec 21, 2025',
+      time: '13:16',
+      content: 'Staff on site called back to check status of Job Ref C0003145. After confirmatory from supervisor that the job had originally fit as a point cleaner to will now progress. In the near year, they are satisfied with knowing that on one else would need to come into the block.'
     }
-  };
+  ]);
 
-  // Get filtered jobs based on active filter
-  const getFilteredJobs = () => {
-    if (activeFilter === 'all') {
-      return getAllJobs();
-    }
-    return getAllJobs().filter(job => getJobStatusCategory(job.status) === activeFilter);
-  };
-
-  // Calculate statistics using all jobs
-  const allJobs = getAllJobs();
-  const stats = {
-    totalJobs: allJobs.length,
-    completed: allJobs.filter(job => getJobStatusCategory(job.status) === 'green').length,
-    inProgress: allJobs.filter(job => getJobStatusCategory(job.status) === 'amber').length,
-    issues: allJobs.filter(job => getJobStatusCategory(job.status) === 'red').length,
-  };
-
-  // Calculate completion rate
-  const completionRate = stats.totalJobs > 0 ? (stats.completed / stats.totalJobs) * 100 : 0;
-
-  const handleTileClick = (filter: 'all' | 'green' | 'amber' | 'red') => {
-    setActiveFilter(filter);
-  };
-
-  const handleCreateJob = () => {
-    if (!newJobData.customer || !newJobData.site || !newJobData.description || !newJobData.engineer) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    const newJob: Omit<Job, 'id'> = {
-      jobNumber: generateJobNumber(),
-      customer: newJobData.customer,
-      site: newJobData.site,
-      description: newJobData.description,
-      engineer: newJobData.engineer,
-      status: 'new',
-      priority: newJobData.priority,
-      category: newJobData.category,
-      jobType: newJobData.jobType,
-      targetCompletionTime: 240,
-      dateLogged: new Date(),
-      dateAccepted: null,
-      dateOnSite: null,
-      dateCompleted: null,
-      reason: null,
-      contact: {
-        name: 'Shift Report',
-        number: '+447000000000',
-        email: 'shift@company.com',
-        relationship: 'Shift Manager'
-      },
-      reporter: {
-        name: 'Shift Report',
-        number: '+447000000000',
-        email: 'shift@company.com',
-        relationship: 'Shift Manager'
-      },
-      primaryJobTrade: newJobData.category,
-      secondaryJobTrades: ['General'],
-      tags: [newJobData.category, newJobData.jobType, 'Shift Report'],
-      customAlerts: {
-        acceptSLA: 30,
-        onsiteSLA: 90,
-        completedSLA: 240
-      },
-      project: 'Shift Report Jobs',
-      customerOrderNumber: '',
-      referenceNumber: '',
-      jobOwner: 'Shift Manager',
-      jobRef1: '',
-      jobRef2: '',
-      requiresApproval: false,
-      preferredAppointmentDate: null,
-      startDate: new Date(),
-      endDate: null,
-      lockVisitDateTime: false,
-      deployToMobile: true,
-      isRecurringJob: false,
-      completionTimeFromEngineerOnsite: false
-    };
-
-    onJobCreate(newJob);
-    setShowCreateJobModal(false);
-    setNewJobData({
-      customer: '',
-      site: '',
-      description: '',
-      engineer: '',
-      priority: 'Medium',
-      category: 'General',
-      jobType: 'Maintenance'
+  // Calculate statistics
+  const stats = useMemo(() => {
+    const filteredJobs = jobs.filter(j => {
+      if (tenantFilter !== 'all' && j.customer !== tenantFilter) return false;
+      return true;
     });
-    
-    // Add note about job creation
-    setShiftNotes(prev => prev + `\n\n[Job Created: ${newJob.jobNumber} - ${newJob.description} for ${newJob.customer} at ${newJob.site}]`);
-  };
 
-  const handleGenerateReport = () => {
-    // In a real application, this would generate and download a PDF report
-    console.log('Generating report for:', startDate, 'to', endDate, shiftNotes);
-    alert('Report generated successfully! (This would download a PDF in a real application)');
-  };
-
-  const handleSendEmail = () => {
-    // In a real application, this would send the report via email
-    console.log('Sending report via email for:', startDate, 'to', endDate, shiftNotes);
-    alert('Email sent successfully! (This would send as a PDF in a real application via email)');
-  };
-
-  const handleVoiceInput = () => {
-    setIsRecording(!isRecording);
-    // In a real app, this would start/stop voice recording
-    if (!isRecording) {
-      alert('Text to Speech Assistant activated! (This would start voice input in a real application)');
-      // Simulate adding voice input after 3 seconds
-      setTimeout(() => {
-        setShiftNotes(prev => prev + '\n\n[Voice Note: Shift completed successfully with 3 jobs completed and 1 in progress. All customers satisfied with service quality.]');
-        setIsRecording(false);
-      }, 3000);
-    } else {
-      alert('Text to Speech Assistant deactivated!');
-    }
-  };
-
-  const handleSummarize = () => {
-    if (!shiftNotes.trim()) {
-      alert('Please add some notes before summarizing.');
-      return;
-    }
-    setShowSummarizeOptions(true);
-  };
-
-  const generateSummary = (type: 'concise' | 'pro' | 'detailed') => {
-    const summaries = {
-      concise: 'Shift completed with 3 jobs finished, 1 in progress. Good customer satisfaction.',
-      pro: 'End of shift report: Successfully completed 3 maintenance jobs, 1 installation in progress. Met all SLA targets. Customer feedback positive. No major issues reported.',
-      detailed: 'Comprehensive shift summary: Completed 3 jobs (HVAC maintenance, electrical repair, plumbing fix) within SLA. 1 installation job in progress for security system. All customers provided positive feedback. Equipment functioning properly. Team coordination excellent. Ready for next shift handover.'
+    return {
+      totalJobs: filteredJobs.length,
+      completed: filteredJobs.filter(j => j.status === 'completed' || j.status === 'reqs_invoice').length,
+      open: filteredJobs.filter(j => j.status === 'new' || j.status === 'allocated' || j.status === 'attended').length,
+      attendanceBreached: filteredJobs.filter(j => j.priority === 'Critical').length,
+      completionBreached: filteredJobs.filter(j => j.status === 'awaiting_parts').length,
+      approaching: filteredJobs.filter(j => j.priority === 'High').length
     };
-    
-    setShiftNotes(prev => prev + `\n\n--- ${type.charAt(0).toUpperCase() + type.slice(1)} Summary ---\n\n${summaries[type]}`);
-    setShowSummarizeOptions(false);
-  };
+  }, [jobs, tenantFilter]);
 
-  const addFollowUpNote = (type: string) => {
-    const followUpNotes = {
-      'job-follow-up': '⚠️ JOB REQUIRES FOLLOW UP: Customer requested additional work on security system installation. Schedule follow-up visit within 48 hours.',
-      'customer-feedback': '📞 CUSTOMER FEEDBACK: Positive response from HVAC maintenance. Customer satisfied with quick resolution.',
-      'equipment-issue': '🔧 EQUIPMENT ISSUE: Plumbing tools need maintenance. Report to maintenance team for inspection.',
-      'sla-breach': '⏰ SLA BREACH: Job #HVAC-2024-001 exceeded response time. Requires escalation to management.'
-    };
-    
-    setShiftNotes(prev => prev + `\n\n--- ${type.replace('-', ' ').toUpperCase()} ---\n\n${followUpNotes[type as keyof typeof followUpNotes]}`);
-    setShowFollowUpOptions(false);
-  };
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
+  // Get filtered jobs for display
+  const displayJobs = useMemo(() => {
+    return jobs.filter(j => {
+      if (tenantFilter !== 'all' && j.customer !== tenantFilter) return false;
+      if (customerFilter !== 'all' && j.customer !== customerFilter) return false;
+      if (siteFilter !== 'all' && j.site !== siteFilter) return false;
+      return true;
     });
+  }, [jobs, tenantFilter, customerFilter, siteFilter]);
+
+  // Get unique values
+  const tenants = useMemo(() => [...new Set(jobs.map(j => j.customer).filter(Boolean))], [jobs]);
+  const customerOptions = useMemo(() => [...new Set(jobs.map(j => j.customer).filter(Boolean))], [jobs]);
+  const siteOptions = useMemo(() => [...new Set(jobs.map(j => j.site).filter(Boolean))], [jobs]);
+
+  // Get SLA status badge
+  const getSlaStatusBadge = (job: Job) => {
+    if (job.priority === 'Critical') {
+      return <Badge className="bg-red-100 text-red-700 text-xs">Attendance Breached</Badge>;
+    } else if (job.status === 'awaiting_parts') {
+      return <Badge className="bg-orange-100 text-orange-700 text-xs">Completion Breached</Badge>;
+    } else if (job.status === 'completed' || job.status === 'reqs_invoice') {
+      return <Badge className="bg-green-100 text-green-700 text-xs">Completed</Badge>;
+    }
+    return <Badge className="bg-gray-100 text-gray-700 text-xs">No SLA</Badge>;
   };
 
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+  // Get job status badge
+  const getStatusBadge = (status: string) => {
+    const styles: Record<string, string> = {
+      'new': 'bg-blue-100 text-blue-700',
+      'allocated': 'bg-purple-100 text-purple-700',
+      'attended': 'bg-green-100 text-green-700',
+      'awaiting_parts': 'bg-orange-100 text-orange-700',
+      'completed': 'bg-green-100 text-green-700',
+      'reqs_invoice': 'bg-amber-100 text-amber-700',
+      'costed': 'bg-gray-100 text-gray-700'
+    };
+
+    const labels: Record<string, string> = {
+      'new': 'New',
+      'allocated': 'Allocated',
+      'attended': 'Attended',
+      'awaiting_parts': 'Awaiting Parts',
+      'completed': 'Completed',
+      'reqs_invoice': 'Reqs. Invoice',
+      'costed': 'Costed'
+    };
+
+    return (
+      <Badge className={`text-xs ${styles[status] || 'bg-gray-100 text-gray-700'}`}>
+        {labels[status] || status}
+      </Badge>
+    );
+  };
+
+  // Add new note
+  const handleAddNote = () => {
+    if (!newNote.trim()) return;
+
+    const note: NightshiftNote = {
+      id: Date.now().toString(),
+      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      time: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      content: newNote
+    };
+
+    setNotes([note, ...notes]);
+    setNewNote('');
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">End of Shift Report</h1>
-          <p className="text-muted-foreground mt-2">
-            Generate comprehensive reports for completed shifts
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Button 
-            onClick={() => setShowCreateJobModal(true)} 
-            className="flex items-center gap-2 bg-green-600 hover:bg-green-700"
-          >
-            <Plus className="h-4 w-4" />
-            Create Job
-          </Button>
-          <Button onClick={onBack} variant="outline" className="flex items-center gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Dashboard
-          </Button>
-        </div>
-      </div>
-
-      {/* Report Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            Report Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="text-sm font-medium mb-2 block">From Date</label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-2 block">To Date</label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
-            </div>
-
-            <div className="flex items-end gap-2">
-              <Button onClick={handleGenerateReport} className="flex-1">
-                <Download className="h-4 w-4 mr-2" />
-                Generate Report
-              </Button>
-              <Button onClick={handleSendEmail} variant="outline" className="flex-1">
-                <Mail className="h-4 w-4 mr-2" />
-                Send via Email
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Shift Summary Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card 
-          className={`bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${
-            activeFilter === 'all' ? 'ring-2 ring-blue-500 shadow-lg' : ''
-          }`}
-          onClick={() => handleTileClick('all')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-blue-800">Total Jobs</CardTitle>
-            <Briefcase className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-900">{stats.totalJobs}</div>
-            <p className="text-xs text-blue-700">Jobs processed</p>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`bg-gradient-to-br from-green-50 to-green-100 border-green-200 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${
-            activeFilter === 'green' ? 'ring-2 ring-green-500 shadow-lg' : ''
-          }`}
-          onClick={() => handleTileClick('green')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-green-800">Completed</CardTitle>
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-900">{stats.completed}</div>
-            <p className="text-xs text-green-700">{completionRate.toFixed(1)}% completion rate</p>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`bg-gradient-to-br from-amber-50 to-amber-100 border-amber-200 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${
-            activeFilter === 'amber' ? 'ring-2 ring-amber-500 shadow-lg' : ''
-          }`}
-          onClick={() => handleTileClick('amber')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-amber-800">In Progress</CardTitle>
-            <Clock className="h-4 w-4 text-amber-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-900">{stats.inProgress}</div>
-            <p className="text-xs text-amber-700">Ongoing work</p>
-          </CardContent>
-        </Card>
-
-        <Card 
-          className={`bg-gradient-to-br from-red-50 to-red-100 border-red-200 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-105 ${
-            activeFilter === 'red' ? 'ring-2 ring-red-500 shadow-lg' : ''
-          }`}
-          onClick={() => handleTileClick('red')}
-        >
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium text-red-800">Issues</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-900">{stats.issues}</div>
-            <p className="text-xs text-red-700">Require attention</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Active Filter Display */}
-      {activeFilter !== 'all' && (
-        <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg border">
-          <span className="text-sm text-gray-600">Showing:</span>
-          <Badge 
-            className={
-              activeFilter === 'green' ? 'bg-green-100 text-green-800 border-green-200' :
-              activeFilter === 'amber' ? 'bg-amber-100 text-amber-800 border-amber-200' :
-              'bg-red-100 text-red-800 border-red-200'
-            }
-          >
-            {activeFilter === 'green' ? 'Completed Jobs' :
-             activeFilter === 'amber' ? 'In Progress Jobs' :
-             'Issue Jobs'}
-          </Badge>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={() => handleTileClick('all')}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            Clear Filter
-          </Button>
-        </div>
-      )}
-
-      {/* Jobs Logged */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Jobs Logged {activeFilter !== 'all' && `(${getFilteredJobs().length} ${activeFilter === 'green' ? 'completed' : activeFilter === 'amber' ? 'in progress' : 'issue'} jobs)`}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {getFilteredJobs().length > 0 ? (
-              getFilteredJobs().map(job => (
-                <div key={job.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-semibold text-gray-900 text-sm">{job.jobNumber}</h3>
-                    <Badge variant={getJobStatusCategory(job.status) === 'green' ? 'default' : getJobStatusCategory(job.status) === 'amber' ? 'secondary' : 'destructive'} className="text-xs">
-                      {getJobStatusCategory(job.status) === 'green' ? 'Completed' : 
-                       getJobStatusCategory(job.status) === 'amber' ? 'In Process' : 
-                       getJobStatusCategory(job.status) === 'red' ? 'Issue' : 
-                       String(job.status).toUpperCase()}
-                    </Badge>
-                  </div>
-                  
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{job.customer}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{job.site}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{job.engineer}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4 text-gray-400" />
-                      <span className="text-gray-600">{formatTime(job.dateLogged)}</span>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <p className="text-xs text-gray-500 mb-2">{job.description}</p>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {job.priority}
-                      </Badge>
-                      <Badge variant="outline" className="text-xs">
-                        {job.category}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <div className="col-span-full text-center py-12">
-                <FileText className="mx-auto h-12 w-12 text-muted-foreground" />
-                <h3 className="mt-2 text-sm font-semibold text-gray-900">No jobs found</h3>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {activeFilter !== 'all' 
-                    ? `No ${activeFilter === 'green' ? 'completed' : activeFilter === 'amber' ? 'in progress' : 'issue'} jobs found.`
-                    : 'No jobs have been logged yet.'}
-                </p>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Shift Notes */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <StickyNote className="h-5 w-5" />
-            Shift Notes
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="space-y-4">
+      {/* Header Filters */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <Button 
-              onClick={handleVoiceInput} 
-              variant={isRecording ? 'destructive' : 'outline'}
-              className="flex items-center gap-2"
-            >
-              <Mic className="h-4 w-4" />
-              {isRecording ? 'Stop Recording' : 'Voice Input'}
-            </Button>
-            
-            <Button onClick={handleSummarize} variant="outline" className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4" />
-              Summarize
-            </Button>
-            
-            <Button onClick={() => setShowFollowUpOptions(true)} variant="outline" className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4" />
-              Add Follow-up
-            </Button>
+            <span className="text-sm text-gray-500">Tenant:</span>
+            <Select value={tenantFilter} onValueChange={setTenantFilter}>
+              <SelectTrigger className="w-32 h-8">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Tenants</SelectItem>
+                <SelectItem value="FM4U Ltd">FM4U Ltd</SelectItem>
+                {tenants.map(t => (
+                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          
-          <Textarea
-            value={shiftNotes}
-            onChange={(e) => setShiftNotes(e.target.value)}
-            placeholder="Enter your shift notes here... (You can use voice input, summarize, or add follow-up notes using the buttons above)"
-            rows={8}
-            className="min-h-[200px]"
-          />
-        </CardContent>
-      </Card>
 
-      {/* Summarize Options Modal */}
-      {showSummarizeOptions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Choose Summary Type</h3>
-            <div className="space-y-3">
-              <Button 
-                onClick={() => generateSummary('concise')} 
-                variant="outline" 
-                className="w-full justify-start"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Concise Summary
-              </Button>
-              <Button 
-                onClick={() => generateSummary('pro')} 
-                variant="outline" 
-                className="w-full justify-start"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Professional Summary
-              </Button>
-              <Button 
-                onClick={() => generateSummary('detailed')} 
-                variant="outline" 
-                className="w-full justify-start"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Detailed Summary
-              </Button>
-            </div>
-            <Button 
-              onClick={() => setShowSummarizeOptions(false)} 
-              variant="ghost" 
-              className="w-full mt-4"
-            >
-              Cancel
-            </Button>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">Customer:</span>
+            <Select value={customerFilter} onValueChange={setCustomerFilter}>
+              <SelectTrigger className="w-32 h-8">
+                <SelectValue placeholder="All Cust..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Customers</SelectItem>
+                {customerOptions.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500">Site:</span>
+            <Select value={siteFilter} onValueChange={setSiteFilter}>
+              <SelectTrigger className="w-28 h-8">
+                <SelectValue placeholder="All Sites" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sites</SelectItem>
+                {siteOptions.map(s => (
+                  <SelectItem key={s} value={s}>{s}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
-      )}
 
-      {/* Follow-up Options Modal */}
-      {showFollowUpOptions && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Add Follow-up Note</h3>
-            <div className="space-y-3">
-              <Button 
-                onClick={() => addFollowUpNote('job-follow-up')} 
-                variant="outline" 
-                className="w-full justify-start"
-              >
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Job Follow-up Required
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-8">
+                <Calendar className="h-4 w-4 mr-2" />
+                Last night shift
+                <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
-              <Button 
-                onClick={() => addFollowUpNote('customer-feedback')} 
-                variant="outline" 
-                className="w-full justify-start"
-              >
-                <User className="h-4 w-4 mr-2" />
-                Customer Feedback
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setDateRange('last-night')}>Last night shift</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateRange('last-3')}>Last 3 days</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateRange('last-7')}>Last 7 days</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDateRange('custom')}>Custom range</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="default" size="sm" className="h-8 bg-green-600 hover:bg-green-700">
+                <Download className="h-4 w-4 mr-2" />
+                Export
+                <ChevronDown className="h-4 w-4 ml-2" />
               </Button>
-              <Button 
-                onClick={() => addFollowUpNote('equipment-issue')} 
-                variant="outline" 
-                className="w-full justify-start"
-              >
-                <Building2 className="h-4 w-4 mr-2" />
-                Equipment Issue
-              </Button>
-              <Button 
-                onClick={() => addFollowUpNote('sla-breach')} 
-                variant="outline" 
-                className="w-full justify-start"
-              >
-                <Clock className="h-4 w-4 mr-2" />
-                SLA Breach
-              </Button>
-            </div>
-            <Button 
-              onClick={() => setShowFollowUpOptions(false)} 
-              variant="ghost" 
-              className="w-full mt-4"
-            >
-              Cancel
-            </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem>Export as PDF</DropdownMenuItem>
+              <DropdownMenuItem>Export as Excel</DropdownMenuItem>
+              <DropdownMenuItem>Export as CSV</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button variant="default" size="sm" className="h-8 bg-blue-600 hover:bg-blue-700">
+            <Mail className="h-4 w-4 mr-2" />
+            Send Email
+          </Button>
+        </div>
+      </div>
+
+      {/* Company Info */}
+      <div className="border-b border-gray-200 pb-4">
+        <h2 className="text-xl font-bold text-blue-600">{tenantFilter}</h2>
+        <p className="text-sm text-gray-500">Shift time: Dec 21, 22:00 - Jan 21, 13:30</p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-6 gap-4">
+        {/* Left Stats Group */}
+        <Card className="border-l-4 border-l-gray-400">
+          <CardContent className="p-4">
+            <p className="text-xs text-gray-500 uppercase">TOTAL JOBS</p>
+            <p className="text-3xl font-bold text-gray-900">{stats.totalJobs}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-green-500">
+          <CardContent className="p-4">
+            <p className="text-xs text-green-600 uppercase">COMPLETED</p>
+            <p className="text-3xl font-bold text-green-600">{stats.completed}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-orange-500">
+          <CardContent className="p-4">
+            <p className="text-xs text-orange-600 uppercase">OPEN</p>
+            <p className="text-3xl font-bold text-orange-600">{stats.open}</p>
+          </CardContent>
+        </Card>
+
+        {/* Right Stats Group - SLA */}
+        <Card className="border-l-4 border-l-red-500">
+          <CardContent className="p-4">
+            <p className="text-xs text-red-600 uppercase">ATTENDANCE BREACHED</p>
+            <p className="text-3xl font-bold text-red-600">{stats.attendanceBreached}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-red-500">
+          <CardContent className="p-4">
+            <p className="text-xs text-red-600 uppercase">COMPLETION BREACHED</p>
+            <p className="text-3xl font-bold text-red-600">{stats.completionBreached}</p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-l-4 border-l-yellow-500">
+          <CardContent className="p-4">
+            <p className="text-xs text-yellow-600 uppercase">APPROACHING</p>
+            <p className="text-3xl font-bold text-yellow-600">{stats.approaching}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content - Table and Notes */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Jobs Table - 3 columns */}
+        <div className="lg:col-span-3">
+          <div className="border border-gray-200 rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-gray-50">
+                  <TableHead className="text-xs font-semibold text-gray-600">Job Number</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-600">Description</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-600">Job Status</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-600">SLA Status</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-600">Engineer</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-600">Tenant</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-600">Customer</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-600">Site</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-600">Logged Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {displayJobs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                      No jobs found for the selected filters
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  displayJobs.map((job) => (
+                    <TableRow key={job.id} className="hover:bg-gray-50">
+                      <TableCell className="font-medium text-amber-600">{job.jobNumber}</TableCell>
+                      <TableCell className="text-gray-600 text-sm max-w-[150px] truncate">{job.description}</TableCell>
+                      <TableCell>{getStatusBadge(job.status)}</TableCell>
+                      <TableCell>{getSlaStatusBadge(job)}</TableCell>
+                      <TableCell className="text-gray-700 text-sm">{job.engineer || 'Unassigned'}</TableCell>
+                      <TableCell className="text-blue-600 text-sm">{tenantFilter}</TableCell>
+                      <TableCell className="text-gray-600 text-sm">{job.customer}</TableCell>
+                      <TableCell className="text-gray-600 text-sm">{job.site}</TableCell>
+                      <TableCell className="text-gray-500 text-sm">
+                        {new Date(job.dateLogged).toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        })}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
           </div>
         </div>
-      )}
 
-      {/* Create Job Modal */}
-      {showCreateJobModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Create New Job</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="text-sm font-medium mb-1 block">Customer</label>
-                <Select onValueChange={(value) => setNewJobData(prev => ({ ...prev, customer: value }))} value={newJobData.customer}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select a customer" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map(customer => (
-                      <SelectItem key={customer.id} value={customer.name}>{customer.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        {/* Nightshift Notes - 1 column */}
+        <div className="lg:col-span-1">
+          <Card className="bg-amber-50 border-amber-200">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-semibold text-gray-900">Nightshift Notes</CardTitle>
+                <Button
+                  size="sm"
+                  className="h-7 bg-blue-600 hover:bg-blue-700"
+                  onClick={handleAddNote}
+                >
+                  Add Note
+                </Button>
               </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Site</label>
-                <Input
-                  type="text"
-                  value={newJobData.site}
-                  onChange={(e) => setNewJobData(prev => ({ ...prev, site: e.target.value }))}
-                  placeholder="Enter site name"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Description</label>
-                <Input
-                  type="text"
-                  value={newJobData.description}
-                  onChange={(e) => setNewJobData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Enter job description"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Engineer</label>
-                <Input
-                  type="text"
-                  value={newJobData.engineer}
-                  onChange={(e) => setNewJobData(prev => ({ ...prev, engineer: e.target.value }))}
-                  placeholder="Enter engineer name"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Priority</label>
-                <Select onValueChange={(value) => setNewJobData(prev => ({ ...prev, priority: value as Job['priority'] }))} value={newJobData.priority}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select priority" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Low">Low</SelectItem>
-                    <SelectItem value="Medium">Medium</SelectItem>
-                    <SelectItem value="High">High</SelectItem>
-                    <SelectItem value="Critical">Critical</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Category</label>
-                <Select onValueChange={(value) => setNewJobData(prev => ({ ...prev, category: value as Job['category'] }))} value={newJobData.category}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="General">General</SelectItem>
-                    <SelectItem value="HVAC">HVAC</SelectItem>
-                    <SelectItem value="Electrical">Electrical</SelectItem>
-                    <SelectItem value="Plumbing">Plumbing</SelectItem>
-                    <SelectItem value="Security">Security</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-1 block">Job Type</label>
-                <Select onValueChange={(value) => setNewJobData(prev => ({ ...prev, jobType: value as Job['jobType'] }))} value={newJobData.jobType}>
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select job type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Maintenance">Maintenance</SelectItem>
-                    <SelectItem value="Installation">Installation</SelectItem>
-                    <SelectItem value="Repair">Repair</SelectItem>
-                    <SelectItem value="Inspection">Inspection</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <Button variant="outline" onClick={() => setShowCreateJobModal(false)}>Cancel</Button>
-              <Button onClick={handleCreateJob}>Create Job</Button>
-            </div>
-          </div>
+            </CardHeader>
+            <CardContent className="space-y-3 max-h-[500px] overflow-y-auto">
+              {notes.length === 0 ? (
+                <p className="text-sm text-gray-500 italic">
+                  No nightshift notes yet. Click "Add Note" to create one.
+                </p>
+              ) : (
+                notes.map((note) => (
+                  <div key={note.id} className="bg-white p-3 rounded-lg border border-amber-200 text-sm">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-xs text-gray-500">{note.date}, {note.time}</span>
+                      <div className="flex items-center gap-1">
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                          <Edit className="h-3 w-3 text-gray-400" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="h-6 w-6">
+                          <Trash2 className="h-3 w-3 text-gray-400" />
+                        </Button>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 text-xs leading-relaxed">{note.content}</p>
+                  </div>
+                ))
+              )}
+            </CardContent>
+          </Card>
         </div>
-      )}
+      </div>
     </div>
   );
 }

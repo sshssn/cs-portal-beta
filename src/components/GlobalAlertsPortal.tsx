@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -125,19 +126,19 @@ interface NewSite {
 
 export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, jobs }: GlobalAlertsPortalProps) {
   // Main alerts and filters with local storage
-  const [searchQuery, setSearchQuery] = useState(() => 
+  const [searchQuery, setSearchQuery] = useState(() =>
     localStorage.getItem('globalAlerts_searchQuery') || ''
   );
-  const [statusFilter, setStatusFilter] = useState<string>(() => 
+  const [statusFilter, setStatusFilter] = useState<string>(() =>
     localStorage.getItem('globalAlerts_statusFilter') || 'all'
   );
-  const [priorityFilter, setPriorityFilter] = useState<string>(() => 
+  const [priorityFilter, setPriorityFilter] = useState<string>(() =>
     localStorage.getItem('globalAlerts_priorityFilter') || 'all'
   );
-  const [alertTypeFilter, setAlertTypeFilter] = useState<string>(() => 
+  const [alertTypeFilter, setAlertTypeFilter] = useState<string>(() =>
     localStorage.getItem('globalAlerts_alertTypeFilter') || 'all'
   );
-  const [resolvedFilter, setResolvedFilter] = useState<string>(() => 
+  const [resolvedFilter, setResolvedFilter] = useState<string>(() =>
     localStorage.getItem('globalAlerts_resolvedFilter') || 'unresolved'
   );
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -154,7 +155,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
       site: 'London HQ',
       engineer: 'Unassigned',
       priority: 'High',
-        status: 'attended',
+      status: 'attended',
       resolved: false,
       severity: 'high'
     },
@@ -208,7 +209,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
       site: 'Manchester Office',
       engineer: 'Unassigned',
       priority: 'Critical',
-        status: 'allocated',
+      status: 'allocated',
       resolved: false,
       severity: 'high'
     }
@@ -220,7 +221,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
   const [engineerAlerts, setEngineerAlerts] = useState<EngineerActionAlert[]>([]);
   const [selectedEngineerAlert, setSelectedEngineerAlert] = useState<EngineerActionAlert | null>(null);
   const [isEngineerDetailModalOpen, setIsEngineerDetailModalOpen] = useState(false);
-  const [activeEngineerTab, setActiveEngineerTab] = useState(() => 
+  const [activeEngineerTab, setActiveEngineerTab] = useState(() =>
     localStorage.getItem('globalAlerts_activeEngineerTab') || 'active'
   );
   const [showEngineerNotificationsDropdown, setShowEngineerNotificationsDropdown] = useState(false);
@@ -281,7 +282,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
   });
 
   // Main tabs with local storage
-  const [activeMainTab, setActiveMainTab] = useState(() => 
+  const [activeMainTab, setActiveMainTab] = useState(() =>
     localStorage.getItem('globalAlerts_activeMainTab') || 'system-alerts'
   );
 
@@ -319,17 +320,17 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
     const newSystemAlerts = generateSystemAlerts();
     const newEngineerAlerts = generateEngineerActionAlerts();
     setSystemAlerts([...customAlerts, ...newSystemAlerts]);
-    
+
     // Process engineer alerts - add resolution details for resolved alerts
     setEngineerAlerts(prevAlerts => {
       // Keep all previously resolved alerts
       const existingResolvedAlerts = prevAlerts.filter(alert => alert.resolved);
-      
+
       // Process new alerts and add resolution details for resolved ones
       const processedAlerts = newEngineerAlerts.map(alert => {
         const job = jobs.find(j => j.id === alert.jobId);
         if (!job) return alert;
-        
+
         // If alert is already resolved, add resolution details
         if (alert.resolved) {
           if (alert.type === 'ENGINEER_ACCEPT' && job.dateAccepted) {
@@ -340,7 +341,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
               resolution: 'Job automatically accepted by engineer'
             };
           }
-          
+
           if (alert.type === 'ENGINEER_ONSITE' && job.dateOnSite) {
             return {
               ...alert,
@@ -350,31 +351,31 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
             };
           }
         }
-        
+
         return alert;
       });
-      
+
       // Separate active and resolved alerts
       const activeAlerts = processedAlerts.filter(alert => !alert.resolved);
       const newlyResolvedAlerts = processedAlerts.filter(alert => alert.resolved);
-      
+
       // Combine existing resolved alerts with newly resolved ones, avoiding duplicates
       const allResolvedAlerts = [...existingResolvedAlerts];
       newlyResolvedAlerts.forEach(alert => {
-        if (!allResolvedAlerts.some(existing => 
+        if (!allResolvedAlerts.some(existing =>
           existing.jobId === alert.jobId && existing.type === alert.type
         )) {
           allResolvedAlerts.push(alert);
         }
       });
-      
+
       // Return all resolved alerts first, then active alerts
       const finalAlerts = [...allResolvedAlerts, ...activeAlerts];
       console.log('Final alerts state:', finalAlerts.length, 'resolved:', allResolvedAlerts.length, 'active:', activeAlerts.length);
       return finalAlerts;
     });
   }, [jobs, customAlerts]);
-  
+
   // Generate system alerts from jobs
   const generateSystemAlerts = (): SystemAlert[] => {
     const alerts: SystemAlert[] = [];
@@ -598,7 +599,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
   // Engineer alerts data - reactive to current state
   const activeEngineerAlerts = engineerAlerts.filter(alert => !alert.resolved);
   const resolvedEngineerAlerts = engineerAlerts.filter(alert => alert.resolved);
-  
+
   // Debug logging
   console.log('Total engineer alerts:', engineerAlerts.length);
   console.log('Active alerts:', activeEngineerAlerts.length);
@@ -760,31 +761,31 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
           prevAlerts.map(a =>
             a.id === alertId
               ? {
-                  ...a,
-                  resolved: true,
-                  resolvedBy: 'Current User',
-                  resolvedAt: new Date(),
-                  resolution
-                }
+                ...a,
+                resolved: true,
+                resolvedBy: 'Current User',
+                resolvedAt: new Date(),
+                resolution
+              }
               : a
           )
         );
 
         // Update the job
         onJobUpdate(updatedJob);
-        
+
         // Show success toast notification to engineer
         toast.success('Job Status Updated', {
           description: `Job ${job.jobNumber} has been ${alert.type === 'ENGINEER_ACCEPT' ? 'accepted' : 'marked as onsite'} successfully.`,
           duration: 5000
         });
-        
+
         // Show global notification to relevant teams
         toast.info('Engineer Action Completed', {
           description: `${alert.engineer} has ${alert.type === 'ENGINEER_ACCEPT' ? 'accepted' : 'arrived onsite for'} job ${job.jobNumber} at ${job.site}.`,
           duration: 7000
         });
-        
+
         // Auto-dismiss container and close modals ONLY after successful resolution
         setTimeout(() => {
           setIsEngineerDetailModalOpen(false);
@@ -882,34 +883,34 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
   const handleResolveAlert = (alertId: string, resolution: string) => {
     // Check if it's a custom alert
     if (alertId.startsWith('custom-')) {
-      setCustomAlerts(prev => prev.map(alert => 
-        alert.id === alertId 
-          ? { 
-              ...alert, 
-              resolved: true, 
-              resolvedBy: 'Current User', 
-              resolvedAt: new Date(),
-              resolution 
-            }
+      setCustomAlerts(prev => prev.map(alert =>
+        alert.id === alertId
+          ? {
+            ...alert,
+            resolved: true,
+            resolvedBy: 'Current User',
+            resolvedAt: new Date(),
+            resolution
+          }
           : alert
       ));
     } else {
       // Find the alert
       const systemAlert = systemAlerts.find(a => a.id === alertId);
       const engineerAlert = engineerAlerts.find(a => a.id === alertId);
-      
+
       // Update system alerts
       if (systemAlert) {
-        setSystemAlerts(prev => 
-          prev.map(alert => 
-            alert.id === alertId 
-              ? { 
-                  ...alert, 
-                  resolved: true, 
-                  resolvedBy: 'Current User', 
-                  resolvedAt: new Date(),
-                  resolution 
-                }
+        setSystemAlerts(prev =>
+          prev.map(alert =>
+            alert.id === alertId
+              ? {
+                ...alert,
+                resolved: true,
+                resolvedBy: 'Current User',
+                resolvedAt: new Date(),
+                resolution
+              }
               : alert
           )
         );
@@ -919,18 +920,18 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
           const job = jobs.find(j => j.id === systemAlert.jobId);
           if (job) {
             const updatedJob = { ...job };
-            
+
             // Add resolution to the job's alerts
             if (updatedJob.alerts) {
-              updatedJob.alerts = updatedJob.alerts.map(alert => 
-                alert.id === alertId 
+              updatedJob.alerts = updatedJob.alerts.map(alert =>
+                alert.id === alertId
                   ? { ...alert, resolved: true, resolution, resolvedAt: new Date(), resolvedBy: 'Current User' }
                   : alert
               );
             }
-            
+
             onJobUpdate(updatedJob);
-            
+
             // Force refresh of alerts after job update
             setTimeout(() => {
               const newSystemAlerts = generateSystemAlerts();
@@ -938,19 +939,19 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
             }, 100);
           }
         }
-      } 
+      }
       // Update engineer alerts
       else if (engineerAlert) {
-        setEngineerAlerts(prev => 
-          prev.map(alert => 
-            alert.id === alertId 
-              ? { 
-                  ...alert, 
-                  resolved: true, 
-                  resolvedBy: 'Current User', 
-                  resolvedAt: new Date(),
-                  resolution 
-                }
+        setEngineerAlerts(prev =>
+          prev.map(alert =>
+            alert.id === alertId
+              ? {
+                ...alert,
+                resolved: true,
+                resolvedBy: 'Current User',
+                resolvedAt: new Date(),
+                resolution
+              }
               : alert
           )
         );
@@ -959,7 +960,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
         const job = jobs.find(j => j.id === engineerAlert.jobId);
         if (job) {
           const updatedJob = { ...job };
-          
+
           if (engineerAlert.type === 'ENGINEER_ACCEPT') {
             updatedJob.dateAccepted = new Date();
             updatedJob.status = 'attended';
@@ -967,23 +968,23 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
             updatedJob.dateOnSite = new Date();
             updatedJob.status = 'attended';
           }
-          
+
           onJobUpdate(updatedJob);
-          
+
           // Show success toast notification to engineer
           toast.success('Job Status Updated', {
             description: `Job ${job.jobNumber} has been ${engineerAlert.type === 'ENGINEER_ACCEPT' ? 'accepted' : 'marked as onsite'} successfully.`,
             duration: 5000
           });
-          
+
           // Show global notification to relevant teams
           toast.info('Engineer Action Completed', {
             description: `${engineerAlert.engineer} has ${engineerAlert.type === 'ENGINEER_ACCEPT' ? 'accepted' : 'arrived onsite for'} job ${job.jobNumber} at ${job.site}.`,
             duration: 7000
           });
-          
+
           // Job update will trigger useEffect to regenerate alerts while preserving resolved ones
-          
+
           // Auto-dismiss container and close modals ONLY after successful resolution
           setTimeout(() => {
             setSelectedAlertForResolution(null);
@@ -1004,7 +1005,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
         });
       }
     }
-    
+
     // Close all modals immediately for system alerts
     setSelectedAlertForResolution(null);
     setShowResolutionModal(false);
@@ -1109,7 +1110,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
         };
     }
   };
-  
+
   const stats = getStats();
 
   return (
@@ -1123,8 +1124,8 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button 
-            onClick={() => setIsCreateModalOpen(true)} 
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
           >
             <Plus className="h-4 w-4" />
@@ -1139,7 +1140,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12 mt-5">
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200 hover:border-blue-300"
           onClick={() => setActiveMainTab('system-alerts')}
         >
@@ -1154,7 +1155,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-red-50 to-red-100 border-red-200 hover:border-red-300"
           onClick={() => {
             setActiveMainTab('system-alerts');
@@ -1172,7 +1173,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-green-50 to-green-100 border-green-200 hover:border-green-300"
           onClick={() => {
             setActiveMainTab('system-alerts');
@@ -1190,7 +1191,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
           </CardContent>
         </Card>
 
-        <Card 
+        <Card
           className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200 hover:border-purple-300"
           onClick={() => {
             setActiveMainTab('engineer-alerts');
@@ -1214,15 +1215,15 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
         <div className="bg-white rounded-xl shadow-lg border border-gray-200 p-2">
           <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1 rounded-lg">
-              <TabsTrigger 
-                value="system-alerts" 
+              <TabsTrigger
+                value="system-alerts"
                 className="flex items-center justify-center gap-2 py-3 px-4 rounded-md transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=inactive]:text-gray-600 hover:text-gray-800"
               >
                 <Bell className="h-5 w-5" />
                 <span className="font-medium">System Alerts</span>
               </TabsTrigger>
-              <TabsTrigger 
-                value="engineer-alerts" 
+              <TabsTrigger
+                value="engineer-alerts"
                 className="flex items-center justify-center gap-2 py-3 px-4 rounded-md transition-all duration-200 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-blue-600 data-[state=inactive]:text-gray-600 hover:text-gray-800"
               >
                 <User className="h-5 w-5" />
@@ -1236,667 +1237,661 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
                 <div className="flex flex-col lg:flex-row gap-4">
                   {/* Search Bar */}
                   <div className="flex items-center gap-3 flex-1">
-                    <Search className="text-gray-400 h-5 w-5" />
-                <Input
+                    <SearchInput
                       placeholder="Search alerts by job number, customer, site, or engineer..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                      className="h-12 text-base border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onClear={() => setSearchQuery('')}
+                      className="h-12 bg-white border-gray-300"
+                    />
+                  </div>
+
                   {/* Filter Dropdowns */}
                   <div className="flex flex-wrap gap-3">
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="w-40 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
                         <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="green">Completed</SelectItem>
-                  <SelectItem value="amber">In Progress</SelectItem>
-                  <SelectItem value="red">Issues</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={priorityFilter} onValueChange={setPriorityFilter}>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="green">Completed</SelectItem>
+                        <SelectItem value="amber">In Progress</SelectItem>
+                        <SelectItem value="red">Issues</SelectItem>
+                      </SelectContent>
+                    </Select>
+
+                    <Select value={priorityFilter} onValueChange={setPriorityFilter}>
                       <SelectTrigger className="w-40 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
                         <SelectValue placeholder="All Priority" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Priority</SelectItem>
-                  <SelectItem value="Critical">Critical</SelectItem>
-                  <SelectItem value="High">High</SelectItem>
-                  <SelectItem value="Medium">Medium</SelectItem>
-                  <SelectItem value="Low">Low</SelectItem>
-                </SelectContent>
-              </Select>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Priority</SelectItem>
+                        <SelectItem value="Critical">Critical</SelectItem>
+                        <SelectItem value="High">High</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="Low">Low</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-              <Select value={alertTypeFilter} onValueChange={setAlertTypeFilter}>
+                    <Select value={alertTypeFilter} onValueChange={setAlertTypeFilter}>
                       <SelectTrigger className="w-48 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
                         <SelectValue placeholder="All Types" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Types</SelectItem>
-                  <SelectItem value="ENGINEER_ACCEPT">Engineer Accept</SelectItem>
-                  <SelectItem value="ENGINEER_ONSITE">Engineer Onsite</SelectItem>
-                  <SelectItem value="ACCEPTED">Accept SLA</SelectItem>
-                  <SelectItem value="ONSITE">Onsite SLA</SelectItem>
-                  <SelectItem value="COMPLETED">Complete SLA</SelectItem>
-                  <SelectItem value="OVERDUE">Overdue</SelectItem>
-                </SelectContent>
-              </Select>
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="ENGINEER_ACCEPT">Engineer Accept</SelectItem>
+                        <SelectItem value="ENGINEER_ONSITE">Engineer Onsite</SelectItem>
+                        <SelectItem value="ACCEPTED">Accept SLA</SelectItem>
+                        <SelectItem value="ONSITE">Onsite SLA</SelectItem>
+                        <SelectItem value="COMPLETED">Complete SLA</SelectItem>
+                        <SelectItem value="OVERDUE">Overdue</SelectItem>
+                      </SelectContent>
+                    </Select>
 
-              <Select value={resolvedFilter} onValueChange={setResolvedFilter}>
+                    <Select value={resolvedFilter} onValueChange={setResolvedFilter}>
                       <SelectTrigger className="w-40 h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500">
-                  <SelectValue placeholder="Resolution" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unresolved">Unresolved</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                  <SelectItem value="all">All</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+                        <SelectValue placeholder="Resolution" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unresolved">Unresolved</SelectItem>
+                        <SelectItem value="resolved">Resolved</SelectItem>
+                        <SelectItem value="all">All</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
               </div>
 
-        {/* Alert Categories */}
-        <div className="space-y-12">
-          {/* Customer Alerts */}
-          <div>
-            <h2 className="text-xl font-bold mb-6">Customer Alerts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredAlerts
-                .filter(alert => alert.type.includes("CUSTOMER"))
-                .map((alert) => (
-                <Card 
-                  key={alert.id} 
-                  className={`${alert.resolved ? 'opacity-80' : ''} cursor-pointer hover:shadow-md transition-shadow`}
-                >
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      {/* Header */}
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-sm">{alert.customer} - {alert.site}</p>
-                          <p className="text-xs text-muted-foreground">Job Number: {alert.jobNumber}</p>
-                          </div>
-                        <div className="flex flex-col items-end space-y-1">
-                          <Badge 
-                            variant="secondary" 
-                            className={`${
-                              alert.priority === 'Critical' ? 'bg-red-100 text-red-700 border-red-200' : 
-                              alert.priority === 'High' ? 'bg-orange-100 text-orange-700 border-orange-200' : 
-                              'bg-blue-100 text-blue-700 border-blue-200'
-                            } text-xs`}
-                          >
-                            {alert.priority}
-                          </Badge>
-                        {alert.resolved && (
-                            <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-xs">
-                            Resolved
-                          </Badge>
-                        )}
-                        </div>
-                      </div>
-                      
-                      {/* Message */}
-                      <div className="space-y-1">
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {alert.message}
-                        </p>
-                          </div>
-
-                      {/* Site */}
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="h-3 w-3 text-gray-400" />
-                        <p className="text-xs font-medium">{alert.site}</p>
-                        </div>
-
-                      {/* Engineer */}
-                      <div className="flex items-center space-x-1">
-                        <User className="h-3 w-3 text-gray-400" />
-                        <p className="text-xs">{alert.engineer}</p>
-                          </div>
-                          
-                      {/* Time and Action */}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{alert.timestamp.toLocaleDateString()}</span>
-                          {!alert.resolved && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2 py-1 h-6"
-                              onClick={() => {
-                                setSelectedAlertForResolution(alert);
-                                setShowResolutionModal(true);
-                              }}
-                            >
-                            <Check className="h-3 w-3 mr-1" />
-                              Resolve
-                            </Button>
-                          )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-          
-          {/* Job Alerts */}
-          <div>
-            <h2 className="text-xl font-bold mb-6">Job Alerts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredAlerts
-                .filter(alert => !alert.type.includes("CUSTOMER") && !alert.type.includes("SITE"))
-                .map((alert) => (
-                <Card 
-                  key={alert.id} 
-                  className={`${alert.resolved ? 'opacity-80' : ''} cursor-pointer hover:shadow-md transition-shadow`}
-                >
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      {/* Header */}
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-sm">{alert.customer} - {alert.site}</p>
-                          <p className="text-xs text-muted-foreground">Job Number: {alert.jobNumber}</p>
-                          </div>
-                        <div className="flex flex-col items-end space-y-1">
-                          <Badge 
-                            variant="secondary" 
-                              className={`${
-                              alert.priority === 'Critical' ? 'bg-red-100 text-red-700 border-red-200' : 
-                              alert.priority === 'High' ? 'bg-orange-100 text-orange-700 border-orange-200' : 
-                              'bg-blue-100 text-blue-700 border-blue-200'
-                            } text-xs`}
-                          >
-                              {alert.priority}
-                            </Badge>
-                        {alert.resolved && (
-                            <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-xs">
-                            Resolved
-                          </Badge>
-                        )}
-                        </div>
-                      </div>
-                      
-                      {/* Message */}
-                      <div className="space-y-1">
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {alert.message}
-                        </p>
-                          </div>
-
-                      {/* Site */}
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="h-3 w-3 text-gray-400" />
-                        <p className="text-xs font-medium">{alert.site}</p>
-                          </div>
-
-                      {/* Engineer */}
-                      <div className="flex items-center space-x-1">
-                        <User className="h-3 w-3 text-gray-400" />
-                        <p className="text-xs">{alert.engineer}</p>
-                          </div>
-                          
-                      {/* Time and Action */}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{alert.timestamp.toLocaleDateString()}</span>
-                          {!alert.resolved && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2 py-1 h-6"
-                              onClick={() => {
-                                setSelectedAlertForResolution(alert);
-                                setShowResolutionModal(true);
-                              }}
-                            >
-                            <Check className="h-3 w-3 mr-1" />
-                              Resolve
-                            </Button>
-                          )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-          
-          {/* Site Alerts */}
-          <div>
-            <h2 className="text-xl font-bold mb-6">Site Alerts</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredAlerts
-                .filter(alert => alert.type.includes("SITE"))
-                .map((alert) => (
-                <Card 
-                  key={alert.id} 
-                  className={`${alert.resolved ? 'opacity-80' : ''} cursor-pointer hover:shadow-md transition-shadow`}
-                >
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      {/* Header */}
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="font-semibold text-sm">{alert.customer} - {alert.site}</p>
-                          <p className="text-xs text-muted-foreground">Job Number: {alert.jobNumber}</p>
-                          </div>
-                        <div className="flex flex-col items-end space-y-1">
-                          <Badge 
-                            variant="secondary" 
-                            className={`${
-                              alert.priority === 'Critical' ? 'bg-red-100 text-red-700 border-red-200' : 
-                              alert.priority === 'High' ? 'bg-orange-100 text-orange-700 border-orange-200' : 
-                              'bg-blue-100 text-blue-700 border-blue-200'
-                            } text-xs`}
-                          >
-                            {alert.priority}
-                          </Badge>
-                        {alert.resolved && (
-                            <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-xs">
-                            Resolved
-                          </Badge>
-                        )}
-                        </div>
-                      </div>
-                      
-                      {/* Message */}
-                      <div className="space-y-1">
-                        <p className="text-xs text-muted-foreground line-clamp-2">
-                          {alert.message}
-                        </p>
-                          </div>
-
-                      {/* Site */}
-                      <div className="flex items-center space-x-1">
-                        <MapPin className="h-3 w-3 text-gray-400" />
-                        <p className="text-xs font-medium">{alert.site}</p>
-                          </div>
-
-                      {/* Engineer */}
-                      <div className="flex items-center space-x-1">
-                        <User className="h-3 w-3 text-gray-400" />
-                        <p className="text-xs">{alert.engineer}</p>
-                          </div>
-                          
-                      {/* Time and Action */}
-                      <div className="flex items-center justify-between text-xs text-muted-foreground">
-                        <span>{alert.timestamp.toLocaleDateString()}</span>
-                          {!alert.resolved && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                            className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2 py-1 h-6"
-                              onClick={() => {
-                                setSelectedAlertForResolution(alert);
-                                setShowResolutionModal(true);
-                              }}
-                            >
-                            <Check className="h-3 w-3 mr-1" />
-                              Resolve
-                            </Button>
-                          )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        </div>
-        
-        {/* Empty State */}
-        {filteredAlerts.length === 0 && (
-          <div className="text-center py-12 mt-4">
-            <Bell className="mx-auto h-12 w-12 text-muted-foreground" />
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">No alerts found</h3>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all' || alertTypeFilter !== 'all' || resolvedFilter !== 'unresolved'
-                ? 'Try adjusting your search or filter criteria.'
-                : 'All alerts have been resolved. Great job!'}
-            </p>
-          </div>
-        )}
-      </TabsContent>
-
-      <TabsContent value="engineer-alerts" className="mt-8 min-h-[calc(100vh-300px)]">
-        <div className="space-y-12 h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-3xl font-bold text-gray-900">Engineer Action Alerts</h2>
-              <p className="text-muted-foreground mt-2 text-lg">
-                Monitor engineer job acceptance and onsite status
-              </p>
-            </div>
-            
-            <div className="flex items-center gap-6">
-              {/* Notification Bell */}
-              <div className="relative">
-                <Button 
-                  onClick={() => setShowEngineerNotificationsDropdown(!showEngineerNotificationsDropdown)} 
-                  variant="outline" 
-                  className="relative flex items-center gap-2 hover:bg-gray-50 transition-colors"
-                >
-                  <Bell className="h-5 w-5 text-gray-600" />
-                  <span className="text-gray-700 font-medium">Notifications</span>
-                  {activeEngineerAlerts.length > 0 && (
-                    <Badge 
-                      variant="destructive" 
-                      className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 text-xs font-bold"
-                    >
-                      {activeEngineerAlerts.length > 99 ? '99+' : activeEngineerAlerts.length}
-                    </Badge>
-                  )}
-                </Button>
-
-                {/* Notifications Dropdown */}
-                {showEngineerNotificationsDropdown && (
-                  <div 
-                    className="engineer-notifications-dropdown fixed right-0 top-16 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-[9999]"
-                    onClick={(e) => e.stopPropagation()}
-                    style={{ pointerEvents: 'all' }}
-                  >
-                    <div className="p-4 border-b border-gray-200">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-gray-900">Engineer Alerts</h3>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setShowEngineerNotificationsDropdown(false)}
-                          className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+              {/* Alert Categories */}
+              <div className="space-y-12">
+                {/* Customer Alerts */}
+                <div>
+                  <h2 className="text-xl font-bold mb-6">Customer Alerts</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredAlerts
+                      .filter(alert => alert.type.includes("CUSTOMER"))
+                      .map((alert) => (
+                        <Card
+                          key={alert.id}
+                          className={`${alert.resolved ? 'opacity-80' : ''} cursor-pointer hover:shadow-md transition-shadow`}
                         >
-                          Close
-                        </Button>
-                      </div>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {activeEngineerAlerts.length} alert{activeEngineerAlerts.length !== 1 ? 's' : ''} requiring attention
-                      </p>
-                    </div>
-                    
-                    <div className="max-h-96 overflow-y-auto overscroll-contain" style={{ pointerEvents: 'auto' }}>
-                      {activeEngineerAlerts.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500">
-                          <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                          <p className="text-sm">No active alerts</p>
-                          <p className="text-xs">All engineers have accepted their jobs and are on site</p>
-                        </div>
-                      ) : (
-                        <div className="divide-y divide-gray-100">
-                          {activeEngineerAlerts.slice(0, 5).map((alert) => (
-                            <div 
-                              key={alert.id}
-                              className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                              onClick={() => {
-                                handleEngineerAlertClick(alert);
-                                setShowEngineerNotificationsDropdown(false);
-                              }}
-                            >
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              {/* Header */}
                               <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <Badge 
-                                      variant={alert.priority === 'Critical' ? 'destructive' : 'secondary'}
-                                      className="text-xs"
-                                    >
-                                      {alert.priority}
-                                    </Badge>
-                                    <span className="text-xs text-gray-500">
-                                      {alert.timestamp.toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  <h4 className="text-sm font-medium text-gray-900 mb-1">
-                                    {alert.customer} - {alert.site}
-                                  </h4>
-                                  <p className="text-xs text-gray-600 mb-1">
-                                    Job Number: {alert.jobNumber}
-                                  </p>
-                                  <p className="text-xs text-gray-600 mb-2 line-clamp-2">
-                                    {getAlertDescription(alert.type, alert.jobNumber)}
-                                  </p>
-                                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                                    <MapPin className="h-3 w-3" />
-                                    <span>{alert.site}</span>
-                                    <span>•</span>
-                                    <User className="h-3 w-3" />
-                                    <span>{alert.engineer}</span>
-                                  </div>
-                                  
-                                  {/* Visit Status in notifications */}
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-xs text-gray-500">Status:</span>
-                                    {(() => {
-                                      const job = jobs.find(j => j.id === alert.jobId);
-                                      if (!job) return <span className="text-gray-400">Unknown</span>;
-                                      
-                                      return <StatusBadge status={job.status} />;
-                                    })()}
-                                  </div>
+                                <div>
+                                  <p className="font-semibold text-sm">{alert.customer} - {alert.site}</p>
+                                  <p className="text-xs text-muted-foreground">Job Number: {alert.jobNumber}</p>
                                 </div>
-                                <div className="ml-3">
-                                  <div className={`w-3 h-3 rounded-full ${
-                                    alert.type === 'ENGINEER_ACCEPT' ? 'bg-blue-500' : 'bg-green-500'
-                                  }`} />
+                                <div className="flex flex-col items-end space-y-1">
+                                  <Badge
+                                    variant="secondary"
+                                    className={`${alert.priority === 'Critical' ? 'bg-red-100 text-red-700 border-red-200' :
+                                      alert.priority === 'High' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                        'bg-blue-100 text-blue-700 border-blue-200'
+                                      } text-xs`}
+                                  >
+                                    {alert.priority}
+                                  </Badge>
+                                  {alert.resolved && (
+                                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-xs">
+                                      Resolved
+                                    </Badge>
+                                  )}
                                 </div>
                               </div>
+
+                              {/* Message */}
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {alert.message}
+                                </p>
+                              </div>
+
+                              {/* Site */}
+                              <div className="flex items-center space-x-1">
+                                <MapPin className="h-3 w-3 text-gray-400" />
+                                <p className="text-xs font-medium">{alert.site}</p>
+                              </div>
+
+                              {/* Engineer */}
+                              <div className="flex items-center space-x-1">
+                                <User className="h-3 w-3 text-gray-400" />
+                                <p className="text-xs">{alert.engineer}</p>
+                              </div>
+
+                              {/* Time and Action */}
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>{alert.timestamp.toLocaleDateString()}</span>
+                                {!alert.resolved && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2 py-1 h-6"
+                                    onClick={() => {
+                                      setSelectedAlertForResolution(alert);
+                                      setShowResolutionModal(true);
+                                    }}
+                                  >
+                                    <Check className="h-3 w-3 mr-1" />
+                                    Resolve
+                                  </Button>
+                                )}
+                              </div>
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                          </CardContent>
+                        </Card>
+                      ))}
                   </div>
-                )}
-              </div>
-             
-              {/* Stats */}
-              <div className="flex items-center gap-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">{activeEngineerAlerts.length}</div>
-                  <div className="text-sm text-gray-600">Active Alerts</div>
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">{resolvedEngineerAlerts.length}</div>
-                  <div className="text-sm text-gray-600">Resolved</div>
+
+                {/* Job Alerts */}
+                <div>
+                  <h2 className="text-xl font-bold mb-6">Job Alerts</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredAlerts
+                      .filter(alert => !alert.type.includes("CUSTOMER") && !alert.type.includes("SITE"))
+                      .map((alert) => (
+                        <Card
+                          key={alert.id}
+                          className={`${alert.resolved ? 'opacity-80' : ''} cursor-pointer hover:shadow-md transition-shadow`}
+                        >
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              {/* Header */}
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <p className="font-semibold text-sm">{alert.customer} - {alert.site}</p>
+                                  <p className="text-xs text-muted-foreground">Job Number: {alert.jobNumber}</p>
+                                </div>
+                                <div className="flex flex-col items-end space-y-1">
+                                  <Badge
+                                    variant="secondary"
+                                    className={`${alert.priority === 'Critical' ? 'bg-red-100 text-red-700 border-red-200' :
+                                      alert.priority === 'High' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                        'bg-blue-100 text-blue-700 border-blue-200'
+                                      } text-xs`}
+                                  >
+                                    {alert.priority}
+                                  </Badge>
+                                  {alert.resolved && (
+                                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-xs">
+                                      Resolved
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Message */}
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {alert.message}
+                                </p>
+                              </div>
+
+                              {/* Site */}
+                              <div className="flex items-center space-x-1">
+                                <MapPin className="h-3 w-3 text-gray-400" />
+                                <p className="text-xs font-medium">{alert.site}</p>
+                              </div>
+
+                              {/* Engineer */}
+                              <div className="flex items-center space-x-1">
+                                <User className="h-3 w-3 text-gray-400" />
+                                <p className="text-xs">{alert.engineer}</p>
+                              </div>
+
+                              {/* Time and Action */}
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>{alert.timestamp.toLocaleDateString()}</span>
+                                {!alert.resolved && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2 py-1 h-6"
+                                    onClick={() => {
+                                      setSelectedAlertForResolution(alert);
+                                      setShowResolutionModal(true);
+                                    }}
+                                  >
+                                    <Check className="h-3 w-3 mr-1" />
+                                    Resolve
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
+                </div>
+
+                {/* Site Alerts */}
+                <div>
+                  <h2 className="text-xl font-bold mb-6">Site Alerts</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                    {filteredAlerts
+                      .filter(alert => alert.type.includes("SITE"))
+                      .map((alert) => (
+                        <Card
+                          key={alert.id}
+                          className={`${alert.resolved ? 'opacity-80' : ''} cursor-pointer hover:shadow-md transition-shadow`}
+                        >
+                          <CardContent className="p-4">
+                            <div className="space-y-3">
+                              {/* Header */}
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  <p className="font-semibold text-sm">{alert.customer} - {alert.site}</p>
+                                  <p className="text-xs text-muted-foreground">Job Number: {alert.jobNumber}</p>
+                                </div>
+                                <div className="flex flex-col items-end space-y-1">
+                                  <Badge
+                                    variant="secondary"
+                                    className={`${alert.priority === 'Critical' ? 'bg-red-100 text-red-700 border-red-200' :
+                                      alert.priority === 'High' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                        'bg-blue-100 text-blue-700 border-blue-200'
+                                      } text-xs`}
+                                  >
+                                    {alert.priority}
+                                  </Badge>
+                                  {alert.resolved && (
+                                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-xs">
+                                      Resolved
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+
+                              {/* Message */}
+                              <div className="space-y-1">
+                                <p className="text-xs text-muted-foreground line-clamp-2">
+                                  {alert.message}
+                                </p>
+                              </div>
+
+                              {/* Site */}
+                              <div className="flex items-center space-x-1">
+                                <MapPin className="h-3 w-3 text-gray-400" />
+                                <p className="text-xs font-medium">{alert.site}</p>
+                              </div>
+
+                              {/* Engineer */}
+                              <div className="flex items-center space-x-1">
+                                <User className="h-3 w-3 text-gray-400" />
+                                <p className="text-xs">{alert.engineer}</p>
+                              </div>
+
+                              {/* Time and Action */}
+                              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                <span>{alert.timestamp.toLocaleDateString()}</span>
+                                {!alert.resolved && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2 py-1 h-6"
+                                    onClick={() => {
+                                      setSelectedAlertForResolution(alert);
+                                      setShowResolutionModal(true);
+                                    }}
+                                  >
+                                    <Check className="h-3 w-3 mr-1" />
+                                    Resolve
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          {/* Tabs */}
-          <Tabs value={activeEngineerTab} onValueChange={setActiveEngineerTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="active" className="flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4" />
-                Active Alerts ({activeEngineerAlerts.length})
-              </TabsTrigger>
-              <TabsTrigger value="resolved" className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" />
-                Resolved ({resolvedEngineerAlerts.length})
-              </TabsTrigger>
-            </TabsList>
+              {/* Empty State */}
+              {filteredAlerts.length === 0 && (
+                <div className="text-center py-12 mt-4">
+                  <Bell className="mx-auto h-12 w-12 text-muted-foreground" />
+                  <h3 className="mt-2 text-sm font-semibold text-gray-900">No alerts found</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {searchQuery || statusFilter !== 'all' || priorityFilter !== 'all' || alertTypeFilter !== 'all' || resolvedFilter !== 'unresolved'
+                      ? 'Try adjusting your search or filter criteria.'
+                      : 'All alerts have been resolved. Great job!'}
+                  </p>
+                </div>
+              )}
+            </TabsContent>
 
-            <TabsContent value="active" className="space-y-6 mt-6">
-              {activeEngineerAlerts.length === 0 ? (
-                <Card className="bg-green-50 border-2 border-green-200">
-                  <CardContent className="p-8 text-center">
-                    <CheckCircle className="mx-auto h-16 w-16 text-green-600 mb-4" />
-                    <h3 className="text-xl font-semibold text-green-800 mb-2">All Engineer Alerts Resolved</h3>
-                    <p className="text-green-700 text-lg">Great job! All engineers have accepted their jobs and are on site.</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {activeEngineerAlerts.map(alert => (
-                    <Card 
-                      key={alert.id} 
-                      className={`${alert.resolved ? 'opacity-80' : ''} cursor-pointer hover:shadow-md transition-shadow`}
-                      onClick={() => handleEngineerAlertClick(alert)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          {/* Header */}
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="font-semibold text-sm">{alert.customer} - {alert.site}</p>
-                              <p className="text-xs text-muted-foreground">Job Number: {alert.jobNumber}</p>
-                          </div>
-                            <div className="flex flex-col items-end space-y-1">
-                              <Badge 
-                                variant="secondary" 
-                                className={`${
-                                  alert.priority === 'Critical' ? 'bg-red-100 text-red-700 border-red-200' : 
-                                  alert.priority === 'High' ? 'bg-orange-100 text-orange-700 border-orange-200' : 
-                                  'bg-blue-100 text-blue-700 border-blue-200'
-                                } text-xs`}
-                              >
-                                {alert.priority}
-                              </Badge>
-                              {alert.resolved && (
-                                <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-xs">
-                                  Resolved
-                                </Badge>
-                              )}
-                            </div>
-                            </div>
-                            
-                          {/* Message */}
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {getAlertDescription(alert.type, alert.jobNumber)}
-                            </p>
-                            </div>
-                            
-                          {/* Site */}
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3 text-gray-400" />
-                            <p className="text-xs font-medium">{alert.site}</p>
-                            </div>
+            <TabsContent value="engineer-alerts" className="mt-8 min-h-[calc(100vh-300px)]">
+              <div className="space-y-12 h-full">
+                {/* Header */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-3xl font-bold text-gray-900">Engineer Action Alerts</h2>
+                    <p className="text-muted-foreground mt-2 text-lg">
+                      Monitor engineer job acceptance and onsite status
+                    </p>
+                  </div>
 
-                          {/* Engineer */}
-                          <div className="flex items-center space-x-1">
-                            <User className="h-3 w-3 text-gray-400" />
-                            <p className="text-xs">{alert.engineer}</p>
-                            </div>
-                            
-                          {/* Time and Action */}
-                          <div className="flex items-center justify-between text-xs text-muted-foreground">
-                            <span>{alert.timestamp.toLocaleDateString()}</span>
-                            {!alert.resolved && (
+                  <div className="flex items-center gap-6">
+                    {/* Notification Bell */}
+                    <div className="relative">
+                      <Button
+                        onClick={() => setShowEngineerNotificationsDropdown(!showEngineerNotificationsDropdown)}
+                        variant="outline"
+                        className="relative flex items-center gap-2 hover:bg-gray-50 transition-colors"
+                      >
+                        <Bell className="h-5 w-5 text-gray-600" />
+                        <span className="text-gray-700 font-medium">Notifications</span>
+                        {activeEngineerAlerts.length > 0 && (
+                          <Badge
+                            variant="destructive"
+                            className="absolute -top-2 -right-2 h-6 w-6 flex items-center justify-center p-0 text-xs font-bold"
+                          >
+                            {activeEngineerAlerts.length > 99 ? '99+' : activeEngineerAlerts.length}
+                          </Badge>
+                        )}
+                      </Button>
+
+                      {/* Notifications Dropdown */}
+                      {showEngineerNotificationsDropdown && (
+                        <div
+                          className="engineer-notifications-dropdown fixed right-0 top-16 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-[9999]"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{ pointerEvents: 'all' }}
+                        >
+                          <div className="p-4 border-b border-gray-200">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-lg font-semibold text-gray-900">Engineer Alerts</h3>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2 py-1 h-6"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setSelectedEngineerAlert(alert);
-                                  setShowEngineerResolutionModal(true);
-                                }}
+                                onClick={() => setShowEngineerNotificationsDropdown(false)}
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
                               >
-                                <Check className="h-3 w-3 mr-1" />
-                                Resolve
+                                Close
                               </Button>
-                            )}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="resolved" className="space-y-6 mt-6">
-              {resolvedEngineerAlerts.length === 0 ? (
-                <Card className="bg-gray-50 border-2 border-gray-200">
-                  <CardContent className="p-8 text-center">
-                    <CheckCircle className="mx-auto h-16 w-16 text-gray-600 mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-800 mb-2">No Resolved Alerts</h3>
-                    <p className="text-gray-700 text-lg">Resolved alerts will appear here once you start resolving them.</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {resolvedEngineerAlerts.map(alert => (
-                    <Card key={alert.id} className="bg-gray-50 border-2 border-gray-200 opacity-75">
-                      <CardContent className="p-4">
-                        <div className="space-y-3">
-                          {/* Header */}
-                          <div className="flex items-start justify-between">
-                            <div>
-                              <p className="font-semibold text-sm">{alert.customer} - {alert.site}</p>
-                              <p className="text-xs text-muted-foreground">Job Number: {alert.jobNumber}</p>
-                          </div>
-                            <div className="flex flex-col items-end space-y-1">
-                              <Badge 
-                                variant="secondary" 
-                                className={`${
-                                  alert.priority === 'Critical' ? 'bg-red-100 text-red-700 border-red-200' : 
-                                  alert.priority === 'High' ? 'bg-orange-100 text-orange-700 border-orange-200' : 
-                                  'bg-blue-100 text-blue-700 border-blue-200'
-                                } text-xs`}
-                              >
-                                {alert.priority}
-                              </Badge>
-                              <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-xs">
-                                Resolved
-                              </Badge>
                             </div>
-                            </div>
-                            
-                          {/* Message */}
-                          <div className="space-y-1">
-                            <p className="text-xs text-muted-foreground line-clamp-2">
-                              {getAlertDescription(alert.type, alert.jobNumber)}
+                            <p className="text-sm text-gray-600 mt-1">
+                              {activeEngineerAlerts.length} alert{activeEngineerAlerts.length !== 1 ? 's' : ''} requiring attention
                             </p>
                           </div>
 
-                          {/* Site */}
-                          <div className="flex items-center space-x-1">
-                            <MapPin className="h-3 w-3 text-gray-400" />
-                            <p className="text-xs font-medium">{alert.site}</p>
+                          <div className="max-h-96 overflow-y-auto overscroll-contain" style={{ pointerEvents: 'auto' }}>
+                            {activeEngineerAlerts.length === 0 ? (
+                              <div className="p-4 text-center text-gray-500">
+                                <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                                <p className="text-sm">No active alerts</p>
+                                <p className="text-xs">All engineers have accepted their jobs and are on site</p>
                               </div>
+                            ) : (
+                              <div className="divide-y divide-gray-100">
+                                {activeEngineerAlerts.slice(0, 5).map((alert) => (
+                                  <div
+                                    key={alert.id}
+                                    className="p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                                    onClick={() => {
+                                      handleEngineerAlertClick(alert);
+                                      setShowEngineerNotificationsDropdown(false);
+                                    }}
+                                  >
+                                    <div className="flex items-start justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 mb-1">
+                                          <Badge
+                                            variant={alert.priority === 'Critical' ? 'destructive' : 'secondary'}
+                                            className="text-xs"
+                                          >
+                                            {alert.priority}
+                                          </Badge>
+                                          <span className="text-xs text-gray-500">
+                                            {alert.timestamp.toLocaleDateString()}
+                                          </span>
+                                        </div>
+                                        <h4 className="text-sm font-medium text-gray-900 mb-1">
+                                          {alert.customer} - {alert.site}
+                                        </h4>
+                                        <p className="text-xs text-gray-600 mb-1">
+                                          Job Number: {alert.jobNumber}
+                                        </p>
+                                        <p className="text-xs text-gray-600 mb-2 line-clamp-2">
+                                          {getAlertDescription(alert.type, alert.jobNumber)}
+                                        </p>
+                                        <div className="flex items-center gap-2 text-xs text-gray-500">
+                                          <MapPin className="h-3 w-3" />
+                                          <span>{alert.site}</span>
+                                          <span>•</span>
+                                          <User className="h-3 w-3" />
+                                          <span>{alert.engineer}</span>
+                                        </div>
 
-                          {/* Engineer */}
-                          <div className="flex items-center space-x-1">
-                            <User className="h-3 w-3 text-gray-400" />
-                            <p className="text-xs">{alert.engineer}</p>
-                              </div>
+                                        {/* Visit Status in notifications */}
+                                        <div className="flex items-center gap-2 mt-1">
+                                          <span className="text-xs text-gray-500">Status:</span>
+                                          {(() => {
+                                            const job = jobs.find(j => j.id === alert.jobId);
+                                            if (!job) return <span className="text-gray-400">Unknown</span>;
 
-                          {/* Resolution Info */}
-                          <div className="space-y-1">
-                            <div className="text-xs text-gray-500">
-                              <span className="font-medium">Resolved by:</span> {alert.resolvedBy || 'System'}
-                              </div>
-                            <div className="text-xs text-gray-500">
-                              <span className="font-medium">Resolved at:</span> {alert.resolvedAt ? 
-                                `${alert.resolvedAt.toLocaleDateString()} at ${alert.resolvedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}` 
-                                : 'Not recorded'}
-                              </div>
-                            </div>
-                            
-                          {/* Resolution Notes */}
-                            {alert.resolution && (
-                            <div className="bg-white p-2 rounded border text-xs">
-                                <span className="font-medium text-gray-700">Resolution:</span>
-                                <p className="text-gray-600 mt-1">{alert.resolution}</p>
+                                            return <StatusBadge status={job.status} />;
+                                          })()}
+                                        </div>
+                                      </div>
+                                      <div className="ml-3">
+                                        <div className={`w-3 h-3 rounded-full ${alert.type === 'ENGINEER_ACCEPT' ? 'bg-blue-500' : 'bg-green-500'
+                                          }`} />
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
                             )}
+                          </div>
                         </div>
-                      </CardContent>
-                    </Card>
-                  ))}
+                      )}
+                    </div>
+
+                    {/* Stats */}
+                    <div className="flex items-center gap-6">
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-blue-600">{activeEngineerAlerts.length}</div>
+                        <div className="text-sm text-gray-600">Active Alerts</div>
+                      </div>
+                      <div className="text-center">
+                        <div className="text-2xl font-bold text-green-600">{resolvedEngineerAlerts.length}</div>
+                        <div className="text-sm text-gray-600">Resolved</div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              )}
+
+                {/* Tabs */}
+                <Tabs value={activeEngineerTab} onValueChange={setActiveEngineerTab} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="active" className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" />
+                      Active Alerts ({activeEngineerAlerts.length})
+                    </TabsTrigger>
+                    <TabsTrigger value="resolved" className="flex items-center gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Resolved ({resolvedEngineerAlerts.length})
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="active" className="space-y-6 mt-6">
+                    {activeEngineerAlerts.length === 0 ? (
+                      <Card className="bg-green-50 border-2 border-green-200">
+                        <CardContent className="p-8 text-center">
+                          <CheckCircle className="mx-auto h-16 w-16 text-green-600 mb-4" />
+                          <h3 className="text-xl font-semibold text-green-800 mb-2">All Engineer Alerts Resolved</h3>
+                          <p className="text-green-700 text-lg">Great job! All engineers have accepted their jobs and are on site.</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {activeEngineerAlerts.map(alert => (
+                          <Card
+                            key={alert.id}
+                            className={`${alert.resolved ? 'opacity-80' : ''} cursor-pointer hover:shadow-md transition-shadow`}
+                            onClick={() => handleEngineerAlertClick(alert)}
+                          >
+                            <CardContent className="p-4">
+                              <div className="space-y-3">
+                                {/* Header */}
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <p className="font-semibold text-sm">{alert.customer} - {alert.site}</p>
+                                    <p className="text-xs text-muted-foreground">Job Number: {alert.jobNumber}</p>
+                                  </div>
+                                  <div className="flex flex-col items-end space-y-1">
+                                    <Badge
+                                      variant="secondary"
+                                      className={`${alert.priority === 'Critical' ? 'bg-red-100 text-red-700 border-red-200' :
+                                        alert.priority === 'High' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                          'bg-blue-100 text-blue-700 border-blue-200'
+                                        } text-xs`}
+                                    >
+                                      {alert.priority}
+                                    </Badge>
+                                    {alert.resolved && (
+                                      <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-xs">
+                                        Resolved
+                                      </Badge>
+                                    )}
+                                  </div>
+                                </div>
+
+                                {/* Message */}
+                                <div className="space-y-1">
+                                  <p className="text-xs text-muted-foreground line-clamp-2">
+                                    {getAlertDescription(alert.type, alert.jobNumber)}
+                                  </p>
+                                </div>
+
+                                {/* Site */}
+                                <div className="flex items-center space-x-1">
+                                  <MapPin className="h-3 w-3 text-gray-400" />
+                                  <p className="text-xs font-medium">{alert.site}</p>
+                                </div>
+
+                                {/* Engineer */}
+                                <div className="flex items-center space-x-1">
+                                  <User className="h-3 w-3 text-gray-400" />
+                                  <p className="text-xs">{alert.engineer}</p>
+                                </div>
+
+                                {/* Time and Action */}
+                                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                  <span>{alert.timestamp.toLocaleDateString()}</span>
+                                  {!alert.resolved && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="text-green-600 hover:text-green-700 hover:bg-green-50 text-xs px-2 py-1 h-6"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedEngineerAlert(alert);
+                                        setShowEngineerResolutionModal(true);
+                                      }}
+                                    >
+                                      <Check className="h-3 w-3 mr-1" />
+                                      Resolve
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="resolved" className="space-y-6 mt-6">
+                    {resolvedEngineerAlerts.length === 0 ? (
+                      <Card className="bg-gray-50 border-2 border-gray-200">
+                        <CardContent className="p-8 text-center">
+                          <CheckCircle className="mx-auto h-16 w-16 text-gray-600 mb-4" />
+                          <h3 className="text-xl font-semibold text-gray-800 mb-2">No Resolved Alerts</h3>
+                          <p className="text-gray-700 text-lg">Resolved alerts will appear here once you start resolving them.</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                        {resolvedEngineerAlerts.map(alert => (
+                          <Card key={alert.id} className="bg-gray-50 border-2 border-gray-200 opacity-75">
+                            <CardContent className="p-4">
+                              <div className="space-y-3">
+                                {/* Header */}
+                                <div className="flex items-start justify-between">
+                                  <div>
+                                    <p className="font-semibold text-sm">{alert.customer} - {alert.site}</p>
+                                    <p className="text-xs text-muted-foreground">Job Number: {alert.jobNumber}</p>
+                                  </div>
+                                  <div className="flex flex-col items-end space-y-1">
+                                    <Badge
+                                      variant="secondary"
+                                      className={`${alert.priority === 'Critical' ? 'bg-red-100 text-red-700 border-red-200' :
+                                        alert.priority === 'High' ? 'bg-orange-100 text-orange-700 border-orange-200' :
+                                          'bg-blue-100 text-blue-700 border-blue-200'
+                                        } text-xs`}
+                                    >
+                                      {alert.priority}
+                                    </Badge>
+                                    <Badge variant="default" className="bg-green-100 text-green-700 border-green-200 text-xs">
+                                      Resolved
+                                    </Badge>
+                                  </div>
+                                </div>
+
+                                {/* Message */}
+                                <div className="space-y-1">
+                                  <p className="text-xs text-muted-foreground line-clamp-2">
+                                    {getAlertDescription(alert.type, alert.jobNumber)}
+                                  </p>
+                                </div>
+
+                                {/* Site */}
+                                <div className="flex items-center space-x-1">
+                                  <MapPin className="h-3 w-3 text-gray-400" />
+                                  <p className="text-xs font-medium">{alert.site}</p>
+                                </div>
+
+                                {/* Engineer */}
+                                <div className="flex items-center space-x-1">
+                                  <User className="h-3 w-3 text-gray-400" />
+                                  <p className="text-xs">{alert.engineer}</p>
+                                </div>
+
+                                {/* Resolution Info */}
+                                <div className="space-y-1">
+                                  <div className="text-xs text-gray-500">
+                                    <span className="font-medium">Resolved by:</span> {alert.resolvedBy || 'System'}
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    <span className="font-medium">Resolved at:</span> {alert.resolvedAt ?
+                                      `${alert.resolvedAt.toLocaleDateString()} at ${alert.resolvedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                      : 'Not recorded'}
+                                  </div>
+                                </div>
+
+                                {/* Resolution Notes */}
+                                {alert.resolution && (
+                                  <div className="bg-white p-2 rounded border text-xs">
+                                    <span className="font-medium text-gray-700">Resolution:</span>
+                                    <p className="text-gray-600 mt-1">{alert.resolution}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    )}
+                  </TabsContent>
+                </Tabs>
+              </div>
             </TabsContent>
           </Tabs>
-        </div>
-      </TabsContent>
-      </Tabs>
         </div>
       </div>
 
@@ -1962,7 +1957,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
               {selectedEngineerAlert && getAlertTitle(selectedEngineerAlert.type)}
             </DialogTitle>
           </DialogHeader>
-          
+
           {selectedEngineerAlert && (
             <div className="space-y-6">
               {/* Job Information */}
@@ -2010,7 +2005,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
                           <span className="font-medium text-amber-900">Current Status:</span>
                           <StatusBadge status={job.status} />
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div>
                             <span className="font-medium text-amber-900">Date Logged:</span>
@@ -2079,7 +2074,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
                     if (!engineer) {
                       return <p className="text-red-600">Engineer information not found</p>;
                     }
-                    
+
                     return (
                       <div className="space-y-4">
                         <div className="flex items-center gap-4">
@@ -2101,7 +2096,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
                             </div>
                           </div>
                         </div>
-                        
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div className="flex items-center gap-3">
                             <Phone className="h-5 w-5 text-blue-600" />
@@ -2145,7 +2140,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
                     <Phone className="h-5 w-5 mr-2" />
                     Call Engineer
                   </Button>
-                  
+
                   <Button
                     onClick={() => {
                       const engineer = getEngineerDetails(selectedEngineerAlert.engineer);
@@ -2160,7 +2155,7 @@ export default function GlobalAlertsPortal({ onBack, onJobUpdate, customers, job
                     Email Engineer
                   </Button>
                 </div>
-                
+
                 <Button
                   onClick={() => setShowEngineerResolutionModal(true)}
                   className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 h-12 text-base font-medium"

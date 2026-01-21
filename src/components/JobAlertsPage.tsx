@@ -3,15 +3,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { SearchInput } from '@/components/ui/search-input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Job, Customer } from '@/types/job';
 import { getStatusColor, getPriorityColor } from '@/lib/jobUtils';
-import { 
-  ArrowLeft, 
-  Search, 
-  AlertTriangle, 
-  CheckCircle, 
-  Clock, 
+import {
+  ArrowLeft,
+  Search,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
   MapPin,
   Phone,
   Smartphone,
@@ -32,11 +33,11 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
   // Filter jobs based on search and filters
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.jobNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         job.engineer.toLowerCase().includes(searchTerm.toLowerCase());
+      job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      job.engineer.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || job.status === statusFilter;
     const matchesPriority = priorityFilter === 'all' || job.priority === priorityFilter;
-    
+
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
@@ -77,8 +78,8 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
       {/* Left Sidebar */}
       <div className="w-64 bg-white shadow-lg">
         <div className="p-6 border-b">
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={onBack}
             className="mb-4 p-0 h-auto font-normal"
           >
@@ -88,7 +89,7 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
           <h2 className="text-xl font-bold text-gray-900">Job Alerts</h2>
           <p className="text-sm text-gray-600">{customer.name}</p>
         </div>
-        
+
         <div className="p-4 space-y-4">
           {/* Quick Stats */}
           <div className="space-y-3">
@@ -99,7 +100,7 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
               </div>
               <span className="text-lg font-bold text-blue-600">{jobs.length}</span>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-4 w-4 text-green-600" />
@@ -109,7 +110,7 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
                 {jobs.filter(job => job.status === 'completed').length}
               </span>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
               <div className="flex items-center space-x-2">
                 <Clock className="h-4 w-4 text-amber-600" />
@@ -119,7 +120,7 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
                 {jobs.filter(job => job.status !== 'completed').length}
               </span>
             </div>
-            
+
             <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
               <div className="flex items-center space-x-2">
                 <AlertTriangle className="h-4 w-4 text-red-600" />
@@ -145,14 +146,12 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
           {/* Filters */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="md:col-span-2">
-              <div className="flex items-center gap-3">
-                <Search className="text-gray-400 h-4 w-4" />
-                <Input
-                  placeholder="Search alerts..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+              <SearchInput
+                placeholder="Search alerts..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                onClear={() => setSearchTerm('')}
+              />
             </div>
 
             <div>
@@ -229,27 +228,27 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
                           </div>
                         </td>
                         <td className="p-4">
-                          <Badge 
-                            variant="secondary" 
+                          <Badge
+                            variant="secondary"
                             className={`${getStatusColor(job.status)}`}
                           >
                             {job.status === 'green' ? 'Completed' :
-                             job.status === 'amber' ? 'In Process' : 
-                             job.status === 'red' ? 'Issue' : 
-                             job.status === 'OOH' ? 'Out of Hours' :
-                             job.status === 'On call' ? 'On Call' :
-                             job.status === 'travel' ? 'Traveling' :
-                             job.status === 'require_revisit' ? 'Requires Revisit' :
-                             job.status === 'sick' ? 'Sick Leave' :
-                             job.status === 'training' ? 'Training' :
-                             String(job.status).toUpperCase()}
+                              job.status === 'amber' ? 'In Process' :
+                                job.status === 'red' ? 'Issue' :
+                                  job.status === 'OOH' ? 'Out of Hours' :
+                                    job.status === 'On call' ? 'On Call' :
+                                      job.status === 'travel' ? 'Traveling' :
+                                        job.status === 'require_revisit' ? 'Requires Revisit' :
+                                          job.status === 'sick' ? 'Sick Leave' :
+                                            job.status === 'training' ? 'Training' :
+                                              String(job.status).toUpperCase()}
                           </Badge>
                         </td>
                         <td className="p-4">
                           <div className="flex items-center space-x-2">
                             {getSyncStatusIcon('accepted')}
-                            <Badge 
-                              variant="outline" 
+                            <Badge
+                              variant="outline"
                               className={`${getSyncStatusColor('accepted')} text-xs`}
                             >
                               Accepted
@@ -261,8 +260,8 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
                           </div>
                         </td>
                         <td className="p-4">
-                          <Badge 
-                            variant="outline" 
+                          <Badge
+                            variant="outline"
                             className={`${getPriorityColor(job.priority)}`}
                           >
                             {job.priority}
