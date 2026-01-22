@@ -52,6 +52,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 // Updated view types matching Joblogic Helpdesk
 type View = 'dashboard' | 'create-job' | 'all-jobs' | 'reports' | 'call-handling' | 'history' | 'reminders' | 'profile' | 'settings' | 'job-detail' | 'tickets' | 'tickets-new' | 'ticket-detail' | 'service-providers' | 'create-job-from-ticket';
 
+// Clear any stale view from localStorage on module load
+if (typeof window !== 'undefined') {
+  localStorage.removeItem('currentView');
+}
+
 export default function Index() {
   const params = useParams<{ jobId: string; ticketId: string }>();
   const location = useLocation();
@@ -82,12 +87,8 @@ export default function Index() {
     if (path === '/service-providers') return 'service-providers';
     if (path.startsWith('/job/')) return 'job-detail';
     
-    // Try to restore the last view from localStorage
-    const savedView = localStorage.getItem('currentView');
-    // Map old view names to new ones for backward compatibility
-    if (savedView === 'master') return 'dashboard';
-    if (savedView === 'wizard') return 'create-job';
-    return (savedView as View) || 'dashboard';
+    // Always default to dashboard on root path
+    return 'dashboard';
   });
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -112,10 +113,7 @@ export default function Index() {
     }
   }, [location]);
 
-  // Save currentView to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('currentView', currentView);
-  }, [currentView]);
+  // View changes are now handled by URL routing, no localStorage persistence
 
   const handleJobCreate = (newJob: Omit<Job, 'id'>) => {
     const jobWithId: Job = {

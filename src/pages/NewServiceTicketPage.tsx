@@ -291,13 +291,11 @@ export default function NewServiceTicketPage() {
                   >
                     {filteredContacts.length > 0 ? (
                       filteredContacts.map(contact => (
-                        <div
+                        <button
+                          type="button"
                           key={contact.id}
                           onMouseDown={(e) => {
                             e.preventDefault();
-                            e.stopPropagation();
-                          }}
-                          onClick={() => {
                             handleReporterChange('id', contact.id);
                             handleReporterChange('name', contact.name);
                             handleReporterChange('email', contact.email);
@@ -309,7 +307,7 @@ export default function NewServiceTicketPage() {
                         >
                           <div className="font-medium text-sm">{contact.name}</div>
                           <div className="text-xs text-muted-foreground">{contact.email} • {contact.phone}</div>
-                        </div>
+                        </button>
                       ))
                     ) : (
                       <div className="px-4 py-3 text-sm text-muted-foreground">No contacts found</div>

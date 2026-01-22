@@ -489,7 +489,7 @@ export default function MasterDashboard({
             <CardContent>
               <div className="flex flex-col items-center">
                 {/* Donut Chart */}
-                <div className="relative w-full h-64">
+                <div className="relative w-full h-44">
                   <ResponsiveContainer width="100%" height="100%">
                     <PieChart>
                       <Tooltip
@@ -510,8 +510,8 @@ export default function MasterDashboard({
                         data={jobStatusData.filter(d => d.value > 0)}
                         cx="50%"
                         cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
+                        innerRadius={42}
+                        outerRadius={70}
                         paddingAngle={2}
                         dataKey="value"
                         onClick={(data) => {
