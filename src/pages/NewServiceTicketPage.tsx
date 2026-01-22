@@ -27,6 +27,7 @@ import {
   mockFlatLocations,
   getTagColors
 } from '@/lib/ticketUtils';
+import { oohServiceProviders, oohLocations } from '@/lib/serviceProviderData';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -71,6 +72,8 @@ export default function NewServiceTicketPage() {
     locations: [],
     assets: []
   });
+
+  const [serviceProviderLocation, setServiceProviderLocation] = useState('');
 
   const handleInputChange = (field: keyof CreateTicketFormData, value: any) => {
     setTicketData(prev => ({ ...prev, [field]: value }));
@@ -470,6 +473,25 @@ export default function NewServiceTicketPage() {
                     {mockTicketClassifications.map(classification => (
                       <SelectItem key={classification} value={classification}>
                         {classification}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Location</Label>
+                <Select
+                  value={serviceProviderLocation}
+                  onValueChange={(value) => setServiceProviderLocation(value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Location..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {oohLocations.map(location => (
+                      <SelectItem key={location} value={location}>
+                        {location}
                       </SelectItem>
                     ))}
                   </SelectContent>
