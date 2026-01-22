@@ -4,6 +4,7 @@ export const mockJobs: Job[] = [
     {
         id: '1',
         jobNumber: 'JOB-2025-0907-001',
+        ticketReference: 'SRTK100',  // Links to ticket-2
         customer: 'Demo Corporation',
         site: 'London HQ',
         description: 'HVAC system malfunction - Air conditioning unit not cooling effectively in server room',
@@ -58,6 +59,7 @@ export const mockJobs: Job[] = [
     {
         id: '2',
         jobNumber: 'JOB-2025-0907-002',
+        ticketReference: 'SRTK101',
         customer: 'Tech Solutions Ltd',
         site: 'Manchester Office',
         description: 'Leaky faucet in breakroom - Constant drip from the breakroom sink faucet',
@@ -112,6 +114,7 @@ export const mockJobs: Job[] = [
     {
         id: '3',
         jobNumber: 'JOB-2025-0907-003',
+        ticketReference: 'SRTK102',
         customer: 'Industrial Manufacturing',
         site: 'Birmingham Factory',
         description: 'Electrical outlet repair - Several power outlets in production area are not working',
@@ -166,6 +169,7 @@ export const mockJobs: Job[] = [
     {
         id: '4',
         jobNumber: 'JOB-2025-0907-004',
+        ticketReference: 'SRTK103',
         customer: 'Demo Corporation',
         site: 'London HQ',
         description: 'Routine HVAC maintenance - Annual check-up and filter replacement for all HVAC units',
@@ -220,6 +224,7 @@ export const mockJobs: Job[] = [
     {
         id: '5',
         jobNumber: 'JOB-2025-0907-005',
+        ticketReference: 'SRTK104',
         customer: 'Tech Solutions Ltd',
         site: 'Manchester Office',
         description: 'Emergency pipe burst - Major water leak from a burst pipe in the basement',
@@ -747,6 +752,61 @@ export const mockJobs: Job[] = [
         requiresApproval: true,
         preferredAppointmentDate: new Date('2024-01-18T12:00:00'),
         startDate: new Date('2024-01-18T11:00:00'),
+        endDate: null,
+        lockVisitDateTime: false,
+        deployToMobile: true,
+        isRecurringJob: false,
+        completionTimeFromEngineerOnsite: false
+    },
+    {
+        id: 'JOB800',
+        jobNumber: 'JOB800',
+        ticketReference: 'SRTK231',
+        customer: 'Edinburgh Royal NHS Trust',
+        site: 'Castleview Children\'s Hospital',
+        description: 'Light Out - Light fixture not working in Medical Gas Store',
+        engineer: 'John Smith',
+        status: 'new',
+        priority: 'High',
+        category: 'Electrical',
+        jobType: 'Repair',
+        targetCompletionTime: 240,
+        dateLogged: new Date('2025-08-13T20:41:00'),
+        dateAccepted: null,
+        dateOnSite: null,
+        dateCompleted: null,
+        tenant: 'Healthcare',
+        alerts: [],
+        reason: null,
+        contact: {
+            name: 'Clive Owen',
+            number: '+44 131 555 0123',
+            email: 'clive.owen@hospital.nhs.uk',
+            relationship: 'Facilities Manager'
+        },
+        reporter: {
+            name: 'Clive Owen',
+            number: '+44 131 555 0123',
+            email: 'clive.owen@hospital.nhs.uk',
+            relationship: 'Facilities Manager'
+        },
+        primaryJobTrade: 'Electrical',
+        secondaryJobTrades: ['Lighting'],
+        tags: ['Electrical', 'Lighting', 'NHS', 'Healthcare'],
+        customAlerts: {
+            acceptSLA: 30,
+            onsiteSLA: 120,
+            completedSLA: 240
+        },
+        project: 'NHS Maintenance',
+        customerOrderNumber: 'NHS-2025-800',
+        referenceNumber: 'REF-800',
+        jobOwner: 'Facilities Department',
+        jobRef1: 'ELEC-800',
+        jobRef2: 'LIGHT-001',
+        requiresApproval: false,
+        preferredAppointmentDate: new Date('2025-08-14T09:00:00'),
+        startDate: new Date('2025-08-13T20:41:00'),
         endDate: null,
         lockVisitDateTime: false,
         deployToMobile: true,

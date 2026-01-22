@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import {
   ArrowLeft,
   Edit,
@@ -10,7 +10,10 @@ import {
   Building2,
   Send,
   MoreVertical,
-  ChevronRight
+  ChevronRight,
+  User,
+  Wrench,
+  Ticket
 } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -201,6 +204,16 @@ export default function JobDetailPage() {
               <ArrowLeft className="h-5 w-5" />
             </button>
             <span className="font-semibold text-gray-900">{job.jobNumber}</span>
+            {job.ticketReference && (
+              <Link 
+                to={`/ticket/${job.ticketReference}`}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium hover:bg-blue-200 transition-colors border border-blue-200"
+              >
+                <Ticket className="h-4 w-4" />
+                Logged from {job.ticketReference}
+              </Link>
+            )}
+            <span className="text-gray-400">|</span>
             <span className="text-gray-700 text-sm">{job.description}</span>
           </div>
           <div className="flex items-center gap-2">
@@ -235,7 +248,7 @@ export default function JobDetailPage() {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
             <div className="p-6">
               <div className="flex items-start justify-between mb-6">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-3">
                   <Building2 className="h-4 w-4 text-gray-500" />
                   <span className="text-gray-900 font-medium">{job.tenant}</span>
                 </div>
@@ -245,7 +258,7 @@ export default function JobDetailPage() {
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-8 gap-y-6">
+              <div className="grid grid-cols-2 gap-x-12 gap-y-6">
                 <EditableField
                   label="Customer"
                   value={job.customer}
@@ -262,7 +275,7 @@ export default function JobDetailPage() {
                   onSave={(val) => handleFieldUpdate('reporter', { ...job.reporter, name: val })}
                 />
                 <div>
-                  <span className="text-gray-500 text-xs uppercase tracking-wide font-medium w-24 flex-shrink-0 block mb-1">Date Logged</span>
+                  <span className="text-gray-500 text-xs uppercase tracking-wide font-medium w-32 flex-shrink-0 block mb-1">Date Logged</span>
                   <span className="text-gray-900 font-medium text-sm">{job.dateLogged ? new Date(job.dateLogged).toLocaleString() : 'N/A'}</span>
                 </div>
                 <EditableField
@@ -275,15 +288,29 @@ export default function JobDetailPage() {
                   value={job.primaryJobTrade || job.category}
                   onSave={(val) => handleFieldUpdate('primaryJobTrade', val)}
                 />
-              </div>
-              <div className="flex gap-2">
-                <span className="text-gray-500 w-28 flex-shrink-0">Order Number:</span>
-                <span className="text-gray-900">{job.customerOrderNumber || 'N/A'}</span>
+                <div>
+                  <span className="text-gray-500 w-32 flex-shrink-0">Order Number:</span>
+                  <span className="text-gray-900">{job.customerOrderNumber || 'N/A'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500 text-xs uppercase tracking-wide font-medium block mb-1">Ticket Reference</span>
+                  {job.ticketReference ? (
+                    <Link 
+                      to={`/ticket/${job.ticketReference}`}
+                      className="inline-flex items-center gap-1.5 text-blue-600 hover:text-blue-800 font-medium text-sm"
+                    >
+                      <Ticket className="h-4 w-4" />
+                      {job.ticketReference}
+                    </Link>
+                  ) : (
+                    <span className="text-gray-400 text-sm">No linked ticket</span>
+                  )}
+                </div>
               </div>
             </div>
 
             {/* Description */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200 px-2">
               <p className="text-gray-500 text-sm mb-2">Description:</p>
               <div className="text-gray-900 text-sm leading-relaxed whitespace-pre-line">
                 {job.description}
@@ -291,10 +318,10 @@ export default function JobDetailPage() {
             </div>
 
             {/* Reported By */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200 px-2">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400">👤</span>
+                  <User className="h-4 w-4 text-blue-600" />
                   <span className="text-gray-900 font-medium text-sm">Reported By</span>
                 </div>
                 <button className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-2">
@@ -302,23 +329,23 @@ export default function JobDetailPage() {
                   Call
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-y-3 gap-x-8 text-sm">
                 <div className="flex gap-2">
-                  <span className="text-gray-500 w-28 flex-shrink-0">Name:</span>
+                  <span className="text-gray-500 w-32 flex-shrink-0">Name:</span>
                   <span className="text-gray-900">{job.reporter?.name || job.contact?.name || 'N/A'}</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-gray-500 w-28 flex-shrink-0">Phone Number:</span>
+                  <span className="text-gray-500 w-32 flex-shrink-0">Phone Number:</span>
                   <span className="text-gray-900">{job.reporter?.number || job.contact?.number || 'N/A'}</span>
                 </div>
               </div>
             </div>
 
             {/* Engineer */}
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-gray-200 px-2">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-400">👤</span>
+                  <Wrench className="h-4 w-4 text-orange-600" />
                   <span className="text-gray-900 font-medium text-sm">Engineer</span>
                 </div>
                 <button className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-2">
@@ -326,17 +353,17 @@ export default function JobDetailPage() {
                   Call
                 </button>
               </div>
-              <div className="grid grid-cols-2 gap-y-3 text-sm">
+              <div className="grid grid-cols-2 gap-y-3 gap-x-8 text-sm">
                 <div className="flex gap-2">
-                  <span className="text-gray-500 w-28 flex-shrink-0">Name:</span>
+                  <span className="text-gray-500 w-32 flex-shrink-0">Name:</span>
                   <span className="text-gray-900">{job.engineer || 'Unassigned'}</span>
                 </div>
                 <div className="flex gap-2">
-                  <span className="text-gray-500 w-28 flex-shrink-0">Phone Number:</span>
+                  <span className="text-gray-500 w-32 flex-shrink-0">Phone Number:</span>
                   <span className="text-gray-900">--</span>
                 </div>
                 <div className="flex gap-2 col-span-2">
-                  <span className="text-gray-500 w-28 flex-shrink-0">Visit Status:</span>
+                  <span className="text-gray-500 w-32 flex-shrink-0">Visit Status:</span>
                   <div>
                     <span className="text-gray-900 font-medium">{job.status}</span>
                     <p className="text-gray-400 text-xs mt-0.5">Updated recently</p>

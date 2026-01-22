@@ -482,6 +482,12 @@ export default function AllJobsPage({
                                             {sortConfig?.key === 'jobNumber' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
                                         </div>
                                     </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => handleSort('ticketReference')}>
+                                        <div className="flex items-center gap-1">
+                                            Ticket Ref
+                                            {sortConfig?.key === 'ticketReference' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
+                                        </div>
+                                    </th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap cursor-pointer hover:bg-gray-100" onClick={() => handleSort('priority')}>
                                         <div className="flex items-center gap-1">
                                             Priority
@@ -522,6 +528,13 @@ export default function AllJobsPage({
                                             onClick={() => onJobClick?.(job)}
                                         >
                                             <td className="px-4 py-3 text-gray-900 whitespace-nowrap border-r border-gray-200">{job.jobNumber}</td>
+                                            <td className="px-4 py-3 whitespace-nowrap">
+                                                {job.ticketReference ? (
+                                                    <span className="text-blue-600 hover:underline cursor-pointer font-medium">{job.ticketReference}</span>
+                                                ) : (
+                                                    <span className="text-gray-400">—</span>
+                                                )}
+                                            </td>
                                             <td className="px-4 py-3 whitespace-nowrap">{getPriorityBadge(job.priority)}</td>
                                             <td className="px-4 py-3 text-gray-700 max-w-xs truncate">{job.description}</td>
                                             <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{new Date(job.dateLogged).toLocaleDateString('en-GB')}</td>

@@ -38,7 +38,7 @@ export default function LoginPage({ onLogin }: LoginPageProps) {
           </div>
           
           <CardTitle className="text-2xl font-bold text-[#09090b]">
-            JobLogic Helpdesk
+            OOH Helpdesk
           </CardTitle>
           <CardDescription className="text-sm text-muted-foreground mt-2">
             Sign in with your Azure AD account to continue

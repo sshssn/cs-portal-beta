@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { SearchInput } from '@/components/ui/search-input';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
@@ -84,7 +85,7 @@ export default function SettingsPage() {
       {/* Header */}
       <div className="flex items-center gap-2 mb-2">
         <Settings className="h-5 w-5 text-gray-600" />
-        <h1 className="text-lg font-semibold text-gray-900">JobLogic Helpdesk</h1>
+        <h1 className="text-lg font-semibold text-gray-900">OOH Helpdesk</h1>
       </div>
 
       {/* Tabs - Global Style */}
@@ -270,13 +271,13 @@ export default function SettingsPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <h3 className="text-sm font-medium text-gray-900">Previous Notes</h3>
-                    <div className="relative w-48">
-                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-400" />
-                      <Input
+                    <div className="w-48">
+                      <SearchInput
                         placeholder="Filter notes..."
-                        className="h-8 pl-8 text-xs bg-gray-50 border-gray-200"
+                        className="h-8 text-xs bg-gray-50 border-gray-200"
                         value={noteFilter}
                         onChange={(e) => setNoteFilter(e.target.value)}
+                        onClear={() => setNoteFilter('')}
                       />
                     </div>
                   </div>

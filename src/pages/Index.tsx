@@ -1,5 +1,5 @@
 import { useState, useEffect, Suspense } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Job, Customer, JobAlert } from '@/types/job';
 import {
   mockJobs,
@@ -34,6 +34,10 @@ import AllJobsPage from '@/pages/AllJobsPage';
 import CallHandlingPage from '@/pages/CallHandlingPage';
 import HistoryPage from '@/pages/HistoryPage';
 import MyRemindersPage from '@/pages/MyRemindersPage';
+import TicketManagerPage from '@/pages/TicketManagerPage';
+import NewServiceTicketPage from '@/pages/NewServiceTicketPage';
+import TicketDetailPage from '@/pages/TicketDetailPage';
+import ServiceProvidersPage from '@/pages/ServiceProvidersPage';
 import NotificationPopover from '@/components/NotificationPopover';
 import {
   DropdownMenu,
@@ -45,17 +49,37 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Updated view types matching Joblogic Helpdesk
-type View = 'dashboard' | 'create-job' | 'all-jobs' | 'reports' | 'call-handling' | 'history' | 'reminders' | 'profile' | 'settings' | 'job-detail';
+type View = 'dashboard' | 'create-job' | 'all-jobs' | 'reports' | 'call-handling' | 'history' | 'reminders' | 'profile' | 'settings' | 'job-detail' | 'tickets' | 'tickets-new' | 'ticket-detail' | 'service-providers';
 
 export default function Index() {
-  const { jobId } = useParams<{ jobId: string }>();
-  console.log('Index.tsx - useParams jobId:', jobId);
+  const params = useParams<{ jobId: string; ticketId: string }>();
+  const location = useLocation();
+  
+  // Extract ticketId from either useParams or URL path (for /ticket/ routes)
+  const jobId = params.jobId;
+  const ticketId = params.ticketId || (
+    location.pathname.startsWith('/ticket/') 
+      ? location.pathname.split('/ticket/')[1]?.split('/')[0]
+      : undefined
+  );
+  
+  console.log('Index.tsx - jobId:', jobId, 'ticketId:', ticketId, 'path:', location.pathname);
   const navigate = useNavigate();
 
   const { jobs, addJob, updateJob } = useJobs();
 
   const [customers, setCustomers] = useState<Customer[]>(mockCustomers);
   const [currentView, setCurrentView] = useState<View>(() => {
+    // Determine view based on URL path
+    const path = window.location.pathname;
+    if (path.startsWith('/tickets/') || path.startsWith('/ticket/')) {
+      if (path.includes('/new')) return 'tickets-new';
+      return 'ticket-detail';
+    }
+    if (path === '/tickets') return 'tickets';
+    if (path === '/service-providers') return 'service-providers';
+    if (path.startsWith('/job/')) return 'job-detail';
+    
     // Try to restore the last view from localStorage
     const savedView = localStorage.getItem('currentView');
     // Map old view names to new ones for backward compatibility
@@ -65,6 +89,24 @@ export default function Index() {
   });
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  // Update view based on location changes
+  useEffect(() => {
+    const path = location.pathname;
+    if (path.startsWith('/tickets/') || path.startsWith('/ticket/')) {
+      if (path.includes('/new')) {
+        setCurrentView('tickets-new');
+      } else {
+        setCurrentView('ticket-detail');
+      }
+    } else if (path === '/tickets') {
+      setCurrentView('tickets');
+    } else if (path === '/service-providers') {
+      setCurrentView('service-providers');
+    } else if (path.startsWith('/job/')) {
+      setCurrentView('job-detail');
+    }
+  }, [location]);
 
   // Save currentView to localStorage whenever it changes
   useEffect(() => {
@@ -135,6 +177,10 @@ export default function Index() {
       case 'profile': return 'Profile';
       case 'settings': return 'Settings';
       case 'job-detail': return 'Job Details';
+      case 'tickets': return 'Ticket Manager';
+      case 'tickets-new': return 'New Service Ticket';
+      case 'ticket-detail': return 'Ticket Details';
+      case 'service-providers': return 'Service Providers';
       default: return 'Dashboard';
     }
   };
@@ -161,6 +207,32 @@ export default function Index() {
         <SidebarInset>
           <div className="flex flex-1 flex-col gap-4 p-4 bg-white">
             <JobDetailPage />
+          </div>
+        </SidebarInset>
+      </>
+    );
+  }
+
+  // If we're on a ticket detail page, show the TicketDetailPage
+  if (ticketId) {
+    return (
+      <>
+        <NavigationSidebar
+          currentView="ticket-detail"
+          onViewChange={(view) => {
+            if (view !== 'ticket-detail') {
+              navigate('/');
+            }
+            handleViewChange(view);
+          }}
+          onHomepageClick={() => {
+            navigate('/');
+            handleHomepageClick();
+          }}
+        />
+        <SidebarInset>
+          <div className="flex flex-1 flex-col gap-4 p-4 bg-white">
+            <TicketDetailPage />
           </div>
         </SidebarInset>
       </>
@@ -245,6 +317,18 @@ export default function Index() {
         return (
           <MyRemindersPage />
         );
+
+      case 'tickets':
+        return <TicketManagerPage />;
+
+      case 'tickets-new':
+        return <NewServiceTicketPage />;
+
+      case 'ticket-detail':
+        return <TicketDetailPage />;
+
+      case 'service-providers':
+        return <ServiceProvidersPage />;
 
       case 'job-detail':
         return (

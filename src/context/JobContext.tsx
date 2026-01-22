@@ -1,11 +1,14 @@
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Job } from '@/types/job';
+import { mockJobs } from '@/lib/mockData';
 
 interface JobContextType {
     jobs: Job[];
     loading: boolean;
     refreshJobs: () => void;
     getJobById: (id: string) => Job | undefined;
+    getJobByJobNumber: (jobNumber: string) => Job | undefined;
+    getJobsByTicketReference: (ticketRef: string) => Job[];
     addJob: (job: Job) => void;
     updateJob: (job: Job) => void;
 }
@@ -34,6 +37,9 @@ const generateRandomJobs = (): Job[] => {
         { name: 'St Martins Care Ltd', sites: ['St Martins Care Ltd - Park View', 'Meppershall Care Home'] },
         { name: 'IQSA Services Limited', sites: ['IQ Weston Hall', 'IQ Opal Court'] }
     ];
+
+    // Ticket references to link random jobs to tickets
+    const ticketReferences = ['SRTK231', 'SRTK232', 'SRTK233', 'SRTK234', 'SRTK235'];
 
     const jobScenarios = [
         {
@@ -74,6 +80,7 @@ const generateRandomJobs = (): Job[] => {
         return {
             id: `J${i + 1}`,
             jobNumber: `C00${22230 + i}`,
+            ticketReference: ticketReferences[i % ticketReferences.length], // Link to tickets
             priority: priorities[Math.floor(Math.random() * priorities.length)] as any,
             description: scenario.desc,
             dateLogged: loggedDate,
@@ -127,7 +134,8 @@ export function JobProvider({ children }: { children: ReactNode }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const storedJobs = localStorage.getItem('global_jobs_mock_v3');
+        // Always start fresh with mockJobs + generated jobs for consistent correlation
+        const storedJobs = localStorage.getItem('global_jobs_mock_v4'); // Bump version to force refresh
         if (storedJobs) {
             // Need to revive dates from JSON
             const parsed = JSON.parse(storedJobs, (key, value) => {
@@ -137,20 +145,41 @@ export function JobProvider({ children }: { children: ReactNode }) {
             setJobs(parsed);
             setLoading(false);
         } else {
-            const newJobs = generateRandomJobs();
-            setJobs(newJobs);
-            localStorage.setItem('global_jobs_mock_v3', JSON.stringify(newJobs));
+            const randomJobs = generateRandomJobs();
+            // Combine mockJobs (which have proper ticket references) with random jobs
+            const combinedJobs = [...mockJobs, ...randomJobs];
+            setJobs(combinedJobs);
+            localStorage.setItem('global_jobs_mock_v4', JSON.stringify(combinedJobs));
             setLoading(false);
         }
     }, []);
 
     const refreshJobs = useCallback(() => {
         const newJobs = generateRandomJobs();
-        setJobs(newJobs);
-        localStorage.setItem('global_jobs_mock_v3', JSON.stringify(newJobs));
+        // Combine mockJobs with randomly generated jobs, mockJobs first
+        const combinedJobs = [...mockJobs, ...newJobs];
+        setJobs(combinedJobs);
+        localStorage.setItem('global_jobs_mock_v3', JSON.stringify(combinedJobs));
     }, []);
 
-    const getJobById = useCallback((id: string) => jobs.find(j => j.id === id), [jobs]);
+    // Search by id, jobNumber, or any identifier
+    const getJobById = useCallback((id: string) => {
+        return jobs.find(j => 
+            j.id === id || 
+            j.jobNumber === id || 
+            j.jobNumber?.toLowerCase() === id.toLowerCase()
+        );
+    }, [jobs]);
+
+    // Get job specifically by job number
+    const getJobByJobNumber = useCallback((jobNumber: string) => {
+        return jobs.find(j => j.jobNumber === jobNumber || j.jobNumber?.toLowerCase() === jobNumber.toLowerCase());
+    }, [jobs]);
+
+    // Get all jobs linked to a ticket reference
+    const getJobsByTicketReference = useCallback((ticketRef: string) => {
+        return jobs.filter(j => j.ticketReference === ticketRef || j.ticketReference?.toLowerCase() === ticketRef.toLowerCase());
+    }, [jobs]);
 
     const addJob = useCallback((job: Job) => {
         setJobs(prev => {
@@ -169,7 +198,7 @@ export function JobProvider({ children }: { children: ReactNode }) {
     }, []);
 
     return (
-        <JobContext.Provider value={{ jobs, loading, refreshJobs, getJobById, addJob, updateJob }}>
+        <JobContext.Provider value={{ jobs, loading, refreshJobs, getJobById, getJobByJobNumber, getJobsByTicketReference, addJob, updateJob }}>
             {children}
         </JobContext.Provider>
     );
