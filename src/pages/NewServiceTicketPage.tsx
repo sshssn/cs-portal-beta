@@ -34,27 +34,7 @@ export default function NewServiceTicketPage() {
   const navigate = useNavigate();
   const { addTicket } = useTickets();
   const [showLocationSelector, setShowLocationSelector] = useState(false);
-  const [showContactSearch, setShowContactSearch] = useState(false);
   const [contactSearchQuery, setContactSearchQuery] = useState('');
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current && 
-        !dropdownRef.current.contains(event.target as Node) &&
-        inputRef.current &&
-        !inputRef.current.contains(event.target as Node)
-      ) {
-        setShowContactSearch(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   // Demo contacts for testing
   const demoContacts = [
@@ -272,31 +252,22 @@ export default function NewServiceTicketPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {/* Contact Search */}
-              <div className="relative">
+              {/* Contact Search and Selection */}
+              <div className="space-y-2">
                 <Input
-                  ref={inputRef}
                   placeholder="Search for contact..."
                   value={contactSearchQuery}
-                  onChange={(e) => {
-                    setContactSearchQuery(e.target.value);
-                    setShowContactSearch(true);
-                  }}
-                  onFocus={() => setShowContactSearch(true)}
+                  onChange={(e) => setContactSearchQuery(e.target.value)}
+                  className="h-9"
                 />
-                {showContactSearch && filteredContacts.length > 0 && (
-                  <div 
-                    ref={dropdownRef}
-                    className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                  >
-                    {filteredContacts.map(contact => (
+                
+                {/* Contact List */}
+                <div className="border rounded-md max-h-[180px] overflow-y-auto">
+                  {filteredContacts.length > 0 ? (
+                    filteredContacts.map(contact => (
                       <div
                         key={contact.id}
-                        role="button"
-                        tabIndex={0}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
+                        onClick={() => {
                           setTicketData(prev => ({
                             ...prev,
                             reportedBy: {
@@ -307,51 +278,53 @@ export default function NewServiceTicketPage() {
                             }
                           }));
                           setContactSearchQuery(contact.name);
-                          setShowContactSearch(false);
-                          inputRef.current?.blur();
                         }}
-                        className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors"
+                        className={cn(
+                          "px-3 py-2 cursor-pointer hover:bg-accent transition-colors border-b last:border-b-0",
+                          ticketData.reportedBy?.id === contact.id && "bg-accent"
+                        )}
                       >
-                        <div className="font-medium text-sm text-gray-900">{contact.name}</div>
-                        <div className="text-xs text-gray-500">{contact.email} • {contact.phone}</div>
+                        <div className="font-medium text-sm">{contact.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {contact.email} • {contact.phone}
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-                {showContactSearch && filteredContacts.length === 0 && contactSearchQuery && (
-                  <div 
-                    ref={dropdownRef}
-                    className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg"
-                  >
-                    <div className="px-4 py-3 text-sm text-gray-500">No contacts found</div>
-                  </div>
-                )}
-              </div>
-
-              {/* Contact Details Grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs">Email</Label>
-                  <Input
-                    type="email"
-                    placeholder="Enter email..."
-                    value={ticketData.reportedBy?.email}
-                    onChange={(e) => handleReporterChange('email', e.target.value)}
-                    className="h-9"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <Label className="text-xs">Phone</Label>
-                  <Input
-                    type="tel"
-                    placeholder="Enter phone..."
-                    value={ticketData.reportedBy?.phone}
-                    onChange={(e) => handleReporterChange('phone', e.target.value)}
-                    className="h-9"
-                  />
+                    ))
+                  ) : (
+                    <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                      No contacts found
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Selected Contact Display */}
+              {ticketData.reportedBy?.name && (
+                <div className="p-3 bg-green-50 border border-green-200 rounded-md">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="font-medium text-sm text-green-800">{ticketData.reportedBy.name}</div>
+                      <div className="text-xs text-green-600">
+                        {ticketData.reportedBy.email} • {ticketData.reportedBy.phone}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        setTicketData(prev => ({
+                          ...prev,
+                          reportedBy: { id: '', name: '', email: '', phone: '' }
+                        }));
+                        setContactSearchQuery('');
+                      }}
+                      className="h-6 w-6 p-0 text-green-600 hover:text-green-800 hover:bg-green-100"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
