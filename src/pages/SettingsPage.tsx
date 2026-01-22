@@ -98,6 +98,16 @@ export default function SettingsPage() {
                 Reset to Defaults
               </Button>
             </div>
+
+            <div className="p-4 border border-gray-200 rounded-lg">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">Tenants</h3>
+              <p className="text-sm text-gray-500 mb-3">Connected tenant environments.</p>
+              <div className="flex items-center gap-2">
+                <div className="px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-md text-sm font-medium text-blue-700">
+                  workflowX
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
