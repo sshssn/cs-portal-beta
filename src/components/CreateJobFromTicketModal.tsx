@@ -9,7 +9,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, MapPin, ChevronDown, ChevronRight, Users, AlertCircle, Sparkles } from 'lucide-react';
 import { CreateJobFromTicketData, Ticket } from '@/types/ticket';
-import { mockWorkflows, mockPreDefinedInstructions, mockSLAs } from '@/lib/ticketUtils';
+import { mockWorkflows, mockPreDefinedInstructions, mockSLAs, mockFlatLocations, getLocationPath } from '@/lib/ticketUtils';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -73,11 +73,21 @@ export function CreateJobFromTicketModal({
   defaultLocation,
   onCreateJob
 }: CreateJobFromTicketModalProps) {
+  // Helper function to get location name from ticket locations
+  const getTicketLocationName = () => {
+    if (ticket?.locations && ticket.locations.length > 0) {
+      const firstLocationId = ticket.locations[0];
+      const locationPath = getLocationPath(firstLocationId);
+      if (locationPath) return locationPath;
+    }
+    return defaultLocation || '';
+  };
+
   // Auto-populate from ticket data
   const getInitialData = (): Partial<CreateJobFromTicketData> => ({
     shortDescription: ticket?.shortDescription || '',
     details: ticket?.longDescription || '',
-    location: defaultLocation || '',
+    location: getTicketLocationName(),
     team: '',
     priority: mapTicketPriorityToJob(ticket?.priority),
     selectedSLA: ticket?.slaId || 'sla-1',

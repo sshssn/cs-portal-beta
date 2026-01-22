@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { CalendarIcon, MapPin, ChevronDown, ChevronRight, Users, AlertCircle, ChevronLeft, FileText, User, Phone, Building2 } from 'lucide-react';
 import { CreateJobFromTicketData } from '@/types/ticket';
 import { Job } from '@/types/job';
-import { mockWorkflows, mockPreDefinedInstructions, mockSLAs } from '@/lib/ticketUtils';
+import { mockWorkflows, mockPreDefinedInstructions, mockSLAs, mockFlatLocations, getLocationPath } from '@/lib/ticketUtils';
 import { useTickets } from '@/contexts/TicketContext';
 import { useJobs } from '@/context/JobContext';
 import { format } from 'date-fns';
@@ -138,10 +138,36 @@ export default function CreateJobFromTicketPage() {
     return '4 - Low';
   }
 
+  // Helper function to find matching job location from ticket location
+  const findMatchingJobLocation = (ticketLocationIds: string[] | undefined) => {
+    if (!ticketLocationIds || ticketLocationIds.length === 0) return null;
+    
+    // Get location names from ticket
+    for (const locId of ticketLocationIds) {
+      const ticketLocation = mockFlatLocations.find(l => l.id === locId);
+      if (ticketLocation) {
+        const locationPath = getLocationPath(locId);
+        // Try to find a matching job location by name
+        const matchingJobLoc = mockJobLocations.find(jobLoc => 
+          locationPath.toLowerCase().includes(jobLoc.name.split(' - ')[0].toLowerCase()) ||
+          jobLoc.name.toLowerCase().includes(ticketLocation.name.toLowerCase()) ||
+          ticketLocation.name.toLowerCase().includes(jobLoc.name.split(' - ')[0].toLowerCase())
+        );
+        if (matchingJobLoc) return matchingJobLoc;
+      }
+    }
+    
+    // If no match found, return the first job location as default
+    return mockJobLocations[0];
+  };
+
+  // Get initial location from ticket
+  const initialLocation = findMatchingJobLocation(ticket?.locations);
+
   const [jobData, setJobData] = useState<Partial<CreateJobFromTicketData>>({
     shortDescription: ticket?.shortDescription || '',
     details: ticket?.longDescription || '',
-    location: defaultLocation,
+    location: initialLocation?.name || defaultLocation,
     team: '',
     priority: mapTicketPriorityToJob(ticket?.priority),
     selectedSLA: ticket?.slaId || 'sla-1',
@@ -150,7 +176,7 @@ export default function CreateJobFromTicketPage() {
     specificDate: undefined,
     preDefinedInstruction: 'None'
   });
-  const [selectedLocationId, setSelectedLocationId] = useState<string>('');
+  const [selectedLocationId, setSelectedLocationId] = useState<string>(initialLocation?.id || '');
   const [selectedServiceProviderId, setSelectedServiceProviderId] = useState<string>('');
 
   // Get service providers for selected location
@@ -160,10 +186,13 @@ export default function CreateJobFromTicketPage() {
   // Update form when ticket data changes
   useEffect(() => {
     if (ticket) {
+      // Find matching job location from ticket locations
+      const matchedLocation = findMatchingJobLocation(ticket.locations);
+      
       setJobData({
         shortDescription: ticket.shortDescription || '',
         details: ticket.longDescription || '',
-        location: defaultLocation,
+        location: matchedLocation?.name || defaultLocation,
         team: '',
         priority: mapTicketPriorityToJob(ticket.priority),
         selectedSLA: ticket.slaId || 'sla-1',
@@ -172,6 +201,11 @@ export default function CreateJobFromTicketPage() {
         specificDate: undefined,
         preDefinedInstruction: 'None'
       });
+      
+      // Set the selected location ID
+      if (matchedLocation) {
+        setSelectedLocationId(matchedLocation.id);
+      }
     }
   }, [ticket?.id]);
 
