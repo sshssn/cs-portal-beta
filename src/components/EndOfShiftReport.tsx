@@ -355,14 +355,13 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
                   <TableHead className="text-xs font-semibold text-gray-600">SLA Status</TableHead>
                   <TableHead className="text-xs font-semibold text-gray-600">Service Provider</TableHead>
                   <TableHead className="text-xs font-semibold text-gray-600">Location</TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-600">Site</TableHead>
                   <TableHead className="text-xs font-semibold text-gray-600">Logged Date</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {displayJobs.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-gray-500">
+                    <TableCell colSpan={7} className="text-center py-8 text-gray-500">
                       No jobs found for the selected filters
                     </TableCell>
                   </TableRow>
@@ -375,7 +374,6 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
                       <TableCell>{getSlaStatusBadge(job)}</TableCell>
                       <TableCell className="text-gray-700 text-sm">{job.engineer || 'Unassigned'}</TableCell>
                       <TableCell className="text-gray-600 text-sm">{job.customer}</TableCell>
-                      <TableCell className="text-gray-600 text-sm">{job.site}</TableCell>
                       <TableCell className="text-gray-500 text-sm">
                         {new Date(job.dateLogged).toLocaleDateString('en-US', {
                           month: 'short',
