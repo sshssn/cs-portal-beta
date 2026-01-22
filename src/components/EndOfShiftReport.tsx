@@ -290,8 +290,15 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
 
       {/* Company Info */}
       <div className="border-b border-gray-200 pb-4">
-        <h2 className="text-xl font-bold text-blue-600">End of Shift Report</h2>
-        <p className="text-sm text-gray-500">Shift time: Dec 21, 22:00 - Jan 21, 13:30</p>
+        <div className="flex items-center gap-3">
+          <img 
+            src="/workflowx.png" 
+            alt="WorkFlowX" 
+            className="h-8 w-8 rounded-full object-cover"
+          />
+          <h2 className="text-xl font-bold text-gray-900">WorkFlowX</h2>
+        </div>
+        <p className="text-sm text-gray-500 mt-1">Shift time: Dec 21, 22:00 - Jan 21, 13:30</p>
       </div>
 
       {/* Stats Cards */}
