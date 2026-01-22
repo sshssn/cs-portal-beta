@@ -85,11 +85,13 @@ export default function NavigationSidebar({
     <Sidebar collapsible="offcanvas" className="border-r border-gray-200">
       <SidebarHeader className="p-4 flex flex-col items-center justify-center gap-4">
         <button onClick={handleLogoClick} className="flex items-center justify-center hover:opacity-90 transition-opacity">
-          <img
-            src="/logo-invida.webp"
-            alt="Invida"
-            className="w-[160px] h-auto object-contain"
-          />
+          <div className="bg-gray-900 rounded-xl p-3 border border-gray-700">
+            <img
+              src="/logo-invida.webp"
+              alt="Invida"
+              className="w-[140px] h-auto object-contain"
+            />
+          </div>
         </button>
       </SidebarHeader>
 

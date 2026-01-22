@@ -13,7 +13,8 @@ import {
   ChevronRight,
   User,
   Wrench,
-  Ticket
+  Ticket,
+  CalendarIcon
 } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -24,14 +25,29 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { AppTabs } from '@/components/ui/app-tabs';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useJobs } from '@/context/JobContext';
+import { useReminders } from '@/contexts/ReminderContext';
 import { Job, JobNote } from '@/types/job';
 import { Breadcrumbs } from '@/components/Breadcrumbs';
 import JobEditModal from '@/components/JobEditModal';
 import StatusBadge from '@/components/StatusBadge';
+import { format } from 'date-fns';
+import { showNotification } from '@/components/ui/toast-notification';
 
 const EditableField = ({ label, value, onSave, icon: Icon }: { label: string, value: any, onSave: (val: string) => void, icon?: any }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -78,11 +94,20 @@ export default function JobDetailPage() {
   const { jobId } = useParams<{ jobId: string }>();
   const navigate = useNavigate();
   const { getJobById, updateJob } = useJobs();
+  const { addReminder, addNotification } = useReminders();
   const [activeNoteTab, setActiveNoteTab] = useState<'job' | 'site'>('job');
   const [auditTab, setAuditTab] = useState<'audit' | 'site_jobs'>('audit');
   const [job, setJob] = useState<Job | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  // Reminder modal state
+  const [isReminderModalOpen, setIsReminderModalOpen] = useState(false);
+  const [reminderData, setReminderData] = useState({
+    message: '',
+    dueDate: new Date(),
+    priority: 'medium' as 'low' | 'medium' | 'high'
+  });
 
   // Notes state
   const [notes, setNotes] = useState<JobNote[]>([]);
@@ -142,6 +167,41 @@ export default function JobDetailPage() {
     const updatedJob = { ...job, [field]: value };
     setJob(updatedJob);
     updateJob(updatedJob);
+  };
+
+  const handleCreateReminder = () => {
+    if (!reminderData.message.trim() || !job) return;
+    
+    addReminder({
+      type: 'job',
+      relatedId: job.id,
+      relatedReference: job.jobNumber,
+      message: reminderData.message,
+      dueDate: reminderData.dueDate,
+      priority: reminderData.priority,
+      createdBy: 'Current User'
+    });
+
+    addNotification({
+      type: 'reminder_due',
+      title: 'Reminder Created',
+      message: `Reminder set for job ${job.jobNumber}`,
+      relatedId: job.id,
+      relatedType: 'job'
+    });
+
+    showNotification({
+      type: 'success',
+      title: 'Reminder Created',
+      message: `Reminder set for ${format(reminderData.dueDate, 'PPP p')}`
+    });
+
+    setIsReminderModalOpen(false);
+    setReminderData({
+      message: '',
+      dueDate: new Date(),
+      priority: 'medium'
+    });
   };
 
   const handleEditSave = (updatedJob: Job) => {
@@ -244,7 +304,17 @@ export default function JobDetailPage() {
             <span className="text-gray-700 text-sm">{job.description}</span>
           </div>
           <div className="flex items-center gap-2">
-            <button className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-2">
+            <button 
+              onClick={() => {
+                setReminderData({
+                  message: `Follow up on job ${job.jobNumber}: ${job.description}`,
+                  dueDate: new Date(Date.now() + 2 * 60 * 60 * 1000), // 2 hours from now
+                  priority: 'medium'
+                });
+                setIsReminderModalOpen(true);
+              }}
+              className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-2"
+            >
               <Bell className="h-4 w-4" />
               Reminder
             </button>
@@ -601,6 +671,78 @@ export default function JobDetailPage() {
         onClose={() => setIsEditModalOpen(false)}
         onSave={handleEditSave}
       />
+
+      {/* Reminder Modal */}
+      <Dialog open={isReminderModalOpen} onOpenChange={setIsReminderModalOpen}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5 text-amber-500" />
+              Create Reminder for {job.jobNumber}
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Reminder Message *</Label>
+              <Textarea
+                placeholder="Enter reminder message..."
+                value={reminderData.message}
+                onChange={(e) => setReminderData(prev => ({ ...prev, message: e.target.value }))}
+                className="min-h-[80px]"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Due Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className="w-full justify-start text-left font-normal">
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {format(reminderData.dueDate, 'PPP')}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={reminderData.dueDate}
+                      onSelect={(date) => date && setReminderData(prev => ({ ...prev, dueDate: date }))}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Priority</Label>
+                <Select 
+                  value={reminderData.priority} 
+                  onValueChange={(value: 'low' | 'medium' | 'high') => setReminderData(prev => ({ ...prev, priority: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="low">Low</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="high">High</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsReminderModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateReminder} disabled={!reminderData.message.trim()}>
+              Create Reminder
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
