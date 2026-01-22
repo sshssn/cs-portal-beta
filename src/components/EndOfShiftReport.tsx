@@ -47,6 +47,8 @@ interface NightshiftNote {
   date: string;
   time: string;
   content: string;
+  jobRef?: string;
+  author?: string;
 }
 
 export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate }: EndOfShiftReportProps) {
@@ -55,39 +57,60 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
   const [dateRange, setDateRange] = useState('last-night');
   const [newNote, setNewNote] = useState('');
 
-  // Mock nightshift notes
-  const [notes, setNotes] = useState<NightshiftNote[]>([
-    {
-      id: '1',
-      date: 'Jan 19, 2026',
-      time: '02:04',
-      content: 'Job Ref C0000347 - Please can someone reach this chap Monday 13th January 2026, he has had issues with the BMS M3 portal and the alarms were enabled on Wednesday and is fully operational now.'
-    },
-    {
-      id: '2',
-      date: 'Jan 5, 2026',
-      time: '17:10',
-      content: 'Rozena requested an engineer to booked for first thing in the morning for job ref C0000341 please'
-    },
-    {
-      id: '3',
-      date: 'Jan 4, 2026',
-      time: '19:10',
-      content: 'URGENT: Tel No go for site at the following for Grainger Group Services Limited 0191 2315757 - mentioned to Dawn for all on site info needed as as site engineer at site area.'
-    },
-    {
-      id: '4',
-      date: 'Jan 21, 2026',
-      time: '12:45',
-      content: 'C021076 - Had front calling, requiring engineer to be allocated this morning. Contacted site contact in booked, to reach another Voltage and he advised that it was okay for any slip time allowed to him. I contacted the scheduler at the number but also spoken to Reyanna post earlier, Carl, there are other works ongoing in the 1st floor cooling in tower, slotted 4 to be possible.'
-    },
-    {
-      id: '5',
-      date: 'Dec 21, 2025',
-      time: '13:16',
-      content: 'Staff on site called back to check status of Job Ref C0003145. After confirmatory from supervisor that the job had originally fit as a point cleaner to will now progress. In the near year, they are satisfied with knowing that on one else would need to come into the block.'
+  // Generate notes from actual job data
+  const generateNotesFromJobs = (): NightshiftNote[] => {
+    const baseNotes: NightshiftNote[] = [];
+    
+    // Add notes based on actual jobs in the system
+    jobs.forEach((job, index) => {
+      if (job.jobNotes) {
+        baseNotes.push({
+          id: `job-note-${job.id}`,
+          date: new Date(job.dateLogged).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          time: new Date(job.dateLogged).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+          content: job.jobNotes,
+          jobRef: job.jobNumber,
+          author: 'System'
+        });
+      }
+      
+      // Add status-based notes for critical jobs
+      if (job.priority === 'Critical' || job.priority === 'High') {
+        baseNotes.push({
+          id: `priority-note-${job.id}`,
+          date: new Date(job.dateLogged).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+          time: new Date(job.dateLogged).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+          content: `${job.priority} priority job logged: ${job.description}. Location: ${job.customer} - ${job.site}. Service Provider: ${job.engineer || 'Pending allocation'}.`,
+          jobRef: job.jobNumber,
+          author: 'Night Shift'
+        });
+      }
+    });
+
+    // Add some default contextual notes if no job notes exist
+    if (baseNotes.length === 0) {
+      return [
+        {
+          id: '1',
+          date: 'Jan 22, 2026',
+          time: '02:04',
+          content: `Night shift commenced. Total jobs in system: ${jobs.length}. Monitoring all active tickets and jobs.`,
+          author: 'Night Shift Operator'
+        },
+        {
+          id: '2', 
+          date: 'Jan 22, 2026',
+          time: '03:30',
+          content: 'All systems operational. No critical escalations during shift.',
+          author: 'Night Shift Operator'
+        }
+      ];
     }
-  ]);
+
+    return baseNotes.slice(0, 10); // Limit to 10 most recent notes
+  };
+
+  const [notes, setNotes] = useState<NightshiftNote[]>(generateNotesFromJobs());
 
   // Calculate statistics
   const stats = useMemo(() => {

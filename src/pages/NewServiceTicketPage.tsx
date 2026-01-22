@@ -35,6 +35,8 @@ export default function NewServiceTicketPage() {
   const { addTicket } = useTickets();
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [contactSearchQuery, setContactSearchQuery] = useState('');
+  const [showAddReporter, setShowAddReporter] = useState(false);
+  const [newReporter, setNewReporter] = useState({ name: '', email: '', phone: '' });
 
   // Demo contacts for testing
   const demoContacts = [
@@ -243,60 +245,129 @@ export default function NewServiceTicketPage() {
         {/* Reported By Card */}
         <Card>
           <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <User className="h-5 w-5 text-green-600" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <User className="h-5 w-5 text-green-600" />
+                </div>
+                <CardTitle className="text-lg">Reported By *</CardTitle>
               </div>
-              <CardTitle className="text-lg">Reported By *</CardTitle>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddReporter(!showAddReporter)}
+                className="gap-1 text-xs"
+              >
+                <Plus className="h-3 w-3" />
+                {showAddReporter ? 'Select Existing' : 'Add New'}
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {/* Contact Search and Selection */}
-              <div className="space-y-2">
-                <Input
-                  placeholder="Search for contact..."
-                  value={contactSearchQuery}
-                  onChange={(e) => setContactSearchQuery(e.target.value)}
-                  className="h-9"
-                />
-                
-                {/* Contact List */}
-                <div className="border rounded-md max-h-[180px] overflow-y-auto">
-                  {filteredContacts.length > 0 ? (
-                    filteredContacts.map(contact => (
-                      <div
-                        key={contact.id}
-                        onClick={() => {
-                          setTicketData(prev => ({
-                            ...prev,
-                            reportedBy: {
-                              id: contact.id,
-                              name: contact.name,
-                              email: contact.email,
-                              phone: contact.phone
-                            }
-                          }));
-                          setContactSearchQuery(contact.name);
-                        }}
-                        className={cn(
-                          "px-3 py-2 cursor-pointer hover:bg-accent transition-colors border-b last:border-b-0",
-                          ticketData.reportedBy?.id === contact.id && "bg-accent"
-                        )}
-                      >
-                        <div className="font-medium text-sm">{contact.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {contact.email} • {contact.phone}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="px-3 py-4 text-center text-sm text-muted-foreground">
-                      No contacts found
+              {showAddReporter ? (
+                /* Add New Reporter Form */
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Name *</Label>
+                    <Input
+                      placeholder="Enter reporter name..."
+                      value={newReporter.name}
+                      onChange={(e) => setNewReporter(prev => ({ ...prev, name: e.target.value }))}
+                      className="h-9"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Email</Label>
+                      <Input
+                        type="email"
+                        placeholder="Enter email..."
+                        value={newReporter.email}
+                        onChange={(e) => setNewReporter(prev => ({ ...prev, email: e.target.value }))}
+                        className="h-9"
+                      />
                     </div>
-                  )}
+                    <div className="space-y-1">
+                      <Label className="text-xs">Phone</Label>
+                      <Input
+                        type="tel"
+                        placeholder="Enter phone..."
+                        value={newReporter.phone}
+                        onChange={(e) => setNewReporter(prev => ({ ...prev, phone: e.target.value }))}
+                        className="h-9"
+                      />
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      if (newReporter.name.trim()) {
+                        setTicketData(prev => ({
+                          ...prev,
+                          reportedBy: {
+                            id: `new-${Date.now()}`,
+                            name: newReporter.name,
+                            email: newReporter.email,
+                            phone: newReporter.phone
+                          }
+                        }));
+                        setShowAddReporter(false);
+                      }
+                    }}
+                    disabled={!newReporter.name.trim()}
+                    className="w-full"
+                  >
+                    Add Reporter
+                  </Button>
                 </div>
-              </div>
+              ) : (
+                /* Contact Search and Selection */
+                <div className="space-y-2">
+                  <Input
+                    placeholder="Search for contact..."
+                    value={contactSearchQuery}
+                    onChange={(e) => setContactSearchQuery(e.target.value)}
+                    className="h-9"
+                  />
+                  
+                  {/* Contact List */}
+                  <div className="border rounded-md max-h-[180px] overflow-y-auto">
+                    {filteredContacts.length > 0 ? (
+                      filteredContacts.map(contact => (
+                        <div
+                          key={contact.id}
+                          onClick={() => {
+                            setTicketData(prev => ({
+                              ...prev,
+                              reportedBy: {
+                                id: contact.id,
+                                name: contact.name,
+                                email: contact.email,
+                                phone: contact.phone
+                              }
+                            }));
+                            setContactSearchQuery(contact.name);
+                          }}
+                          className={cn(
+                            "px-3 py-2 cursor-pointer hover:bg-accent transition-colors border-b last:border-b-0",
+                            ticketData.reportedBy?.id === contact.id && "bg-accent"
+                          )}
+                        >
+                          <div className="font-medium text-sm">{contact.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {contact.email} • {contact.phone}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                        No contacts found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {/* Selected Contact Display */}
               {ticketData.reportedBy?.name && (
@@ -317,6 +388,7 @@ export default function NewServiceTicketPage() {
                           reportedBy: { id: '', name: '', email: '', phone: '' }
                         }));
                         setContactSearchQuery('');
+                        setNewReporter({ name: '', email: '', phone: '' });
                       }}
                       className="h-6 w-6 p-0 text-green-600 hover:text-green-800 hover:bg-green-100"
                     >

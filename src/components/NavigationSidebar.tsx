@@ -49,7 +49,7 @@ export default function NavigationSidebar({
     { id: 'tickets', label: 'Ticket Manager', icon: (props: any) => <FileText {...props} className="w-8 h-8" />, path: '/tickets' },
     { id: 'all-jobs', label: 'All Jobs', icon: (props: any) => <Target {...props} className="w-8 h-8" />, path: null },
     { id: 'service-providers', label: 'Service Providers', icon: (props: any) => <Users {...props} className="w-8 h-8" />, path: '/service-providers' },
-    { id: 'call-handling', label: 'Call Handling', icon: (props: any) => <Phone {...props} className="w-8 h-8" />, path: null },
+    // Call Handling hidden as per user request
     { id: 'reports', label: 'Night Shift Reports', icon: (props: any) => <Moon {...props} className="w-8 h-8" />, path: null },
     { id: 'history', label: 'History', icon: (props: any) => <History {...props} className="w-8 h-8" />, path: null },
     { id: 'reminders', label: 'My Reminders', icon: (props: any) => <Bell {...props} className="w-8 h-8" />, path: null },

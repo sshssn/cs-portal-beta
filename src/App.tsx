@@ -5,6 +5,7 @@ import { Toaster } from '@/components/ui/sonner';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { ThemeProvider } from '@/contexts/ThemeContext';
 import { TicketProvider } from '@/contexts/TicketContext';
+import { ReminderProvider } from '@/contexts/ReminderContext';
 import ScrollToTop from '@/components/ScrollToTop';
 import Index from './pages/Index';
 import WizardPage from './pages/WizardPage';
@@ -22,25 +23,27 @@ const App = () => {
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TicketProvider>
-          <SidebarProvider>
-            <TooltipProvider>
-              <Toaster />
-              <BrowserRouter>
-                <ScrollToTop />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/job/:jobId" element={<Index />} />
-                  <Route path="/wizard" element={<WizardPage />} />
-                  <Route path="/tickets" element={<Index />} />
-                  <Route path="/tickets/new" element={<Index />} />
-                  <Route path="/tickets/:ticketId" element={<Index />} />
-                  <Route path="/ticket/:ticketId" element={<Index />} />
-                  <Route path="/ticket/:ticketId/create-job" element={<Index />} />
-                  <Route path="/service-providers" element={<Index />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
-          </SidebarProvider>
+          <ReminderProvider>
+            <SidebarProvider>
+              <TooltipProvider>
+                <Toaster />
+                <BrowserRouter>
+                  <ScrollToTop />
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/job/:jobId" element={<Index />} />
+                    <Route path="/wizard" element={<WizardPage />} />
+                    <Route path="/tickets" element={<Index />} />
+                    <Route path="/tickets/new" element={<Index />} />
+                    <Route path="/tickets/:ticketId" element={<Index />} />
+                    <Route path="/ticket/:ticketId" element={<Index />} />
+                    <Route path="/ticket/:ticketId/create-job" element={<Index />} />
+                    <Route path="/service-providers" element={<Index />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </SidebarProvider>
+          </ReminderProvider>
         </TicketProvider>
       </ThemeProvider>
     </QueryClientProvider>

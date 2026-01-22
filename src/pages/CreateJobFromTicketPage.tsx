@@ -128,6 +128,10 @@ export default function CreateJobFromTicketPage() {
   
   const defaultLocation = searchParams.get('location') || '';
   const ticket = tickets.find(t => t.id === ticketId);
+  
+  // State for selecting multiple tickets
+  const [selectedTicketIds, setSelectedTicketIds] = useState<string[]>(ticketId ? [ticketId] : []);
+  const [showTicketSelector, setShowTicketSelector] = useState(false);
 
   // Map ticket priority to job priority
   function mapTicketPriorityToJob(ticketPriority?: string): '1 - High' | '2 - High' | '3 - Medium' | '4 - Low' {
@@ -231,10 +235,15 @@ export default function CreateJobFromTicketPage() {
     const selectedProvider = availableServiceProviders.find(p => p.id === selectedServiceProviderId);
     const assignedEngineer = selectedProvider ? selectedProvider.name : 'Unassigned';
 
+    // Get all selected ticket references
+    const selectedTickets = tickets.filter(t => selectedTicketIds.includes(t.id));
+    const ticketRefs = selectedTickets.map(t => t.reference);
+
     const newJob: Job = {
       id: `job-${Date.now()}`,
       jobNumber,
-      ticketReference: ticket.reference,
+      ticketReference: ticket.reference, // Primary ticket reference
+      ticketReferences: ticketRefs, // All linked tickets
       customer: selectedLocationData?.name.split(' - ')[0] || jobData.location.split(' > ')[0] || 'Unknown',
       tenant: selectedLocationData?.name.split(' - ')[0] || jobData.location.split(' > ')[0] || 'Unknown',
       site: jobData.location,
@@ -274,27 +283,33 @@ export default function CreateJobFromTicketPage() {
     // Add job to context
     addJob(newJob);
 
-    // Update ticket with job reference
-    updateTicket(ticket.id, {
-      jobs: [...(ticket.jobs || []), newJob.id],
-      timeline: [
-        ...(ticket.timeline || []),
-        {
-          id: `timeline-${Date.now()}`,
-          type: 'job_created',
-          title: `Job ${jobNumber} created`,
-          timestamp: new Date(),
-          author: 'Current User',
-          status: 'completed'
-        }
-      ]
+    // Update ALL selected tickets with job reference
+    selectedTicketIds.forEach(tId => {
+      const linkedTicket = tickets.find(t => t.id === tId);
+      if (linkedTicket) {
+        updateTicket(tId, {
+          jobs: [...(linkedTicket.jobs || []), newJob.id],
+          timeline: [
+            ...(linkedTicket.timeline || []),
+            {
+              id: `timeline-${Date.now()}-${tId}`,
+              type: 'job_created',
+              title: `Job ${jobNumber} created`,
+              timestamp: new Date(),
+              author: 'Current User',
+              status: 'completed'
+            }
+          ]
+        });
+      }
     });
 
     // Show success notification
+    const ticketCount = selectedTicketIds.length;
     showNotification({
       type: 'success',
       title: 'Job Created Successfully',
-      message: `Job ${jobNumber} has been created from ticket ${ticket.reference}`
+      message: `Job ${jobNumber} has been created and linked to ${ticketCount} ticket${ticketCount > 1 ? 's' : ''}`
     });
 
     // Navigate back to ticket detail
@@ -359,11 +374,86 @@ export default function CreateJobFromTicketPage() {
             <p className="text-sm text-gray-500">Creating job from ticket {ticket.reference}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-50 text-blue-700 rounded-lg border border-blue-200">
-          <FileText className="h-4 w-4" />
-          <span className="text-sm font-medium">{ticket.reference}</span>
+        <div className="flex items-center gap-2">
+          {/* Multiple Ticket Selection */}
+          <div className="flex items-center gap-2 flex-wrap">
+            {selectedTicketIds.map(tId => {
+              const t = tickets.find(x => x.id === tId);
+              return t ? (
+                <div key={tId} className="flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-700 rounded-lg border border-blue-200 text-sm">
+                  <FileText className="h-3 w-3" />
+                  <span className="font-medium">{t.reference}</span>
+                  {selectedTicketIds.length > 1 && (
+                    <button
+                      onClick={() => setSelectedTicketIds(prev => prev.filter(id => id !== tId))}
+                      className="ml-1 hover:bg-blue-100 rounded p-0.5"
+                    >
+                      <span className="text-blue-500 hover:text-blue-700 text-xs">×</span>
+                    </button>
+                  )}
+                </div>
+              ) : null;
+            })}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowTicketSelector(!showTicketSelector)}
+            className="gap-1"
+          >
+            <FileText className="h-4 w-4" />
+            {showTicketSelector ? 'Hide Tickets' : 'Link More Tickets'}
+          </Button>
         </div>
       </div>
+
+      {/* Ticket Selector Panel */}
+      {showTicketSelector && (
+        <Card className="border-blue-200 bg-blue-50/30">
+          <CardHeader className="pb-2">
+            <h3 className="text-sm font-medium text-gray-700">Select Additional Tickets to Link</h3>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[200px] overflow-y-auto">
+              {tickets
+                .filter(t => t.status !== 'Closed' && t.status !== 'Resolved')
+                .map(t => (
+                  <div
+                    key={t.id}
+                    onClick={() => {
+                      if (selectedTicketIds.includes(t.id)) {
+                        if (selectedTicketIds.length > 1) {
+                          setSelectedTicketIds(prev => prev.filter(id => id !== t.id));
+                        }
+                      } else {
+                        setSelectedTicketIds(prev => [...prev, t.id]);
+                      }
+                    }}
+                    className={cn(
+                      "p-2 rounded-lg border cursor-pointer transition-colors",
+                      selectedTicketIds.includes(t.id)
+                        ? "bg-blue-100 border-blue-300"
+                        : "bg-white border-gray-200 hover:border-blue-200"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedTicketIds.includes(t.id)}
+                        onChange={() => {}}
+                        className="rounded"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-sm text-gray-900">{t.reference}</div>
+                        <div className="text-xs text-gray-500 truncate">{t.shortDescription}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Main Form */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

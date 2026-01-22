@@ -43,6 +43,7 @@ export interface Job {
   id: string;
   jobNumber: string;
   ticketReference?: string; // Reference to parent ticket (e.g., 'SRTK231')
+  ticketReferences?: string[]; // Multiple ticket references
   customer: string;
   tenant: string;
   site: string;
