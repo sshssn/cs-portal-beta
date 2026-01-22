@@ -284,34 +284,46 @@ export default function NewServiceTicketPage() {
                   }}
                   onFocus={() => setShowContactSearch(true)}
                 />
-                {showContactSearch && (
+                {showContactSearch && filteredContacts.length > 0 && (
                   <div 
                     ref={dropdownRef}
-                    className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                    className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto"
                   >
-                    {filteredContacts.length > 0 ? (
-                      filteredContacts.map(contact => (
-                        <button
-                          type="button"
-                          key={contact.id}
-                          onMouseDown={(e) => {
-                            e.preventDefault();
-                            handleReporterChange('id', contact.id);
-                            handleReporterChange('name', contact.name);
-                            handleReporterChange('email', contact.email);
-                            handleReporterChange('phone', contact.phone);
-                            setContactSearchQuery(contact.name);
-                            setShowContactSearch(false);
-                          }}
-                          className="w-full px-4 py-3 text-left hover:bg-accent border-b border-border last:border-b-0 cursor-pointer"
-                        >
-                          <div className="font-medium text-sm">{contact.name}</div>
-                          <div className="text-xs text-muted-foreground">{contact.email} • {contact.phone}</div>
-                        </button>
-                      ))
-                    ) : (
-                      <div className="px-4 py-3 text-sm text-muted-foreground">No contacts found</div>
-                    )}
+                    {filteredContacts.map(contact => (
+                      <div
+                        key={contact.id}
+                        role="button"
+                        tabIndex={0}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setTicketData(prev => ({
+                            ...prev,
+                            reportedBy: {
+                              id: contact.id,
+                              name: contact.name,
+                              email: contact.email,
+                              phone: contact.phone
+                            }
+                          }));
+                          setContactSearchQuery(contact.name);
+                          setShowContactSearch(false);
+                          inputRef.current?.blur();
+                        }}
+                        className="w-full px-4 py-3 text-left hover:bg-blue-50 border-b border-gray-100 last:border-b-0 cursor-pointer transition-colors"
+                      >
+                        <div className="font-medium text-sm text-gray-900">{contact.name}</div>
+                        <div className="text-xs text-gray-500">{contact.email} • {contact.phone}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {showContactSearch && filteredContacts.length === 0 && contactSearchQuery && (
+                  <div 
+                    ref={dropdownRef}
+                    className="absolute z-[100] w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg"
+                  >
+                    <div className="px-4 py-3 text-sm text-gray-500">No contacts found</div>
                   </div>
                 )}
               </div>
