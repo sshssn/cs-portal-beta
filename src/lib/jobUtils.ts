@@ -47,6 +47,24 @@ export const getPriorityColor = (priority: Job['priority']): string => {
   }
 };
 
+export const getEngineerStatusColor = (status: string): string => {
+  switch (status) {
+    case 'OOH':
+    case 'available':
+      return 'bg-green-500';
+    case 'On call':
+    case 'on_job':
+      return 'bg-blue-500';
+    case 'travel':
+    case 'traveling':
+      return 'bg-amber-500';
+    case 'off_duty':
+      return 'bg-gray-400';
+    default:
+      return 'bg-gray-400';
+  }
+};
+
 // Professional numbering system
 const getCurrentYear = () => new Date().getFullYear().toString();
 const getCurrentDate = () => {

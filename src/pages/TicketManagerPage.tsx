@@ -23,6 +23,7 @@ import { Search, Plus, Filter, FileText } from 'lucide-react';
 import { useTickets } from '@/contexts/TicketContext';
 import { getTagColors, getStatusColors } from '@/lib/ticketUtils';
 import { format } from 'date-fns';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { cn } from '@/lib/utils';
 
 export default function TicketManagerPage() {
@@ -67,7 +68,15 @@ export default function TicketManagerPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-end">
+      {/* Breadcrumbs */}
+      <Breadcrumbs items={[{ label: 'Ticket Manager' }]} />
+
+      {/* Page Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Service Tickets</h1>
+          <p className="text-sm text-muted-foreground mt-1">View and manage all existing tickets</p>
+        </div>
         <Button className="gap-2" onClick={() => navigate('/tickets/new')}>
           <Plus className="h-4 w-4" />
           New Ticket

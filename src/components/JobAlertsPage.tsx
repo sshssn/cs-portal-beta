@@ -41,7 +41,7 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
     return matchesSearch && matchesStatus && matchesPriority;
   });
 
-  // Get engineer sync status icon
+  // Get service provider sync status icon
   const getSyncStatusIcon = (status: string) => {
     switch (status) {
       case 'accepted':
@@ -57,7 +57,7 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
     }
   };
 
-  // Get engineer sync status color
+  // Get service provider sync status color
   const getSyncStatusColor = (status: string) => {
     switch (status) {
       case 'accepted':
@@ -140,7 +140,7 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900">Job Alerts - {customer.name}</h1>
-            <p className="text-gray-600">Monitor job status and engineer mobile app sync</p>
+            <p className="text-gray-600">Monitor job status and service provider mobile app sync</p>
           </div>
 
           {/* Filters */}
@@ -188,7 +188,7 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
           {/* Jobs Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Job Status & Engineer Sync</CardTitle>
+              <CardTitle>Job Status & Service Provider Sync</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -196,9 +196,9 @@ export default function JobAlertsPage({ customer, jobs, onBack }: JobAlertsPageP
                   <thead>
                     <tr className="border-b">
                       <th className="text-left p-4 font-medium text-gray-900">Job Number</th>
-                      <th className="text-left p-4 font-medium text-gray-900">Assigned Engineer</th>
+                      <th className="text-left p-4 font-medium text-gray-900">Assigned Service Provider</th>
                       <th className="text-left p-4 font-medium text-gray-900">Job Status</th>
-                      <th className="text-left p-4 font-medium text-gray-900">Engineer Mobile Sync</th>
+                      <th className="text-left p-4 font-medium text-gray-900">Service Provider Mobile Sync</th>
                       <th className="text-left p-4 font-medium text-gray-900">Priority</th>
                       <th className="text-left p-4 font-medium text-gray-900">Site</th>
                       <th className="text-left p-4 font-medium text-gray-900">Created</th>

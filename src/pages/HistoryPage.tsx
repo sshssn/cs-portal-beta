@@ -123,11 +123,6 @@ export default function HistoryPage({ jobs }: HistoryPageProps) {
                     </SelectContent>
                 </Select>
 
-                <div className="flex items-center gap-2 px-3 h-10 bg-white border border-gray-200 rounded-md">
-                    <Checkbox id="test-tenant" />
-                    <label htmlFor="test-tenant" className="text-sm text-gray-600 whitespace-nowrap cursor-pointer">Include Test Tenant</label>
-                </div>
-
                 <Button variant="outline" size="icon" className="h-10 w-10 border-gray-200">
                     <RefreshCw className="h-4 w-4 text-gray-500" />
                 </Button>

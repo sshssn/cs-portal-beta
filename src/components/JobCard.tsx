@@ -139,7 +139,7 @@ export default function JobCard({ job, onUpdateStatus }: JobCardProps) {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
           <div className="flex items-center gap-2">
             <User size={16} className="text-blue-600" />
-            <span className="text-gray-600">Engineer:</span>
+            <span className="text-gray-600">Service Provider:</span>
             <span className="font-medium">{job.engineer}</span>
           </div>
           

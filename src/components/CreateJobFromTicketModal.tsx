@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,16 +7,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, MapPin, ChevronDown, ChevronRight, Users, AlertCircle } from 'lucide-react';
-import { CreateJobFromTicketData } from '@/types/ticket';
+import { CalendarIcon, MapPin, ChevronDown, ChevronRight, Users, AlertCircle, Sparkles } from 'lucide-react';
+import { CreateJobFromTicketData, Ticket } from '@/types/ticket';
 import { mockWorkflows, mockPreDefinedInstructions, mockSLAs } from '@/lib/ticketUtils';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 interface CreateJobFromTicketModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   ticketId: string;
+  ticket?: Ticket; // Pass ticket data for auto-population
   defaultLocation?: string;
   onCreateJob: (jobData: CreateJobFromTicketData) => void;
 }
@@ -67,23 +69,49 @@ export function CreateJobFromTicketModal({
   open,
   onOpenChange,
   ticketId,
+  ticket,
   defaultLocation,
   onCreateJob
 }: CreateJobFromTicketModalProps) {
-  const [jobData, setJobData] = useState<Partial<CreateJobFromTicketData>>({
-    shortDescription: '',
-    details: '',
+  // Auto-populate from ticket data
+  const getInitialData = (): Partial<CreateJobFromTicketData> => ({
+    shortDescription: ticket?.shortDescription || '',
+    details: ticket?.longDescription || '',
     location: defaultLocation || '',
     team: '',
-    priority: '1 - High',
-    selectedSLA: 'sla-1',
+    priority: mapTicketPriorityToJob(ticket?.priority),
+    selectedSLA: ticket?.slaId || 'sla-1',
     workflow: 'CAFM Job - Reactive',
     startJob: 'straight-away',
     specificDate: undefined,
     preDefinedInstruction: 'None'
   });
 
+  // Map ticket priority to job priority
+  function mapTicketPriorityToJob(ticketPriority?: string): '1 - High' | '2 - High' | '3 - Medium' | '4 - Low' {
+    if (!ticketPriority) return '2 - High';
+    if (ticketPriority.toLowerCase().includes('critical') || ticketPriority === '1 - High') return '1 - High';
+    if (ticketPriority.toLowerCase().includes('high') || ticketPriority === '2 - High') return '2 - High';
+    if (ticketPriority.toLowerCase().includes('medium') || ticketPriority === '3 - Medium') return '3 - Medium';
+    return '4 - Low';
+  }
+
+  const [jobData, setJobData] = useState<Partial<CreateJobFromTicketData>>(getInitialData());
   const [autoSLA, setAutoSLA] = useState(true);
+  const { toast } = useToast();
+
+  // Re-populate when modal opens with new ticket data
+  React.useEffect(() => {
+    if (open && ticket) {
+      setJobData(getInitialData());
+      // Show toast notification for auto-fill
+      toast({
+        title: "Form Auto-Filled",
+        description: `Job details populated from ticket ${ticket.reference}`,
+        duration: 3000,
+      });
+    }
+  }, [open, ticket?.id]);
 
   const handleInputChange = (field: keyof CreateJobFromTicketData, value: any) => {
     setJobData(prev => ({ ...prev, [field]: value }));
@@ -96,19 +124,8 @@ export function CreateJobFromTicketModal({
 
     onCreateJob(jobData as CreateJobFromTicketData);
     
-    // Reset form
-    setJobData({
-      shortDescription: '',
-      details: '',
-      location: defaultLocation || '',
-      team: '',
-      priority: '1 - High',
-      selectedSLA: 'sla-1',
-      workflow: 'CAFM Job - Reactive',
-      startJob: 'straight-away',
-      specificDate: undefined,
-      preDefinedInstruction: 'None'
-    });
+    // Reset form to initial values (from ticket)
+    setJobData(getInitialData());
     
     if (closeAfter) {
       onOpenChange(false);
@@ -358,26 +375,6 @@ export function CreateJobFromTicketModal({
                   Schedule / Assign
                 </Button>
               </div>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Assets linked to Job" variant="dark">
-              <p className="text-sm text-gray-500">No assets linked yet.</p>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Follow-on Jobs" variant="dark">
-              <p className="text-sm text-gray-500">No follow-on jobs configured.</p>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Payment Requests & Invoicing" variant="dark">
-              <p className="text-sm text-gray-500">Payment configuration will be available after job creation.</p>
-            </CollapsibleSection>
-
-            <CollapsibleSection title="Instruction Details" variant="dark">
-              <p className="text-sm text-gray-500">
-                {jobData.preDefinedInstruction && jobData.preDefinedInstruction !== 'None' 
-                  ? jobData.preDefinedInstruction 
-                  : 'No instructions specified.'}
-              </p>
             </CollapsibleSection>
           </div>
         </div>

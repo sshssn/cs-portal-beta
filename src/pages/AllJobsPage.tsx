@@ -29,11 +29,14 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useJobs } from '@/context/JobContext';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { oohServiceProviders } from '@/lib/serviceProviderData';
 
-const tenants = ['All Tenants', 'FM4U Ltd', 'Guardian Environmental Services Limited', 'WorkFlowX'];
-const customers = ['All Customers', 'St Martins Care Ltd', 'Homes For Students Limited'];
-const sites = ['All Sites', 'London HQ', 'Manchester Branch', 'Birmingham Office'];
-const engineers = ['All Engineers', 'John Smith', 'Sarah Johnson', 'Mike Davis', 'Multiconnect Electrical Services Ltd'];
+// Customer/location names from jobs data
+const locations = ['All Locations', 'Block A Management Ltd', 'Corporate HQ Ltd', 'Tech Park Developments', 'Maple Court Residents Association', 'Financial Services Group'];
+const sites = ['All Sites', 'Block A Residential Complex', 'Corporate Headquarters', 'Tech Park Building B', 'Maple Court', 'Financial Centre'];
+// Use service provider names from shared data
+const serviceProviders = ['All Service Providers', ...oohServiceProviders.map(sp => sp.name)];
 
 export default function AllJobsPage({
     onJobClick,
@@ -47,16 +50,14 @@ export default function AllJobsPage({
     const [statusFilters, setStatusFilters] = useState<string[]>([]);
     const [statusFilter, setStatusFilter] = useState('all'); // Keep for dropdown compatibility or simple use
     const [slaFilter, setSlaFilter] = useState('all');
-    const [tenantFilter, setTenantFilter] = useState('all');
-    const [customerFilter, setCustomerFilter] = useState('all');
+    const [locationFilter, setLocationFilter] = useState('all');
     const [siteFilter, setSiteFilter] = useState('all');
-    const [engineerFilter, setEngineerFilter] = useState('all');
+    const [serviceProviderFilter, setServiceProviderFilter] = useState('all');
     const [priorityFilter, setPriorityFilter] = useState('all');
 
     // Checkbox states
     const [includeNonHelpdesk, setIncludeNonHelpdesk] = useState(false);
-    const [noEngineerAllocated, setNoEngineerAllocated] = useState(false);
-    const [includeTestTenant, setIncludeTestTenant] = useState(false);
+    const [noServiceProviderAllocated, setNoServiceProviderAllocated] = useState(false);
 
     // Pagination
     const [currentPage, setCurrentPage] = useState(1);
@@ -85,7 +86,7 @@ export default function AllJobsPage({
                 setSlaFilter(initialFilter.value);
             }
             if (initialFilter.type === 'unassigned') {
-                setNoEngineerAllocated(true);
+                setNoServiceProviderAllocated(true);
             }
         }
     }, [initialFilter]);
@@ -103,7 +104,7 @@ export default function AllJobsPage({
 
     const toggleQuickFilter = (type: string) => {
         if (type === 'unassigned') {
-            setNoEngineerAllocated(prev => !prev);
+            setNoServiceProviderAllocated(prev => !prev);
         } else if (type === 'breached') {
             setSlaFilter(prev => prev === 'breached' ? 'all' : 'breached');
         } else if (type === 'approaching_attendance') {
@@ -145,25 +146,16 @@ export default function AllJobsPage({
             if (slaFilter === 'on-track' && (isBreached || isApproaching)) return false;
         }
 
-        if (tenantFilter !== 'all' && job.tenant !== tenantFilter) return false;
-        if (customerFilter !== 'all' && job.customer !== customerFilter) return false;
+        if (locationFilter !== 'all' && job.customer !== locationFilter) return false;
         if (siteFilter !== 'all' && job.site !== siteFilter) return false;
-        if (engineerFilter !== 'all' && job.engineer !== engineerFilter) return false;
+        if (serviceProviderFilter !== 'all' && job.engineer !== serviceProviderFilter) return false;
         if (priorityFilter !== 'all' && job.priority !== priorityFilter) return false;
 
         // Checkbox filters - fixed unassigned logic
-        if (noEngineerAllocated && job.engineer && job.engineer !== 'Unassigned') return false;
-        if (!noEngineerAllocated && initialFilter?.type === 'unassigned') {
+        if (noServiceProviderAllocated && job.engineer && job.engineer !== 'Unassigned') return false;
+        if (!noServiceProviderAllocated && initialFilter?.type === 'unassigned') {
             // Special case for dashboard unassigned click
             if (job.engineer && job.engineer !== 'Unassigned') return false;
-        }
-        if (includeTestTenant && job.tenant !== 'Test Tenant') {
-            // If we only want test tenant? Or is "Include" meaning show them in addition? 
-            // Usually "Include Test Tenant" means test tenants are hidden by default. 
-            // But for now let's assume it's just a toggle. 
-            // Actually user said "Include", implying they are excluded by default.
-            // Given the limited context, if unchecked, we might exclude 'Test Tenant' if it existed?
-            // Since mock data doesn't have 'Test Tenant', this logic won't affect much but let's leave it as a placeholder or unimplemented if unclear.
         }
         if (!includeNonHelpdesk) {
             // Logic to filter out non-helpdesk?
@@ -193,14 +185,19 @@ export default function AllJobsPage({
 
     const getPriorityBadge = (priority: string) => {
         switch (priority) {
+            case 'Critical':
             case 'Emergency Response':
-                return <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-red-500 text-white whitespace-nowrap">{priority}</span>;
+                return <span className="inline-block px-2 py-1 rounded text-xs font-bold bg-red-600 text-white whitespace-nowrap shadow-sm">{priority}</span>;
+            case 'High':
             case 'Next day 24-hour Response':
-                return <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-red-400 text-white whitespace-nowrap">{priority}</span>;
             case 'Call out 4-hour Response':
-                return <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-red-500 text-white whitespace-nowrap">{priority}</span>;
+                return <span className="inline-block px-2 py-1 rounded text-xs font-bold bg-orange-500 text-white whitespace-nowrap shadow-sm">{priority}</span>;
+            case 'Medium':
+                return <span className="inline-block px-2 py-1 rounded text-xs font-bold bg-yellow-500 text-white whitespace-nowrap shadow-sm">{priority}</span>;
+            case 'Low':
+                return <span className="inline-block px-2 py-1 rounded text-xs font-bold bg-green-500 text-white whitespace-nowrap shadow-sm">{priority}</span>;
             default:
-                return <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-500 text-white whitespace-nowrap">{priority}</span>;
+                return <span className="inline-block px-2 py-1 rounded text-xs font-bold bg-gray-500 text-white whitespace-nowrap shadow-sm">{priority}</span>;
         }
     };
 
@@ -209,6 +206,7 @@ export default function AllJobsPage({
             case 'allocated':
                 return <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-700 whitespace-nowrap">Allocated</span>;
             case 'completed':
+            case 'green':
                 return <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-700 whitespace-nowrap">Completed</span>;
             case 'attended':
             case 'in_progress':
@@ -228,6 +226,11 @@ export default function AllJobsPage({
 
     return (
         <div className="min-h-screen bg-gray-50 font-sans text-sm w-full max-w-full overflow-x-hidden">
+            {/* Breadcrumbs */}
+            <div className="bg-white px-6 pt-4">
+                <Breadcrumbs items={[{ label: 'All Jobs' }]} />
+            </div>
+
             {/* Quick Filters - Top Bar */}
             <div className="bg-white border-b border-gray-200 px-6 py-3">
                 <div className="flex items-center gap-3 text-sm overflow-x-auto pb-1">
@@ -236,16 +239,16 @@ export default function AllJobsPage({
                     <button
                         onClick={() => {
                             setStatusFilters([]);
-                            setNoEngineerAllocated(false);
+                            setNoServiceProviderAllocated(false);
                             setSlaFilter('all');
                             setPriorityFilter('all');
                         }}
-                        className={`px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium transition-colors border ${statusFilters.length === 0 && !noEngineerAllocated && slaFilter === 'all'
+                        className={`px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium transition-colors border ${statusFilters.length === 0 && !noServiceProviderAllocated && slaFilter === 'all'
                             ? 'bg-gray-100 border-gray-300 text-gray-900'
                             : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                             }`}
                     >
-                        {statusFilters.length === 0 && !noEngineerAllocated && slaFilter === 'all' ? (
+                        {statusFilters.length === 0 && !noServiceProviderAllocated && slaFilter === 'all' ? (
                             <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
                                     <polyline points="20 6 9 17 4 12"></polyline>
@@ -260,12 +263,12 @@ export default function AllJobsPage({
 
                     <button
                         onClick={() => toggleQuickFilter('unassigned')}
-                        className={`px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium transition-colors border ${noEngineerAllocated
+                        className={`px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium transition-colors border ${noServiceProviderAllocated
                             ? 'bg-blue-50 border-blue-200 text-blue-700'
                             : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                             }`}
                     >
-                        {noEngineerAllocated ? (
+                        {noServiceProviderAllocated ? (
                             <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
                                     <polyline points="20 6 9 17 4 12"></polyline>
@@ -361,26 +364,15 @@ export default function AllJobsPage({
                 </div>
 
                 {/* Filter Row */}
-                <div className="grid grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-3 gap-4 mb-4">
                     <div>
-                        <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1.5 block">Tenant</label>
-                        <Select value={tenantFilter} onValueChange={setTenantFilter}>
+                        <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1.5 block">Location</label>
+                        <Select value={locationFilter} onValueChange={setLocationFilter}>
                             <SelectTrigger className="w-full bg-white border-gray-200 h-9">
-                                <SelectValue placeholder="All Tenants" />
+                                <SelectValue placeholder="All Locations" />
                             </SelectTrigger>
                             <SelectContent>
-                                {tenants.map(t => <SelectItem key={t} value={t === 'All Tenants' ? 'all' : t}>{t}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1.5 block">Customer</label>
-                        <Select value={customerFilter} onValueChange={setCustomerFilter}>
-                            <SelectTrigger className="w-full bg-white border-gray-200 h-9">
-                                <SelectValue placeholder="All Customers" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {customers.map(c => <SelectItem key={c} value={c === 'All Customers' ? 'all' : c}>{c}</SelectItem>)}
+                                {locations.map(l => <SelectItem key={l} value={l === 'All Locations' ? 'all' : l}>{l}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
@@ -396,13 +388,13 @@ export default function AllJobsPage({
                         </Select>
                     </div>
                     <div>
-                        <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1.5 block">Engineer</label>
-                        <Select value={engineerFilter} onValueChange={setEngineerFilter}>
+                        <label className="text-gray-500 text-xs font-semibold uppercase tracking-wider mb-1.5 block">Service Provider</label>
+                        <Select value={serviceProviderFilter} onValueChange={setServiceProviderFilter}>
                             <SelectTrigger className="w-full bg-white border-gray-200 h-9">
-                                <SelectValue placeholder="All Engineers" />
+                                <SelectValue placeholder="All Service Providers" />
                             </SelectTrigger>
                             <SelectContent>
-                                {engineers.map(e => <SelectItem key={e} value={e === 'All Engineers' ? 'all' : e}>{e}</SelectItem>)}
+                                {serviceProviders.map(sp => <SelectItem key={sp} value={sp === 'All Service Providers' ? 'all' : sp}>{sp}</SelectItem>)}
                             </SelectContent>
                         </Select>
                     </div>
@@ -430,13 +422,13 @@ export default function AllJobsPage({
                     </button>
 
                     <button
-                        onClick={() => setNoEngineerAllocated(prev => !prev)}
-                        className={`px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium transition-colors border ${noEngineerAllocated
+                        onClick={() => setNoServiceProviderAllocated(prev => !prev)}
+                        className={`px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium transition-colors border ${noServiceProviderAllocated
                             ? 'bg-blue-50 border-blue-200 text-blue-700'
                             : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
                             }`}
                     >
-                        {noEngineerAllocated ? (
+                        {noServiceProviderAllocated ? (
                             <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
                                     <polyline points="20 6 9 17 4 12"></polyline>
@@ -445,26 +437,7 @@ export default function AllJobsPage({
                         ) : (
                             <div className="w-4 h-4 rounded-full border border-gray-300"></div>
                         )}
-                        <span>Re: Engineer Allocated</span>
-                    </button>
-
-                    <button
-                        onClick={() => setIncludeTestTenant(prev => !prev)}
-                        className={`px-3 py-1.5 rounded-full flex items-center gap-2 text-xs font-medium transition-colors border ${includeTestTenant
-                            ? 'bg-blue-50 border-blue-200 text-blue-700'
-                            : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                            }`}
-                    >
-                        {includeTestTenant ? (
-                            <div className="w-4 h-4 rounded-full bg-blue-600 flex items-center justify-center">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="w-3 h-3">
-                                    <polyline points="20 6 9 17 4 12"></polyline>
-                                </svg>
-                            </div>
-                        ) : (
-                            <div className="w-4 h-4 rounded-full border border-gray-300"></div>
-                        )}
-                        <span>Include Test Tenant</span>
+                        <span>No Service Provider Allocated</span>
                     </button>
                 </div>
             </div>
@@ -507,11 +480,10 @@ export default function AllJobsPage({
                                             {sortConfig?.key === 'status' && (sortConfig.direction === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />)}
                                         </div>
                                     </th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap">Engineer</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap">Tenant</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap">Customer</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap">Service Provider</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap">Location</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap">Site</th>
-                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap">SLA Status</th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap min-w-[120px]">SLA Status</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap">Attendance Remaining</th>
                                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-600 whitespace-nowrap">Completion Remaining</th>
                                     <th className="px-4 py-3 border-l border-gray-200"></th>
@@ -540,13 +512,12 @@ export default function AllJobsPage({
                                             <td className="px-4 py-3 text-gray-600 whitespace-nowrap">{new Date(job.dateLogged).toLocaleDateString('en-GB')}</td>
                                             <td className="px-4 py-3 whitespace-nowrap">{getStatusBadge(job.status)}</td>
                                             <td className="px-4 py-3 text-gray-700">{job.engineer || 'Unassigned'}</td>
-                                            <td className="px-4 py-3 text-gray-700">{job.tenant || 'Guardian Environmental'}</td>
-                                            <td className="px-4 py-3 text-gray-700">{job.customer}</td>
+                                            <td className="px-4 py-3 text-gray-700">{job.customer || '—'}</td>
                                             <td className="px-4 py-3 text-gray-700">{job.site}</td>
-                                            <td className="px-4 py-3">
-                                                <span className="flex items-center gap-1">
-                                                    <span className={`w-2 h-2 rounded-full ${isSlaBreached ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></span>
-                                                    <span className="text-gray-700 text-xs">{isSlaBreached ? 'Breached' : 'On Track'}</span>
+                                            <td className="px-4 py-3 min-w-[120px]">
+                                                <span className="flex items-center gap-2">
+                                                    <span className={`w-2.5 h-2.5 rounded-full ${isSlaBreached ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></span>
+                                                    <span className="text-gray-700 text-sm font-medium">{isSlaBreached ? 'Breached' : 'On Track'}</span>
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3 text-gray-700 whitespace-nowrap">23h 3m</td>

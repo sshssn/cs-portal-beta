@@ -35,6 +35,7 @@ const App = () => {
                   <Route path="/tickets/new" element={<Index />} />
                   <Route path="/tickets/:ticketId" element={<Index />} />
                   <Route path="/ticket/:ticketId" element={<Index />} />
+                  <Route path="/ticket/:ticketId/create-job" element={<Index />} />
                   <Route path="/service-providers" element={<Index />} />
                 </Routes>
               </BrowserRouter>

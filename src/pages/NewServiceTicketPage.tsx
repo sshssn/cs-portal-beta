@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { SearchInput } from '@/components/ui/search-input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { LocationSelectorModal } from '@/components/LocationSelectorModal';
-import { CalendarIcon, X, MapPin, Plus, Search, User } from 'lucide-react';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import { CalendarIcon, X, MapPin, Plus, User, FileText, Tag, Clock, Save, Layers } from 'lucide-react';
 import { CreateTicketFormData, Ticket, TicketReporter } from '@/types/ticket';
 import { useTickets } from '@/contexts/TicketContext';
 import {
@@ -35,6 +35,39 @@ export default function NewServiceTicketPage() {
   const { addTicket } = useTickets();
   const [showLocationSelector, setShowLocationSelector] = useState(false);
   const [showContactSearch, setShowContactSearch] = useState(false);
+  const [contactSearchQuery, setContactSearchQuery] = useState('');
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(event.target as Node)
+      ) {
+        setShowContactSearch(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Demo contacts for testing
+  const demoContacts = [
+    { id: 'contact-1', name: 'John Smith', email: 'john.smith@example.com', phone: '+44 7700 900123' },
+    { id: 'contact-2', name: 'Sarah Johnson', email: 'sarah.johnson@stmartins.co.uk', phone: '+44 7700 900456' },
+    { id: 'contact-3', name: 'Mike Williams', email: 'mike.williams@homeforstudents.com', phone: '+44 7700 900789' },
+    { id: 'contact-4', name: 'Emma Davis', email: 'emma.davis@facilities.org', phone: '+44 7700 900321' }
+  ];
+
+  const filteredContacts = demoContacts.filter(contact =>
+    contact.name.toLowerCase().includes(contactSearchQuery.toLowerCase()) ||
+    contact.email.toLowerCase().includes(contactSearchQuery.toLowerCase())
+  );
 
   const [ticketData, setTicketData] = useState<Partial<CreateTicketFormData>>({
     date: new Date(),
@@ -129,116 +162,229 @@ export default function NewServiceTicketPage() {
     ticketData.locations?.includes(loc.id)
   );
 
-  const isFormValid = ticketData.shortDescription && ticketData.longDescription && 
-                      ticketData.locations && ticketData.locations.length > 0;
+  // Validation - require all mandatory fields
+  const hasReporter = ticketData.reportedBy?.name || ticketData.reportedBy?.email || ticketData.reportedBy?.phone;
+  const isFormValid = ticketData.shortDescription?.trim() && 
+                      ticketData.longDescription?.trim() && 
+                      ticketData.locations && ticketData.locations.length > 0 &&
+                      ticketData.origin &&
+                      ticketData.impact &&
+                      hasReporter;
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-1">
-            <span className="cursor-pointer hover:text-foreground" onClick={() => navigate('/tickets')}>Ticket Manager</span>
-            <span>/</span>
-            <span>New Ticket</span>
-          </div>
+          <Breadcrumbs
+            items={[
+              { label: 'Ticket Manager', path: '/tickets' },
+              { label: 'New Service Ticket' }
+            ]}
+          />
+          <h1 className="text-2xl font-bold mt-2">Create New Service Ticket</h1>
+          <p className="text-muted-foreground">Log a new service request with all relevant details</p>
         </div>
-        <Button onClick={handleSave} disabled={!isFormValid} size="lg" className="gap-2">
-          Save
-        </Button>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => navigate('/tickets')}>
+            Cancel
+          </Button>
+          <Button onClick={handleSave} disabled={!isFormValid} className="gap-2">
+            <Save className="h-4 w-4" />
+            Save Ticket
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Date and Origin */}
-          <Card>
-            <CardContent className="pt-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Date */}
-                <div>
-                  <Label>Date</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full justify-start text-left font-normal',
-                          !ticketData.date && 'text-muted-foreground'
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {ticketData.date ? format(ticketData.date, 'dd/MM/yyyy') : 'Pick a date'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={ticketData.date}
-                        onSelect={(date) => handleInputChange('date', date)}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
-
-                {/* Origin */}
-                <div>
-                  <Label>Origin</Label>
-                  <Select
-                    value={ticketData.origin}
-                    onValueChange={(value) => handleInputChange('origin', value)}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Origin..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {mockTicketOrigins.map(origin => (
-                        <SelectItem key={origin} value={origin}>
-                          {origin}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+      {/* Row 1: Date & Origin + Reported By (side by side) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Date & Origin Card */}
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <Clock className="h-5 w-5 text-blue-600" />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Service Ticket Details */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-6 bg-blue-500 rounded" />
-                <h3 className="font-semibold">Service ticket details</h3>
+              <CardTitle className="text-lg">Date & Origin</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4">
+              {/* Date */}
+              <div className="space-y-2">
+                <Label>Date *</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full justify-start text-left font-normal',
+                        !ticketData.date && 'text-muted-foreground'
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {ticketData.date ? format(ticketData.date, 'dd/MM/yyyy') : 'Pick a date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={ticketData.date}
+                      onSelect={(date) => handleInputChange('date', date)}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Short Description */}
-              <div>
-                <Label htmlFor="shortDescription">Short Description...</Label>
+
+              {/* Origin */}
+              <div className="space-y-2">
+                <Label>Origin *</Label>
+                <Select
+                  value={ticketData.origin}
+                  onValueChange={(value) => handleInputChange('origin', value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Origin..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mockTicketOrigins.map(origin => (
+                      <SelectItem key={origin} value={origin}>
+                        {origin}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Reported By Card */}
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <User className="h-5 w-5 text-green-600" />
+              </div>
+              <CardTitle className="text-lg">Reported By *</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {/* Contact Search */}
+              <div className="relative">
                 <Input
-                  id="shortDescription"
+                  ref={inputRef}
+                  placeholder="Search for contact..."
+                  value={contactSearchQuery}
+                  onChange={(e) => {
+                    setContactSearchQuery(e.target.value);
+                    setShowContactSearch(true);
+                  }}
+                  onFocus={() => setShowContactSearch(true)}
+                />
+                {showContactSearch && (
+                  <div 
+                    ref={dropdownRef}
+                    className="absolute z-50 w-full mt-1 bg-background border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                  >
+                    {filteredContacts.length > 0 ? (
+                      filteredContacts.map(contact => (
+                        <div
+                          key={contact.id}
+                          onMouseDown={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                          }}
+                          onClick={() => {
+                            handleReporterChange('id', contact.id);
+                            handleReporterChange('name', contact.name);
+                            handleReporterChange('email', contact.email);
+                            handleReporterChange('phone', contact.phone);
+                            setContactSearchQuery(contact.name);
+                            setShowContactSearch(false);
+                          }}
+                          className="w-full px-4 py-3 text-left hover:bg-accent border-b border-border last:border-b-0 cursor-pointer"
+                        >
+                          <div className="font-medium text-sm">{contact.name}</div>
+                          <div className="text-xs text-muted-foreground">{contact.email} • {contact.phone}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-3 text-sm text-muted-foreground">No contacts found</div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Contact Details Grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs">Email</Label>
+                  <Input
+                    type="email"
+                    placeholder="Enter email..."
+                    value={ticketData.reportedBy?.email}
+                    onChange={(e) => handleReporterChange('email', e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Phone</Label>
+                  <Input
+                    type="tel"
+                    placeholder="Enter phone..."
+                    value={ticketData.reportedBy?.phone}
+                    onChange={(e) => handleReporterChange('phone', e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Row 2: Service Ticket Details (full width) */}
+      <Card>
+        <CardHeader className="pb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-purple-100 rounded-lg">
+              <FileText className="h-5 w-5 text-purple-600" />
+            </div>
+            <CardTitle className="text-lg">Service Ticket Details</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left column - Descriptions */}
+            <div className="lg:col-span-2 space-y-4">
+              <div className="space-y-2">
+                <Label>Short Description *</Label>
+                <Input
                   placeholder="Enter short description..."
                   value={ticketData.shortDescription}
                   onChange={(e) => handleInputChange('shortDescription', e.target.value)}
                 />
               </div>
 
-              {/* Long Description */}
-              <div>
-                <Label htmlFor="longDescription">Long description</Label>
+              <div className="space-y-2">
+                <Label>Long Description *</Label>
                 <Textarea
-                  id="longDescription"
-                  placeholder="Enter detailed description..."
+                  placeholder="Enter detailed description of the issue..."
                   value={ticketData.longDescription}
                   onChange={(e) => handleInputChange('longDescription', e.target.value)}
                   className="min-h-[100px]"
                 />
               </div>
+            </div>
 
-              {/* Impact */}
-              <div>
-                <Label htmlFor="impact">Select Impact...</Label>
+            {/* Right column - Dropdowns */}
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Impact *</Label>
                 <Select
                   value={ticketData.impact}
                   onValueChange={(value) => handleInputChange('impact', value)}
@@ -256,9 +402,8 @@ export default function NewServiceTicketPage() {
                 </Select>
               </div>
 
-              {/* Classification */}
-              <div>
-                <Label htmlFor="classification">Select Classification...</Label>
+              <div className="space-y-2">
+                <Label>Classification</Label>
                 <Select
                   value={ticketData.classification}
                   onValueChange={(value) => handleInputChange('classification', value)}
@@ -276,9 +421,8 @@ export default function NewServiceTicketPage() {
                 </Select>
               </div>
 
-              {/* Ticket Queue */}
-              <div>
-                <Label htmlFor="ticketQueue">Select Ticket Queue...</Label>
+              <div className="space-y-2">
+                <Label>Ticket Queue</Label>
                 <Select
                   value={ticketData.ticketQueue}
                   onValueChange={(value) => handleInputChange('ticketQueue', value)}
@@ -296,12 +440,11 @@ export default function NewServiceTicketPage() {
                 </Select>
               </div>
 
-              {/* SLA */}
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <Label htmlFor="sla">Default SLA</Label>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Auto</span>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label>Default SLA</Label>
+                  <div className="flex items-center gap-2 text-sm">
+                    <span className="text-muted-foreground text-xs">Auto</span>
                     <Switch
                       checked={ticketData.autoSLA}
                       onCheckedChange={(checked) => handleInputChange('autoSLA', checked)}
@@ -325,221 +468,148 @@ export default function NewServiceTicketPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-          {/* Reported By */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <User className="h-5 w-5 text-muted-foreground" />
-                <h3 className="font-semibold">Reported By</h3>
+      {/* Row 3: Tags + Locations/Assets (side by side) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Tags Card */}
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-orange-100 rounded-lg">
+                <Tag className="h-5 w-5 text-orange-600" />
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <SearchInput
-                  placeholder="Search for contact..."
-                />
+              <CardTitle className="text-lg">Tags</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-2">
+              {mockTicketTags.map(tag => {
+                const isSelected = ticketData.tags?.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    onClick={() => handleTagToggle(tag)}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-sm font-medium transition-all border',
+                      isSelected 
+                        ? getTagColors(tag)
+                        : 'bg-muted/50 text-muted-foreground border-transparent hover:bg-muted'
+                    )}
+                  >
+                    {tag}
+                    {isSelected && (
+                      <X className="inline-block ml-1.5 h-3 w-3" />
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            {ticketData.tags && ticketData.tags.length > 0 && (
+              <div className="mt-3 pt-3 border-t">
+                <p className="text-sm text-muted-foreground">
+                  Selected: {ticketData.tags.length} tag(s)
+                </p>
               </div>
+            )}
+          </CardContent>
+        </Card>
 
-              <div className="space-y-3">
-                <div>
-                  <Label htmlFor="reporterEmail">Email address</Label>
-                  <Input
-                    id="reporterEmail"
-                    type="email"
-                    placeholder="Enter email..."
-                    value={ticketData.reportedBy?.email}
-                    onChange={(e) => handleReporterChange('email', e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="reporterPhone">Phone number</Label>
-                  <Input
-                    id="reporterPhone"
-                    type="tel"
-                    placeholder="Enter phone number..."
-                    value={ticketData.reportedBy?.phone}
-                    onChange={(e) => handleReporterChange('phone', e.target.value)}
-                  />
-                </div>
-
-                <Button variant="outline" size="sm" className="w-full gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add another person/group
-                </Button>
+        {/* Locations/Assets Card */}
+        <Card>
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-100 rounded-lg">
+                <MapPin className="h-5 w-5 text-red-600" />
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Locations/Assets Affected */}
-          <Card>
-            <CardHeader>
-              <div className="flex items-center gap-2">
-                <MapPin className="h-5 w-5 text-muted-foreground" />
-                <h3 className="font-semibold">Locations/Assets affected</h3>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {ticketData.locations && ticketData.locations.length > 0 ? (
-                <div className="p-4 border rounded-lg bg-blue-50 border-blue-200">
-                  <p className="text-sm font-medium text-blue-900 mb-2">
-                    Please select the affected Locations/Assets.
-                  </p>
-                  <div className="space-y-2">
-                    {selectedLocations.map(location => (
-                      <div key={location.id} className="flex items-start gap-2">
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{location.name}</div>
-                          <div className="text-xs text-blue-700">{getLocationPath(location.id)}</div>
-                        </div>
-                        <button
-                          onClick={() => {
-                            handleInputChange(
-                              'locations',
-                              ticketData.locations?.filter(id => id !== location.id)
-                            );
-                          }}
-                          className="text-red-500 hover:text-red-700"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 border rounded-lg border-blue-200 text-center">
-                  <p className="text-sm text-blue-900">
-                    Please select the affected Locations/Assets.
-                  </p>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowLocationSelector(true)}
-                  className="flex-1 gap-2"
-                >
-                  <MapPin className="h-4 w-4" />
-                  Select locations/assets
-                </Button>
-                <Button variant="outline" className="gap-2">
-                  <Plus className="h-4 w-4" />
-                  Add a supplementary location
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Right Column - Summary */}
-        <div className="space-y-6">
-          <Card className="sticky top-6">
-            <CardHeader>
-              <h3 className="font-semibold">Ticket Summary</h3>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div>
-                <div className="text-xs text-muted-foreground">Status</div>
-                <Badge className="bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-100">Draft</Badge>
-              </div>
-              
-              {ticketData.shortDescription && (
-                <div>
-                  <div className="text-xs text-muted-foreground">Description</div>
-                  <div className="text-sm font-medium">{ticketData.shortDescription}</div>
-                </div>
-              )}
-
-              {ticketData.impact && (
-                <div>
-                  <div className="text-xs text-muted-foreground">Impact</div>
-                  <div className="text-sm">{ticketData.impact}</div>
-                </div>
-              )}
-
-              {ticketData.classification && (
-                <div>
-                  <div className="text-xs text-muted-foreground">Classification</div>
-                  <div className="text-sm">{ticketData.classification}</div>
-                </div>
-              )}
-
-              {ticketData.locations && ticketData.locations.length > 0 && (
-                <div>
-                  <div className="text-xs text-muted-foreground">Locations</div>
-                  <div className="text-sm">{ticketData.locations.length} selected</div>
-                </div>
-              )}
-
-              <div className="pt-3 border-t">
-                <Button onClick={handleSave} disabled={!isFormValid} className="w-full">
-                  Save Ticket
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Tags */}
-          <Card>
-            <CardHeader className="pb-3">
-              <Label>Tags</Label>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className="gap-2">
-                      <Plus className="h-4 w-4" />
-                      Add Tag...
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80" align="start">
-                    <div className="space-y-2">
-                      {mockTicketTags.map(tag => (
-                        <button
-                          key={tag}
-                          onClick={() => handleTagToggle(tag)}
-                          className={cn(
-                            'w-full text-left px-3 py-2 rounded text-sm transition-colors border',
-                            ticketData.tags?.includes(tag) 
-                              ? getTagColors(tag)
-                              : 'hover:bg-accent border-transparent'
-                          )}
-                        >
-                          <span className={cn(
-                            'inline-block w-2 h-2 rounded-full mr-2',
-                            ticketData.tags?.includes(tag) ? 'bg-current' : getTagColors(tag).split(' ')[0].replace('bg-', 'bg-').replace('-100', '-400')
-                          )} />
-                          {tag}
-                        </button>
-                      ))}
+              <CardTitle className="text-lg">Locations/Assets *</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {ticketData.locations && ticketData.locations.length > 0 ? (
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {selectedLocations.map(location => (
+                  <div 
+                    key={location.id} 
+                    className="p-2 border rounded-lg bg-blue-50 border-blue-200 flex items-center justify-between"
+                  >
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm truncate">{location.name}</div>
+                      <div className="text-xs text-blue-700 truncate">{getLocationPath(location.id)}</div>
                     </div>
-                  </PopoverContent>
-                </Popover>
-
-                {ticketData.tags && ticketData.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
-                    {ticketData.tags.map(tag => (
-                      <Badge key={tag} variant="outline" className={`gap-1 border ${getTagColors(tag)}`}>
-                        {tag}
-                        <button
-                          onClick={() => handleTagToggle(tag)}
-                          className="ml-1 hover:opacity-70 rounded-full"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </Badge>
-                    ))}
+                    <button
+                      onClick={() => {
+                        handleInputChange(
+                          'locations',
+                          ticketData.locations?.filter(id => id !== location.id)
+                        );
+                      }}
+                      className="ml-2 text-red-500 hover:text-red-700 flex-shrink-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
                   </div>
-                )}
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <div className="p-4 border-2 border-dashed rounded-lg text-center">
+                <Layers className="h-8 w-8 mx-auto text-muted-foreground mb-1" />
+                <p className="text-sm text-muted-foreground">
+                  No locations selected
+                </p>
+              </div>
+            )}
+
+            <Button
+              variant="outline"
+              onClick={() => setShowLocationSelector(true)}
+              className="w-full gap-2"
+            >
+              <MapPin className="h-4 w-4" />
+              Select Locations/Assets
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Sticky Footer */}
+      <div className="sticky bottom-4 bg-background/95 backdrop-blur border rounded-lg p-4 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              {isFormValid ? (
+                <div className="h-2 w-2 bg-green-500 rounded-full" />
+              ) : (
+                <div className="h-2 w-2 bg-amber-500 rounded-full" />
+              )}
+              <span className="text-sm text-muted-foreground">
+                {isFormValid ? 'Ready to save' : 'Complete required fields'}
+              </span>
+            </div>
+            {!isFormValid && (
+              <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                {!ticketData.shortDescription?.trim() && <Badge variant="outline">Short description</Badge>}
+                {!ticketData.longDescription?.trim() && <Badge variant="outline">Long description</Badge>}
+                {!ticketData.origin && <Badge variant="outline">Origin</Badge>}
+                {!ticketData.impact && <Badge variant="outline">Impact</Badge>}
+                {!(ticketData.reportedBy?.name || ticketData.reportedBy?.email || ticketData.reportedBy?.phone) && <Badge variant="outline">Reporter info</Badge>}
+                {(!ticketData.locations || ticketData.locations.length === 0) && <Badge variant="outline">Location</Badge>}
+              </div>
+            )}
+          </div>
+          <div className="flex gap-3">
+            <Button variant="outline" onClick={() => navigate('/tickets')}>
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={!isFormValid} className="gap-2">
+              <Save className="h-4 w-4" />
+              Save Ticket
+            </Button>
+          </div>
         </div>
       </div>
 

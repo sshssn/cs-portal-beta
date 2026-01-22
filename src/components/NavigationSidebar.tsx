@@ -17,12 +17,12 @@ import {
   Settings,
   User,
   Target,
+  FileText,
+  Users,
+  Moon,
   Phone,
   History,
-  Bell,
-  BarChart3,
-  FileText,
-  Users
+  Bell
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -45,28 +45,28 @@ export default function NavigationSidebar({
 
   // Main navigation items
   const mainMenuItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: (props: any) => <Home {...props} className="w-8 h-8" />, path: '/' },
-    { id: 'create-job', label: 'Create Job', icon: (props: any) => <PlusCircle {...props} className="w-8 h-8" />, path: null },
-    { id: 'all-jobs', label: 'All Jobs', icon: (props: any) => <Target {...props} className="w-8 h-8" />, path: null },
+    { id: 'dashboard', label: 'Dashboard', icon: (props: any) => <Home {...props} className="w-8 h-8" />, path: null },
     { id: 'tickets', label: 'Ticket Manager', icon: (props: any) => <FileText {...props} className="w-8 h-8" />, path: '/tickets' },
+    { id: 'all-jobs', label: 'All Jobs', icon: (props: any) => <Target {...props} className="w-8 h-8" />, path: null },
     { id: 'service-providers', label: 'Service Providers', icon: (props: any) => <Users {...props} className="w-8 h-8" />, path: '/service-providers' },
-    { id: 'reports', label: 'Night shift Reports', icon: (props: any) => <BarChart3 {...props} className="w-8 h-8" />, path: null },
     { id: 'call-handling', label: 'Call Handling', icon: (props: any) => <Phone {...props} className="w-8 h-8" />, path: null },
+    { id: 'reports', label: 'Night Shift Reports', icon: (props: any) => <Moon {...props} className="w-8 h-8" />, path: null },
     { id: 'history', label: 'History', icon: (props: any) => <History {...props} className="w-8 h-8" />, path: null },
+    { id: 'reminders', label: 'My Reminders', icon: (props: any) => <Bell {...props} className="w-8 h-8" />, path: null },
   ];
 
   // Bottom navigation items
   const bottomMenuItems = [
-    { id: 'reminders', label: 'My Reminders', icon: (props: any) => <Bell {...props} className="w-8 h-8" />, path: null },
     { id: 'profile', label: 'Profile', icon: (props: any) => <User {...props} className="w-8 h-8" />, path: null },
     { id: 'settings', label: 'Settings', icon: (props: any) => <Settings {...props} className="w-8 h-8" />, path: null },
   ];
 
   const handleNavClick = (viewId: string, path: string | null) => {
+    // Always call onViewChange for proper view switching
+    onViewChange(viewId as ViewType);
+    // Navigate if there's a specific path
     if (path) {
       navigate(path);
-    } else {
-      onViewChange(viewId as ViewType);
     }
     if (isMobile) {
       setOpenMobile(false);

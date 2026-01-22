@@ -29,6 +29,9 @@ import { AppTabs } from '@/components/ui/app-tabs';
 import { Input } from '@/components/ui/input';
 import { useJobs } from '@/context/JobContext';
 import { Job, JobNote } from '@/types/job';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
+import JobEditModal from '@/components/JobEditModal';
+import StatusBadge from '@/components/StatusBadge';
 
 const EditableField = ({ label, value, onSave, icon: Icon }: { label: string, value: any, onSave: (val: string) => void, icon?: any }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -79,6 +82,7 @@ export default function JobDetailPage() {
   const [auditTab, setAuditTab] = useState<'audit' | 'site_jobs'>('audit');
   const [job, setJob] = useState<Job | undefined>();
   const [isLoading, setIsLoading] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Notes state
   const [notes, setNotes] = useState<JobNote[]>([]);
@@ -140,6 +144,12 @@ export default function JobDetailPage() {
     updateJob(updatedJob);
   };
 
+  const handleEditSave = (updatedJob: Job) => {
+    setJob(updatedJob);
+    updateJob(updatedJob);
+    setIsEditModalOpen(false);
+  };
+
   if (isLoading) return <div className="p-6">Loading...</div>;
   if (!job) return <div className="p-6">Job not found</div>;
 
@@ -193,12 +203,29 @@ export default function JobDetailPage() {
         </div>
       </header>
 
+      {/* Breadcrumbs */}
+      <div className="bg-white px-6 pt-4">
+        <Breadcrumbs 
+          items={[
+            { label: 'All Jobs', onClick: () => {
+              localStorage.setItem('currentView', 'all-jobs');
+              navigate('/');
+            }},
+            { label: job.jobNumber }
+          ]}
+        />
+      </div>
+
       {/* Job Header */}
       <div className="bg-white px-6 py-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate(-1)}
+              onClick={() => {
+                // Set the view to all-jobs and navigate to home
+                localStorage.setItem('currentView', 'all-jobs');
+                navigate('/');
+              }}
               className="text-gray-600 hover:text-gray-900"
             >
               <ArrowLeft className="h-5 w-5" />
@@ -227,15 +254,17 @@ export default function JobDetailPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
-            {job.status}
-          </span>
+        <div className="flex items-center gap-3">
+          <StatusBadge status={job.status} />
           <span className="px-2 py-1 bg-white border border-gray-300 text-gray-700 rounded text-xs">
             {job.priority}
           </span>
-          <button className="text-red-500 hover:text-red-600">
-            <Edit className="h-4 w-4" />
+          <button 
+            className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-1.5 text-gray-700"
+            onClick={() => setIsEditModalOpen(true)}
+          >
+            <Edit className="h-3.5 w-3.5" />
+            Edit
           </button>
         </div>
       </div>
@@ -250,9 +279,12 @@ export default function JobDetailPage() {
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <Building2 className="h-4 w-4 text-gray-500" />
-                  <span className="text-gray-900 font-medium">{job.tenant}</span>
+                  <span className="text-gray-900 font-medium">{job.customer}</span>
                 </div>
-                <button className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-1">
+                <button 
+                  className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-1"
+                  onClick={() => setIsEditModalOpen(true)}
+                >
                   <Edit className="h-3 w-3" />
                   Edit
                 </button>
@@ -260,7 +292,7 @@ export default function JobDetailPage() {
 
               <div className="grid grid-cols-2 gap-x-12 gap-y-6">
                 <EditableField
-                  label="Customer"
+                  label="Location"
                   value={job.customer}
                   onSave={(val) => handleFieldUpdate('customer', val)}
                 />
@@ -341,12 +373,12 @@ export default function JobDetailPage() {
               </div>
             </div>
 
-            {/* Engineer */}
+            {/* Service Provider */}
             <div className="mt-6 pt-6 border-t border-gray-200 px-2">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <Wrench className="h-4 w-4 text-orange-600" />
-                  <span className="text-gray-900 font-medium text-sm">Engineer</span>
+                  <span className="text-gray-900 font-medium text-sm">Service Provider</span>
                 </div>
                 <button className="px-3 py-1.5 text-sm border border-gray-300 rounded hover:bg-gray-50 flex items-center gap-2">
                   <Phone className="h-3 w-3" />
@@ -561,6 +593,14 @@ export default function JobDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Job Edit Modal */}
+      <JobEditModal
+        job={job}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        onSave={handleEditSave}
+      />
     </div>
   );
 }

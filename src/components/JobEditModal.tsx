@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Job } from '@/types/job';
-import { Save, X } from 'lucide-react';
+import { Save } from 'lucide-react';
 
 interface JobEditModalProps {
   job: Job | null;
@@ -31,12 +31,7 @@ export default function JobEditModal({ job, isOpen, onClose, onSave }: JobEditMo
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Edit Job - {job.jobNumber}</span>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X size={16} />
-            </Button>
-          </DialogTitle>
+          <DialogTitle>Edit Job - {job.jobNumber}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -72,7 +67,7 @@ export default function JobEditModal({ job, isOpen, onClose, onSave }: JobEditMo
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium">Customer</label>
+              <label className="text-sm font-medium">Location</label>
               <Input
                 value={formData.customer}
                 onChange={(e) => setFormData(prev => prev ? { ...prev, customer: e.target.value } : null)}
@@ -98,7 +93,7 @@ export default function JobEditModal({ job, isOpen, onClose, onSave }: JobEditMo
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm font-medium">Engineer</label>
+              <label className="text-sm font-medium">Service Provider</label>
               <Input
                 value={formData.engineer}
                 onChange={(e) => setFormData(prev => prev ? { ...prev, engineer: e.target.value } : null)}

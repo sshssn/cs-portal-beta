@@ -18,7 +18,7 @@ export const mockJobs: Job[] = [
         dateAccepted: new Date('2024-01-15T09:30:00'),
         dateOnSite: new Date('2024-01-15T10:15:00'),
         dateCompleted: null,
-        tenant: 'FM4U Ltd',
+        tenant: 'WorkFlowX',
         alerts: [],
         reason: null,
         contact: {
@@ -128,7 +128,7 @@ export const mockJobs: Job[] = [
         dateAccepted: new Date('2024-01-13T10:15:00'),
         dateOnSite: new Date('2024-01-13T11:00:00'),
         dateCompleted: new Date('2024-01-13T14:00:00'),
-        tenant: 'Guardian Environmental',
+        tenant: 'WorkFlowX',
         alerts: [],
         reason: null,
         contact: {
@@ -183,7 +183,7 @@ export const mockJobs: Job[] = [
         dateAccepted: null,
         dateOnSite: null,
         dateCompleted: null,
-        tenant: 'FM4U Ltd',
+        tenant: 'WorkFlowX',
         alerts: [{ type: 'OVERDUE', message: 'Attendance SLA Breached' }],
         reason: null,
         contact: {
@@ -238,7 +238,7 @@ export const mockJobs: Job[] = [
         dateAccepted: new Date('2024-01-16T10:05:00'),
         dateOnSite: new Date('2024-01-16T10:30:00'),
         dateCompleted: null,
-        tenant: 'Guardian Environmental',
+        tenant: 'WorkFlowX',
         alerts: [],
         reason: null,
         contact: {
@@ -350,7 +350,7 @@ export const mockJobs: Job[] = [
         dateAccepted: null,
         dateOnSite: null,
         dateCompleted: null,
-        tenant: 'FM4U Ltd',
+        tenant: 'WorkFlowX',
         alerts: [],
         reason: null,
         contact: {
@@ -408,7 +408,7 @@ export const mockJobs: Job[] = [
         dateAccepted: new Date('2024-01-15T16:15:00'),
         dateOnSite: null,
         dateCompleted: null,
-        tenant: 'Guardian Environmental',
+        tenant: 'WorkFlowX',
         alerts: [],
         reason: 'Awaiting parts delivery',
         contact: {
@@ -466,7 +466,7 @@ export const mockJobs: Job[] = [
         dateAccepted: new Date('2024-01-14T11:30:00'),
         dateOnSite: new Date('2024-01-15T09:00:00'),
         dateCompleted: null,
-        tenant: 'FM4U Ltd',
+        tenant: 'WorkFlowX',
         alerts: [],
         reason: 'Paint supplies delayed',
         contact: {
@@ -574,7 +574,7 @@ export const mockJobs: Job[] = [
         dateAccepted: new Date('2024-01-18T09:00:00'),
         dateOnSite: null,
         dateCompleted: null,
-        tenant: 'FM4U Ltd',
+        tenant: 'WorkFlowX',
         alerts: [{ type: 'WARNING', message: 'Approaching On-site SLA' }],
         reason: null,
         contact: {
@@ -624,7 +624,7 @@ export const mockJobs: Job[] = [
         dateAccepted: new Date('2024-01-18T07:45:00'),
         dateOnSite: new Date('2024-01-18T08:30:00'),
         dateCompleted: null,
-        tenant: 'Guardian Environmental',
+        tenant: 'WorkFlowX',
         alerts: [{ type: 'OVERDUE', message: 'Completion SLA Breached' }],
         reason: 'Waiting for replacement pump',
         contact: {
@@ -724,7 +724,7 @@ export const mockJobs: Job[] = [
         dateAccepted: null,
         dateOnSite: null,
         dateCompleted: null,
-        tenant: 'Guardian Environmental',
+        tenant: 'WorkFlowX',
         alerts: [{ type: 'OVERDUE', message: 'Acceptance SLA Breached' }],
         reason: null,
         contact: {
@@ -775,7 +775,7 @@ export const mockJobs: Job[] = [
         dateAccepted: null,
         dateOnSite: null,
         dateCompleted: null,
-        tenant: 'Healthcare',
+        tenant: 'WorkFlowX',
         alerts: [],
         reason: null,
         contact: {

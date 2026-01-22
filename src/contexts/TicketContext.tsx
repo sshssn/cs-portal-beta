@@ -1,6 +1,11 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { Ticket, TicketNote, TimelineEvent, CreateJobFromTicketData } from '@/types/ticket';
-import { mockTickets } from '@/lib/ticketUtils';
+import { 
+  loadTicketsFromStorage, 
+  saveTicketsToStorage, 
+  initialTickets,
+  generateTicketReference 
+} from '@/lib/demoData';
 
 interface TicketContextType {
   tickets: Ticket[];
@@ -10,12 +15,29 @@ interface TicketContextType {
   addNoteToTicket: (ticketId: string, note: Omit<TicketNote, 'id' | 'timestamp'>) => void;
   addJobToTicket: (ticketId: string, jobId: string, jobData: CreateJobFromTicketData) => void;
   addTimelineEvent: (ticketId: string, event: Omit<TimelineEvent, 'id'>) => void;
+  generateNewReference: () => string;
+  resetToDefaults: () => void;
 }
 
 const TicketContext = createContext<TicketContextType | undefined>(undefined);
 
 export function TicketProvider({ children }: { children: ReactNode }) {
-  const [tickets, setTickets] = useState<Ticket[]>(mockTickets);
+  const [tickets, setTickets] = useState<Ticket[]>([]);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load from localStorage on mount
+  useEffect(() => {
+    const loaded = loadTicketsFromStorage();
+    setTickets(loaded);
+    setIsLoaded(true);
+  }, []);
+
+  // Save to localStorage whenever tickets change (after initial load)
+  useEffect(() => {
+    if (isLoaded && tickets.length > 0) {
+      saveTicketsToStorage(tickets);
+    }
+  }, [tickets, isLoaded]);
 
   const addTicket = (ticket: Ticket) => {
     setTickets(prev => [...prev, ticket]);
@@ -106,6 +128,15 @@ export function TicketProvider({ children }: { children: ReactNode }) {
     );
   };
 
+  const generateNewReference = () => {
+    return generateTicketReference(tickets);
+  };
+
+  const resetToDefaults = () => {
+    setTickets(initialTickets);
+    saveTicketsToStorage(initialTickets);
+  };
+
   return (
     <TicketContext.Provider
       value={{
@@ -115,7 +146,9 @@ export function TicketProvider({ children }: { children: ReactNode }) {
         getTicket,
         addNoteToTicket,
         addJobToTicket,
-        addTimelineEvent
+        addTimelineEvent,
+        generateNewReference,
+        resetToDefaults
       }}
     >
       {children}

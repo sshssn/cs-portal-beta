@@ -10,18 +10,20 @@ import { useTickets } from '@/contexts/TicketContext';
 import { useJobs } from '@/context/JobContext';
 import { TicketTimelinePanel } from '@/components/TicketTimelinePanel';
 import { AddNoteModal } from '@/components/AddNoteModal';
-import { CreateJobFromTicketModal } from '@/components/CreateJobFromTicketModal';
+import { TicketEditModal } from '@/components/TicketEditModal';
+import { Breadcrumbs } from '@/components/Breadcrumbs';
 import { getLocationPath, mockFlatLocations, getTagColors, getStatusColors } from '@/lib/ticketUtils';
+import { Ticket } from '@/types/ticket';
 import { format } from 'date-fns';
 
 export default function TicketDetailPage() {
   const { ticketId } = useParams();
   const navigate = useNavigate();
-  const { getTicket, addNoteToTicket, addJobToTicket } = useTickets();
+  const { getTicket, updateTicket, addNoteToTicket, addJobToTicket } = useTickets();
   const { getJobById, getJobsByTicketReference } = useJobs();
 
   const [showAddNote, setShowAddNote] = useState(false);
-  const [showCreateJob, setShowCreateJob] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const ticket = getTicket(ticketId || '');
 
@@ -32,6 +34,12 @@ export default function TicketDetailPage() {
   ].filter((job, index, self) => 
     job && self.findIndex(j => j?.id === job.id) === index // Remove duplicates
   ) : [];
+
+  const handleEditSave = (updates: Partial<Ticket>) => {
+    if (ticket) {
+      updateTicket(ticket.id, updates);
+    }
+  };
 
   if (!ticket) {
     return (
@@ -50,6 +58,14 @@ export default function TicketDetailPage() {
 
   return (
     <div className="container mx-auto py-6 max-w-7xl">
+      {/* Breadcrumbs */}
+      <Breadcrumbs 
+        items={[
+          { label: 'Ticket Manager', path: '/tickets' },
+          { label: ticket.reference }
+        ]}
+      />
+
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <Button
@@ -76,12 +92,17 @@ export default function TicketDetailPage() {
           variant="outline"
           size="sm"
           className="gap-2"
-          onClick={() => setShowCreateJob(true)}
+          onClick={() => navigate(`/ticket/${ticketId}/create-job`)}
         >
           <Plus className="h-4 w-4" />
           New Job
         </Button>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2"
+          onClick={() => setShowEditModal(true)}
+        >
           <Edit className="h-4 w-4" />
           Edit
         </Button>
@@ -251,7 +272,7 @@ export default function TicketDetailPage() {
                   <Button
                     variant="link"
                     className="mt-2"
-                    onClick={() => setShowCreateJob(true)}
+                    onClick={() => navigate(`/ticket/${ticketId}/create-job`)}
                   >
                     Create a job
                   </Button>
@@ -334,16 +355,12 @@ export default function TicketDetailPage() {
         ticketId={ticket.id}
         onSave={(note) => addNoteToTicket(ticket.id, note)}
       />
-
-      <CreateJobFromTicketModal
-        open={showCreateJob}
-        onOpenChange={setShowCreateJob}
-        ticketId={ticket.id}
-        defaultLocation={ticket.locations[0] ? getLocationPath(ticket.locations[0]) : undefined}
-        onCreateJob={(jobData) => {
-          const jobId = `JOB${Math.floor(Math.random() * 1000)}`;
-          addJobToTicket(ticket.id, jobId, jobData);
-        }}
+      
+      <TicketEditModal
+        ticket={ticket}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onSave={handleEditSave}
       />
     </div>
   );

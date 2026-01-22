@@ -415,11 +415,11 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
                 <p className="text-gray-900 font-mono">{alert.jobNumber}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Engineer:</span>
+                <span className="font-medium text-gray-700">Service Provider:</span>
                 <p className="text-gray-900">{alert.engineer}</p>
               </div>
               <div>
-                <span className="font-medium text-gray-700">Customer:</span>
+                <span className="font-medium text-gray-700">Location:</span>
                 <p className="text-gray-900">{alert.customer}</p>
               </div>
               <div>
@@ -523,9 +523,9 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
              {/* Header */}
        <div className="flex items-center justify-between">
          <div>
-           <h2 className="text-3xl font-bold text-gray-900">Engineer Action Alerts</h2>
+           <h2 className="text-3xl font-bold text-gray-900">Service Provider Action Alerts</h2>
            <p className="text-muted-foreground mt-2 text-lg">
-             Monitor engineer job acceptance and onsite status
+             Monitor service provider job acceptance and onsite status
            </p>
          </div>
          
@@ -558,7 +558,7 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
                 >
                   <div className="p-4 border-b border-gray-200">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-lg font-semibold text-gray-900">Engineer Alerts</h3>
+                      <h3 className="text-lg font-semibold text-gray-900">Service Provider Alerts</h3>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -798,7 +798,7 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
                           <div className="bg-white/60 p-3 rounded-lg border border-green-200">
                             <div className="flex items-center gap-2 mb-1">
                               <User className="h-4 w-4 text-green-600" />
-                              <span className="font-medium text-green-800">Engineer</span>
+                              <span className="font-medium text-green-800">Service Provider</span>
                             </div>
                             <p className="text-green-700 font-medium">{alert.engineer}</p>
                           </div>
@@ -996,13 +996,13 @@ export default function EngineerActionAlerts({ jobs, onJobUpdate }: EngineerActi
               {/* Engineer Information */}
               <Card className="bg-blue-50 border-2 border-blue-200">
                 <CardHeader>
-                  <CardTitle className="text-lg text-blue-900">Engineer Details</CardTitle>
+                  <CardTitle className="text-lg text-blue-900">Service Provider Details</CardTitle>
                 </CardHeader>
                 <CardContent>
                   {(() => {
                     const engineer = getEngineerDetails(selectedAlert.engineer);
                     if (!engineer) {
-                      return <p className="text-red-600">Engineer information not found</p>;
+                      return <p className="text-red-600">Service provider information not found</p>;
                     }
                     
                     return (

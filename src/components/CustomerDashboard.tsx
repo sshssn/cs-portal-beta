@@ -125,7 +125,7 @@ export default function CustomerDashboard({ customer, jobs, onBack, onJobClick, 
                 <Building2 className="h-5 w-5 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm font-medium text-blue-900">Customer</p>
+                <p className="text-sm font-medium text-blue-900">Location</p>
                 <p className="text-lg font-semibold text-blue-900">{customer.name}</p>
               </div>
             </div>

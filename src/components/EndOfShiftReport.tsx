@@ -50,7 +50,6 @@ interface NightshiftNote {
 }
 
 export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate }: EndOfShiftReportProps) {
-  const [tenantFilter, setTenantFilter] = useState('FM4U Ltd');
   const [customerFilter, setCustomerFilter] = useState('all');
   const [siteFilter, setSiteFilter] = useState('all');
   const [dateRange, setDateRange] = useState('last-night');
@@ -93,7 +92,7 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
   // Calculate statistics
   const stats = useMemo(() => {
     const filteredJobs = jobs.filter(j => {
-      if (tenantFilter !== 'all' && j.customer !== tenantFilter) return false;
+      if (customerFilter !== 'all' && j.customer !== customerFilter) return false;
       return true;
     });
 
@@ -105,20 +104,18 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
       completionBreached: filteredJobs.filter(j => j.status === 'awaiting_parts').length,
       approaching: filteredJobs.filter(j => j.priority === 'High').length
     };
-  }, [jobs, tenantFilter]);
+  }, [jobs, customerFilter]);
 
   // Get filtered jobs for display
   const displayJobs = useMemo(() => {
     return jobs.filter(j => {
-      if (tenantFilter !== 'all' && j.customer !== tenantFilter) return false;
       if (customerFilter !== 'all' && j.customer !== customerFilter) return false;
       if (siteFilter !== 'all' && j.site !== siteFilter) return false;
       return true;
     });
-  }, [jobs, tenantFilter, customerFilter, siteFilter]);
+  }, [jobs, customerFilter, siteFilter]);
 
   // Get unique values
-  const tenants = useMemo(() => [...new Set(jobs.map(j => j.customer).filter(Boolean))], [jobs]);
   const customerOptions = useMemo(() => [...new Set(jobs.map(j => j.customer).filter(Boolean))], [jobs]);
   const siteOptions = useMemo(() => [...new Set(jobs.map(j => j.site).filter(Boolean))], [jobs]);
 
@@ -184,16 +181,15 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500">Tenant:</span>
-            <Select value={tenantFilter} onValueChange={setTenantFilter}>
+            <span className="text-sm text-gray-500">Location:</span>
+            <Select value={customerFilter} onValueChange={setCustomerFilter}>
               <SelectTrigger className="w-32 h-8">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Tenants</SelectItem>
-                <SelectItem value="FM4U Ltd">FM4U Ltd</SelectItem>
-                {tenants.map(t => (
-                  <SelectItem key={t} value={t}>{t}</SelectItem>
+                <SelectItem value="all">All Locations</SelectItem>
+                {customerOptions.map(c => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -271,7 +267,7 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
 
       {/* Company Info */}
       <div className="border-b border-gray-200 pb-4">
-        <h2 className="text-xl font-bold text-blue-600">{tenantFilter}</h2>
+        <h2 className="text-xl font-bold text-blue-600">End of Shift Report</h2>
         <p className="text-sm text-gray-500">Shift time: Dec 21, 22:00 - Jan 21, 13:30</p>
       </div>
 
@@ -334,9 +330,8 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
                   <TableHead className="text-xs font-semibold text-gray-600">Description</TableHead>
                   <TableHead className="text-xs font-semibold text-gray-600">Job Status</TableHead>
                   <TableHead className="text-xs font-semibold text-gray-600">SLA Status</TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-600">Engineer</TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-600">Tenant</TableHead>
-                  <TableHead className="text-xs font-semibold text-gray-600">Customer</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-600">Service Provider</TableHead>
+                  <TableHead className="text-xs font-semibold text-gray-600">Location</TableHead>
                   <TableHead className="text-xs font-semibold text-gray-600">Site</TableHead>
                   <TableHead className="text-xs font-semibold text-gray-600">Logged Date</TableHead>
                 </TableRow>
@@ -356,7 +351,6 @@ export default function EndOfShiftReport({ onBack, jobs, customers, onJobCreate 
                       <TableCell>{getStatusBadge(job.status)}</TableCell>
                       <TableCell>{getSlaStatusBadge(job)}</TableCell>
                       <TableCell className="text-gray-700 text-sm">{job.engineer || 'Unassigned'}</TableCell>
-                      <TableCell className="text-blue-600 text-sm">{tenantFilter}</TableCell>
                       <TableCell className="text-gray-600 text-sm">{job.customer}</TableCell>
                       <TableCell className="text-gray-600 text-sm">{job.site}</TableCell>
                       <TableCell className="text-gray-500 text-sm">

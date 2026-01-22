@@ -37,7 +37,7 @@ export default function EngineerAlertsPage({ onBack, jobs, onJobUpdate }: Engine
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <Bell className="h-8 w-8 text-blue-600" />
-                <h1 className="text-3xl font-bold text-gray-900">Engineer Action Alerts</h1>
+                <h1 className="text-3xl font-bold text-gray-900">Service Provider Action Alerts</h1>
               </div>
             </div>
           </div>
@@ -46,18 +46,18 @@ export default function EngineerAlertsPage({ onBack, jobs, onJobUpdate }: Engine
             <div className="flex items-center gap-3 text-sm text-gray-600">
               <div className="flex items-center gap-2">
                 <User className="h-5 w-5 text-blue-600" />
-                <span>Engineer Accept</span>
+                <span>Service Provider Accept</span>
               </div>
               <div className="flex items-center gap-2">
                 <MapPin className="h-5 w-5 text-green-600" />
-                <span>Engineer Onsite</span>
+                <span>Service Provider Onsite</span>
               </div>
             </div>
           </div>
         </div>
         
         <p className="text-muted-foreground mt-3 ml-20 text-lg">
-          Monitor and manage engineer job acceptance and onsite status alerts
+          Monitor and manage service provider job acceptance and onsite status alerts
         </p>
       </div>
 

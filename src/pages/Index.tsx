@@ -38,6 +38,7 @@ import TicketManagerPage from '@/pages/TicketManagerPage';
 import NewServiceTicketPage from '@/pages/NewServiceTicketPage';
 import TicketDetailPage from '@/pages/TicketDetailPage';
 import ServiceProvidersPage from '@/pages/ServiceProvidersPage';
+import CreateJobFromTicketPage from '@/pages/CreateJobFromTicketPage';
 import NotificationPopover from '@/components/NotificationPopover';
 import {
   DropdownMenu,
@@ -49,7 +50,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 // Updated view types matching Joblogic Helpdesk
-type View = 'dashboard' | 'create-job' | 'all-jobs' | 'reports' | 'call-handling' | 'history' | 'reminders' | 'profile' | 'settings' | 'job-detail' | 'tickets' | 'tickets-new' | 'ticket-detail' | 'service-providers';
+type View = 'dashboard' | 'create-job' | 'all-jobs' | 'reports' | 'call-handling' | 'history' | 'reminders' | 'profile' | 'settings' | 'job-detail' | 'tickets' | 'tickets-new' | 'ticket-detail' | 'service-providers' | 'create-job-from-ticket';
 
 export default function Index() {
   const params = useParams<{ jobId: string; ticketId: string }>();
@@ -72,6 +73,7 @@ export default function Index() {
   const [currentView, setCurrentView] = useState<View>(() => {
     // Determine view based on URL path
     const path = window.location.pathname;
+    if (path.includes('/create-job')) return 'create-job-from-ticket';
     if (path.startsWith('/tickets/') || path.startsWith('/ticket/')) {
       if (path.includes('/new')) return 'tickets-new';
       return 'ticket-detail';
@@ -93,7 +95,9 @@ export default function Index() {
   // Update view based on location changes
   useEffect(() => {
     const path = location.pathname;
-    if (path.startsWith('/tickets/') || path.startsWith('/ticket/')) {
+    if (path.includes('/create-job')) {
+      setCurrentView('create-job-from-ticket');
+    } else if (path.startsWith('/tickets/') || path.startsWith('/ticket/')) {
       if (path.includes('/new')) {
         setCurrentView('tickets-new');
       } else {
@@ -180,6 +184,7 @@ export default function Index() {
       case 'tickets': return 'Ticket Manager';
       case 'tickets-new': return 'New Service Ticket';
       case 'ticket-detail': return 'Ticket Details';
+      case 'create-job-from-ticket': return 'Create Job';
       case 'service-providers': return 'Service Providers';
       default: return 'Dashboard';
     }
@@ -213,8 +218,8 @@ export default function Index() {
     );
   }
 
-  // If we're on a ticket detail page, show the TicketDetailPage
-  if (ticketId) {
+  // If we're on a ticket detail page (but not create-job), show the TicketDetailPage
+  if (ticketId && !location.pathname.includes('/create-job')) {
     return (
       <>
         <NavigationSidebar
@@ -326,6 +331,9 @@ export default function Index() {
 
       case 'ticket-detail':
         return <TicketDetailPage />;
+
+      case 'create-job-from-ticket':
+        return <CreateJobFromTicketPage />;
 
       case 'service-providers':
         return <ServiceProvidersPage />;
